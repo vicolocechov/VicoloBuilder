@@ -106,4 +106,39 @@ describe("History", () => {
 
     expect(hashDocument(history.document)).toBe(hashBeforeUndo);
   });
+
+  it("undo after DELETE_NODE restores the exact pre-delete structure, including children order", () => {
+    const history = new History(baseDocument());
+    // root ha 3 figli ordinati: x, y, z. Cancelliamo quello in mezzo.
+    history.execute({ type: "CREATE_NODE", nodeId: "x", nodeType: "box", parentId: "root" });
+    history.execute({ type: "CREATE_NODE", nodeId: "y", nodeType: "box", parentId: "root" });
+    history.execute({ type: "CREATE_NODE", nodeId: "z", nodeType: "box", parentId: "root" });
+    // "y" ha a sua volta discendenti, per verificare che l'undo li ripristini tutti.
+    history.execute({ type: "CREATE_NODE", nodeId: "y-child", nodeType: "text", parentId: "y" });
+
+    expect(validateDocument(history.document)).toEqual([]);
+    const sizeBeforeDelete = history.document.nodes.size;
+    const childrenBeforeDelete = getNode(history.document, "root")!.childrenIds;
+    expect(childrenBeforeDelete).toEqual(["x", "y", "z"]);
+    const hashBeforeDelete = hashDocument(history.document);
+
+    history.execute({ type: "DELETE_NODE", nodeId: "y" });
+
+    // dopo il delete: "y" e "y-child" spariti, root ha solo x e z, nessun orfano
+    expect(getNode(history.document, "y")).toBeUndefined();
+    expect(getNode(history.document, "y-child")).toBeUndefined();
+    expect(getNode(history.document, "root")!.childrenIds).toEqual(["x", "z"]);
+    expect(history.document.nodes.size).toBe(sizeBeforeDelete - 2); // y + y-child rimossi
+    expect(validateDocument(history.document)).toEqual([]);
+
+    history.undo();
+
+    // dopo l'undo: struttura ESATTAMENTE come prima, ordine dei figli incluso
+    expect(getNode(history.document, "y")).toBeDefined();
+    expect(getNode(history.document, "y-child")).toBeDefined();
+    expect(getNode(history.document, "root")!.childrenIds).toEqual(childrenBeforeDelete);
+    expect(history.document.nodes.size).toBe(sizeBeforeDelete);
+    expect(hashDocument(history.document)).toBe(hashBeforeDelete);
+    expect(validateDocument(history.document)).toEqual([]);
+  });
 });

@@ -65,6 +65,14 @@ function applyCreateNode(document: Document, command: CreateNodeCommand): Docume
   nextChildrenIds.splice(insertAt, 0, newNode.id);
   const nextParent: DocumentNode = { ...parent, childrenIds: nextChildrenIds };
 
+  // KNOWN COST (misurato, non ancora un problema): questa copia è O(n) nel
+  // numero totale di nodi del documento, ripetuta ad ogni comando -> O(n^2)
+  // cumulativo su lunghe sequenze di comandi senza pause. A N=10.000 il costo
+  // marginale di UN comando è ~6-6.6ms, entro tutti i budget di RFC-000 §6
+  // (margine >=1.9x anche sul piu' stretto, 16ms) - vedi packages/engine/test/performance.test.ts.
+  // Da rivedere solo se: (a) il target nodi cresce molto oltre 10.000, oppure
+  // (b) viene introdotta un'operazione di bulk-edit che emette molti comandi
+  // senza rendering/pause fra uno e l'altro. Non riscrivere per "eleganza".
   const nextNodes = new Map(document.nodes);
   nextNodes.set(nextParent.id, nextParent);
   nextNodes.set(newNode.id, newNode);
@@ -76,6 +84,7 @@ function applyUpdateProps(document: Document, command: UpdatePropsCommand): Docu
   const node = requireNode(document, command.nodeId);
   const nextNode: DocumentNode = { ...node, props: { ...node.props, ...command.props } };
 
+  // Vedi la nota in applyCreateNode: stesso costo O(n), stessa conclusione.
   const nextNodes = new Map(document.nodes);
   nextNodes.set(nextNode.id, nextNode);
 
@@ -91,6 +100,11 @@ function applyDeleteNode(document: Document, command: DeleteNodeCommand): Docume
     }
   }
 
+  // Vedi la nota in applyCreateNode: stesso costo O(n) di copia della Map.
+  // Nota separata: la cascata (collectSubtreeIds + le delete sotto) NON è il
+  // collo di bottiglia - misurato: cancellare un sottoalbero da 5000 nodi in
+  // un documento da 10.000 costa ~7.9ms, quasi come cancellarne uno da 10
+  // nodi (~6.0ms). Il costo è quasi tutto nella riga sopra.
   const nextNodes = new Map(document.nodes);
   for (const id of collectSubtreeIds(document, node.id)) {
     nextNodes.delete(id);

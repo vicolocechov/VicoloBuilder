@@ -101,6 +101,29 @@ describe("applyCommand — DELETE_NODE", () => {
     expect(getNode(doc, "b")).toBeUndefined();
   });
 
+  it("cascades deletion through a subtree deeper than 3 levels, leaving no orphans", () => {
+    // root -> a -> b -> c -> d  (4 livelli sotto root)
+    let doc = baseDocument();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "a", nodeType: "box", parentId: "root" });
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "b", nodeType: "box", parentId: "a" });
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "c", nodeType: "box", parentId: "b" });
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "d", nodeType: "text", parentId: "c" });
+    // un ramo laterale che NON deve essere toccato dalla cancellazione di "a"
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "sibling", nodeType: "text", parentId: "root" });
+
+    expect(doc.nodes.size).toBe(6); // root, a, b, c, d, sibling
+
+    doc = applyCommand(doc, { type: "DELETE_NODE", nodeId: "a" });
+
+    for (const id of ["a", "b", "c", "d"]) {
+      expect(getNode(doc, id)).toBeUndefined();
+    }
+    expect(getNode(doc, "sibling")).toBeDefined();
+    expect(doc.nodes.size).toBe(2); // root + sibling, nessun orfano rimasto
+    expect(getNode(doc, "root")!.childrenIds).toEqual(["sibling"]);
+    expect(validateDocument(doc)).toEqual([]);
+  });
+
   it("refuses to delete a page's root node", () => {
     const doc = baseDocument();
     expect(() => applyCommand(doc, { type: "DELETE_NODE", nodeId: "root" })).toThrow(CommandError);
