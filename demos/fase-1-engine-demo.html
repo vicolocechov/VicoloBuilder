@@ -1,0 +1,934 @@
+<title>VicoloBuilder — Engine Demo (Fase 1)</title>
+<style>
+  :root {
+    --bg: #f4f6f5;
+    --surface: #ffffff;
+    --surface-2: #eef1f0;
+    --border: #dbe2df;
+    --ink: #16211f;
+    --ink-dim: #5b6b68;
+    --ink-faint: #8a9895;
+    --accent: #0f8a7d;
+    --accent-ink: #ffffff;
+    --accent-soft: #e3f3f0;
+    --good: #1f9d63;
+    --good-soft: #e3f6ec;
+    --bad: #c9372c;
+    --bad-soft: #fbe7e5;
+    --warn: #a9720b;
+    --warn-soft: #f6ecd9;
+    --shadow: 0 1px 2px rgba(20, 30, 28, 0.06), 0 8px 24px rgba(20, 30, 28, 0.07);
+    --font-ui: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1513;
+      --surface: #151d1b;
+      --surface-2: #1b2523;
+      --border: #2b3735;
+      --ink: #e7efec;
+      --ink-dim: #94a6a1;
+      --ink-faint: #6c7d78;
+      --accent: #55d6c4;
+      --accent-ink: #052220;
+      --accent-soft: #17322e;
+      --good: #4fdb95;
+      --good-soft: #163429;
+      --bad: #f0766e;
+      --bad-soft: #3a1f1d;
+      --warn: #e6ba5c;
+      --warn-soft: #372a15;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0e1513;
+    --surface: #151d1b;
+    --surface-2: #1b2523;
+    --border: #2b3735;
+    --ink: #e7efec;
+    --ink-dim: #94a6a1;
+    --ink-faint: #6c7d78;
+    --accent: #55d6c4;
+    --accent-ink: #052220;
+    --accent-soft: #17322e;
+    --good: #4fdb95;
+    --good-soft: #163429;
+    --bad: #f0766e;
+    --bad-soft: #3a1f1d;
+    --warn: #e6ba5c;
+    --warn-soft: #372a15;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 14px/1.45 var(--font-ui);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  button { font-family: inherit; }
+
+  .app { flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
+  .brand .title { font: 700 15.5px/1.2 var(--font-ui); letter-spacing: -0.01em; }
+  .brand .title b { color: var(--accent); }
+  .brand .subtitle { font: 500 11.5px/1.3 var(--font-ui); color: var(--ink-dim); }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font: 700 10.5px/1 var(--font-mono);
+    letter-spacing: .02em;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    border: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .topbar .spacer { flex: 1; }
+  .history-controls { display: flex; gap: 8px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font: 600 12.5px/1 var(--font-ui);
+    padding: 9px 13px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background .12s ease, border-color .12s ease, transform .05s ease;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.05); }
+  .btn-danger { color: var(--bad); }
+  .btn-danger:hover:not(:disabled) { background: var(--bad-soft); border-color: var(--bad); }
+  .btn-block { width: 100%; }
+  .btn-row { display: flex; gap: 8px; }
+  .kbd {
+    font: 600 10px/1 var(--font-mono);
+    background: rgba(0,0,0,0.12);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+
+  /* ---------- Layout ---------- */
+  main.layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 272px 1fr 336px;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--surface);
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(100vh - 66px);
+  }
+  .panel-left { border-right: 1px solid var(--border); }
+  .panel-right { border-left: 1px solid var(--border); }
+  .canvas-wrap {
+    background: var(--bg);
+    padding: 16px 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 66px);
+  }
+
+  @media (max-width: 980px) {
+    main.layout { grid-template-columns: 1fr; }
+    .panel, .canvas-wrap { max-height: 62vh; border: none; border-bottom: 1px solid var(--border); }
+  }
+
+  h2.section-title {
+    font: 700 11px/1 var(--font-ui);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--ink-dim);
+    margin: 20px 0 10px;
+  }
+  h2.section-title:first-child { margin-top: 0; }
+
+  .caption {
+    font: 500 12px/1.55 var(--font-ui);
+    color: var(--ink-dim);
+    max-width: 62ch;
+  }
+
+  /* ---------- Tree ---------- */
+  .node-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+  .node-row:hover { background: var(--surface-2); }
+  .node-row.selected { background: var(--accent-soft); border-color: var(--accent); }
+  .node-row .indent { flex: none; }
+  .node-row .type-tag {
+    font: 700 9.5px/1 var(--font-mono);
+    letter-spacing: .03em;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    flex: none;
+  }
+  .node-row.selected .type-tag { background: var(--surface); }
+  .node-row .id {
+    font: 600 11.5px/1 var(--font-mono);
+    color: var(--ink-faint);
+    flex: none;
+  }
+  .node-row .preview {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink-dim);
+    font-size: 12.5px;
+  }
+  .swatch {
+    width: 13px; height: 13px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex: none;
+  }
+
+  /* ---------- History timeline ---------- */
+  .timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    font: 500 12px/1.3 var(--font-ui);
+    color: var(--ink-faint);
+  }
+  .timeline-item:hover { background: var(--surface-2); }
+  .timeline-item.applied { color: var(--ink-dim); }
+  .timeline-item.current { background: var(--accent-soft); color: var(--ink); font-weight: 700; }
+  .timeline-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex: none; }
+  .timeline-item.applied .dot { background: var(--accent); }
+  .timeline-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 9px; padding: 6px; }
+  .empty-hint { font: 500 12px/1.5 var(--font-ui); color: var(--ink-faint); padding: 8px; }
+
+  /* ---------- Inspector ---------- */
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label {
+    font: 700 10.5px/1 var(--font-ui);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink-dim);
+  }
+  .field input[type="text"] {
+    font: 500 13px/1.3 var(--font-ui);
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .field input[type="text"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .color-field { display: flex; align-items: center; gap: 10px; }
+  .field input[type="color"] {
+    width: 42px; height: 32px;
+    padding: 2px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .kv { font: 600 12px/1.6 var(--font-mono); color: var(--ink-dim); }
+  .kv b { color: var(--ink); font-weight: 600; }
+  .node-summary {
+    background: var(--surface-2);
+    border-radius: 9px;
+    padding: 11px 12px;
+    margin-bottom: 14px;
+  }
+  .node-summary .headline {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .node-summary .headline .id { font: 700 13px/1.2 var(--font-mono); }
+
+  .inv-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    margin-bottom: 6px;
+    font: 500 12px/1.35 var(--font-ui);
+  }
+  .pill {
+    font: 700 10px/1 var(--font-mono);
+    padding: 4px 8px;
+    border-radius: 20px;
+    flex: none;
+  }
+  .pill.ok { background: var(--good-soft); color: var(--good); }
+  .pill.fail { background: var(--bad-soft); color: var(--bad); }
+
+  .hash-box {
+    font: 600 11.5px/1.5 var(--font-mono);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    word-break: break-all;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .verify-result {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 9px;
+    font: 500 12px/1.55 var(--font-ui);
+    border: 1px solid var(--border);
+  }
+  .verify-result.ok { background: var(--good-soft); border-color: var(--good); }
+  .verify-result.fail { background: var(--bad-soft); border-color: var(--bad); }
+  .verify-result .headline {
+    font: 700 13px/1.3 var(--font-ui);
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 5px;
+  }
+  .verify-result .hash-box { margin-top: 6px; background: rgba(0,0,0,0.05); }
+
+  .footer-note {
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font: 500 11px/1.5 var(--font-ui);
+    color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="title">Vicolo<b>Builder</b> — Engine</div>
+      <div class="subtitle">Fase 1 · Document + CommandBus + History</div>
+    </div>
+    <div class="badges">
+      <span class="badge" id="badge-schema">schemaVersion 1</span>
+      <span class="badge" id="badge-nodes">0 nodi</span>
+      <span class="badge" id="badge-pages">1 pagina</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="history-controls">
+      <button class="btn" id="btn-undo" title="Annulla (Ctrl/Cmd+Z)">↶ Annulla</button>
+      <button class="btn" id="btn-redo" title="Ripeti (Ctrl/Cmd+Shift+Z)">↷ Ripeti</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: actions + history -->
+    <aside class="panel panel-left">
+      <h2 class="section-title">Crea nel nodo selezionato</h2>
+      <div class="btn-row" style="margin-bottom:8px;">
+        <button class="btn btn-block" id="btn-add-box">▢ Sezione</button>
+        <button class="btn btn-block" id="btn-add-text">T Testo</button>
+      </div>
+      <p class="caption">Ogni pulsante esegue un comando <code>CREATE_NODE</code> attraverso il Command Bus e seleziona il nodo appena creato, così puoi annidare aggiungendo ancora.</p>
+
+      <h2 class="section-title">Cronologia comandi</h2>
+      <div class="timeline-list" id="timeline-list"></div>
+      <p class="caption" style="margin-top:8px;">Clicca una voce per saltare a quel punto della cronologia (annulla/ripeti multipli).</p>
+
+      <div class="footer-note">
+        Questa demo esegue in JavaScript una copia fedele della logica di <code>packages/engine</code> (Document, CommandBus, History, invarianti), così puoi verificarne il comportamento nel browser senza passare dal codice.
+      </div>
+    </aside>
+
+    <!-- CENTER: document tree -->
+    <section class="canvas-wrap">
+      <h2 class="section-title">Documento (albero nodi, su Map)</h2>
+      <p class="caption" style="margin-bottom:14px;">Ogni riga è un nodo reale del Document. Seleziona una riga per ispezionarla o modificarla a destra.</p>
+      <div id="tree"></div>
+    </section>
+
+    <!-- RIGHT: inspector -->
+    <aside class="panel panel-right">
+      <h2 class="section-title">Nodo selezionato</h2>
+      <div id="inspector"></div>
+
+      <h2 class="section-title">Invarianti (RFC-000 §12)</h2>
+      <div id="invariants"></div>
+
+      <h2 class="section-title">Hash del Document</h2>
+      <div class="hash-box" id="hash-current"></div>
+      <button class="btn btn-block" id="btn-verify" style="margin-top:10px;">Verifica invariante Annulla↔Ripeti</button>
+      <div id="verify-result"></div>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =========================================================================
+   * ENGINE PORT — riproduce fedelmente packages/engine (document, invariants,
+   * commands, hash, history) in JS puro, per eseguirla nel browser senza
+   * build step. Nessuna logica qui diverge dall'implementazione TypeScript.
+   * ========================================================================= */
+
+  const CURRENT_SCHEMA_VERSION = 1;
+
+  function createDocument(opts) {
+    opts = opts || {};
+    const rootPageId = opts.rootPageId || "page-home";
+    const rootNodeId = opts.rootNodeId || "root";
+    const rootNode = {
+      id: rootNodeId, type: opts.rootNodeType || "page-root",
+      parentId: null, childrenIds: [], props: {},
+    };
+    const page = { id: rootPageId, name: opts.rootPageName || "Home", rootNodeId: rootNodeId };
+    return {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      rootPageId: rootPageId,
+      nodes: new Map([[rootNodeId, rootNode]]),
+      pages: new Map([[rootPageId, page]]),
+    };
+  }
+
+  function collectSubtreeIds(doc, nodeId) {
+    const result = []; const stack = [nodeId]; const seen = new Set();
+    while (stack.length) {
+      const id = stack.pop();
+      if (seen.has(id)) continue;
+      seen.add(id); result.push(id);
+      const node = doc.nodes.get(id);
+      if (!node) continue;
+      for (const c of node.childrenIds) stack.push(c);
+    }
+    return result;
+  }
+
+  function validateDocument(doc) {
+    const violations = [];
+    const parentCountByChild = new Map();
+    for (const node of doc.nodes.values()) {
+      for (const childId of node.childrenIds) {
+        if (!doc.nodes.has(childId)) {
+          violations.push({ code: "CHILD_NOT_FOUND", message: `Nodo "${node.id}" referenzia il figlio mancante "${childId}".`, nodeId: node.id });
+          continue;
+        }
+        parentCountByChild.set(childId, (parentCountByChild.get(childId) || 0) + 1);
+      }
+    }
+    for (const node of doc.nodes.values()) {
+      if (node.parentId !== null && !doc.nodes.has(node.parentId)) {
+        violations.push({ code: "PARENT_NOT_FOUND", message: `Nodo "${node.id}" ha parentId "${node.parentId}" inesistente.`, nodeId: node.id });
+      }
+      const count = parentCountByChild.get(node.id) || 0;
+      if (node.parentId === null) {
+        if (count > 0) violations.push({ code: "ORPHAN_PARENT_LINK", message: `Nodo "${node.id}" ha parentId=null ma è referenziato come figlio.`, nodeId: node.id });
+      } else if (count !== 1) {
+        violations.push({ code: "MULTIPLE_PARENTS", message: `Nodo "${node.id}" ha ${count} genitori; atteso esattamente 1.`, nodeId: node.id });
+      }
+    }
+    const WHITE = 0, GRAY = 1, BLACK = 2;
+    const color = new Map();
+    for (const id of doc.nodes.keys()) color.set(id, WHITE);
+    let cycleFound = false;
+    function visit(id) {
+      if (cycleFound) return;
+      color.set(id, GRAY);
+      const node = doc.nodes.get(id);
+      if (node) {
+        for (const childId of node.childrenIds) {
+          if (!doc.nodes.has(childId)) continue;
+          const cc = color.get(childId);
+          if (cc === GRAY) {
+            cycleFound = true;
+            violations.push({ code: "CYCLE_DETECTED", message: `Ciclo rilevato che coinvolge il nodo "${childId}".`, nodeId: childId });
+            return;
+          }
+          if (cc === WHITE) visit(childId);
+        }
+      }
+      color.set(id, BLACK);
+    }
+    for (const id of doc.nodes.keys()) if (color.get(id) === WHITE) visit(id);
+
+    for (const page of doc.pages.values()) {
+      const rootNode = doc.nodes.get(page.rootNodeId);
+      if (!rootNode) {
+        violations.push({ code: "PAGE_ROOT_NOT_FOUND", message: `La pagina "${page.id}" ha rootNodeId "${page.rootNodeId}" inesistente.`, pageId: page.id });
+      } else if (rootNode.parentId !== null) {
+        violations.push({ code: "PAGE_ROOT_HAS_PARENT", message: `La radice della pagina "${page.id}" non può avere un genitore.`, pageId: page.id, nodeId: rootNode.id });
+      }
+    }
+    return violations;
+  }
+
+  class DocumentInvariantError extends Error {
+    constructor(violations) {
+      super(`Il Document viola ${violations.length} invariante/i: ${violations.map(v => v.code).join(", ")}`);
+      this.name = "DocumentInvariantError";
+      this.violations = violations;
+    }
+  }
+
+  function assertValidDocument(doc) {
+    const v = validateDocument(doc);
+    if (v.length) throw new DocumentInvariantError(v);
+  }
+
+  class CommandError extends Error {
+    constructor(command, message) { super(message); this.name = "CommandError"; this.command = command; }
+  }
+
+  function requireNode(doc, id) {
+    const n = doc.nodes.get(id);
+    if (!n) throw new Error(`Nodo non trovato: ${id}`);
+    return n;
+  }
+
+  function applyCreateNode(doc, cmd) {
+    if (doc.nodes.has(cmd.nodeId)) throw new CommandError(cmd, `L'id nodo "${cmd.nodeId}" esiste già.`);
+    const parent = requireNode(doc, cmd.parentId);
+    const newNode = { id: cmd.nodeId, type: cmd.nodeType, parentId: cmd.parentId, childrenIds: [], props: Object.assign({}, cmd.props || {}) };
+    const nextChildren = parent.childrenIds.slice();
+    const insertAt = cmd.index === undefined ? nextChildren.length : cmd.index;
+    nextChildren.splice(insertAt, 0, newNode.id);
+    const nextParent = Object.assign({}, parent, { childrenIds: nextChildren });
+    const nextNodes = new Map(doc.nodes);
+    nextNodes.set(nextParent.id, nextParent);
+    nextNodes.set(newNode.id, newNode);
+    return Object.assign({}, doc, { nodes: nextNodes });
+  }
+
+  function applyUpdateProps(doc, cmd) {
+    const node = requireNode(doc, cmd.nodeId);
+    const nextNode = Object.assign({}, node, { props: Object.assign({}, node.props, cmd.props) });
+    const nextNodes = new Map(doc.nodes);
+    nextNodes.set(nextNode.id, nextNode);
+    return Object.assign({}, doc, { nodes: nextNodes });
+  }
+
+  function applyDeleteNode(doc, cmd) {
+    const node = requireNode(doc, cmd.nodeId);
+    for (const page of doc.pages.values()) {
+      if (page.rootNodeId === node.id) throw new CommandError(cmd, `Impossibile eliminare "${node.id}": è la radice della pagina "${page.id}".`);
+    }
+    const nextNodes = new Map(doc.nodes);
+    for (const id of collectSubtreeIds(doc, node.id)) nextNodes.delete(id);
+    if (node.parentId !== null) {
+      const parent = nextNodes.get(node.parentId);
+      if (parent) nextNodes.set(parent.id, Object.assign({}, parent, { childrenIds: parent.childrenIds.filter(id => id !== node.id) }));
+    }
+    return Object.assign({}, doc, { nodes: nextNodes });
+  }
+
+  function applyCommand(doc, cmd) {
+    let next;
+    switch (cmd.type) {
+      case "CREATE_NODE": next = applyCreateNode(doc, cmd); break;
+      case "UPDATE_PROPS": next = applyUpdateProps(doc, cmd); break;
+      case "DELETE_NODE": next = applyDeleteNode(doc, cmd); break;
+      default: throw new CommandError(cmd, "Tipo di comando sconosciuto.");
+    }
+    assertValidDocument(next);
+    return next;
+  }
+
+  function sortedEntries(props) {
+    return Object.keys(props).sort().map(k => [k, props[k]]);
+  }
+
+  function serializeDocument(doc) {
+    const nodes = Array.from(doc.nodes.values())
+      .map(n => ({ id: n.id, type: n.type, parentId: n.parentId, childrenIds: n.childrenIds.slice(), props: sortedEntries(n.props) }))
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    const pages = Array.from(doc.pages.values())
+      .map(p => ({ id: p.id, name: p.name, rootNodeId: p.rootNodeId }))
+      .sort((a, b) => (a.id < b.id ? -1 : 1));
+    return JSON.stringify({ schemaVersion: doc.schemaVersion, rootPageId: doc.rootPageId, pages, nodes });
+  }
+
+  function fnv1a(input) {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < input.length; i++) {
+      hash ^= input.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }
+
+  function hashDocument(doc) { return fnv1a(serializeDocument(doc)); }
+
+  class History {
+    constructor(initial) { this._past = []; this._present = initial; this._future = []; }
+    get document() { return this._present; }
+    get canUndo() { return this._past.length > 0; }
+    get canRedo() { return this._future.length > 0; }
+    execute(cmd) {
+      const next = applyCommand(this._present, cmd);
+      this._past.push(this._present);
+      this._present = next;
+      this._future = [];
+      return this._present;
+    }
+    undo() {
+      const prev = this._past.pop();
+      if (prev === undefined) return this._present;
+      this._future.unshift(this._present);
+      this._present = prev;
+      return this._present;
+    }
+    redo() {
+      const next = this._future.shift();
+      if (next === undefined) return this._present;
+      this._past.push(this._present);
+      this._present = next;
+      return this._present;
+    }
+  }
+
+  /* =========================================================================
+   * DEMO STATE + UI
+   * ========================================================================= */
+
+  const INVARIANT_GROUPS = [
+    { label: "Ogni nodo ha un solo genitore", codes: ["MULTIPLE_PARENTS", "ORPHAN_PARENT_LINK"] },
+    { label: "Nessun ciclo nel grafo dei nodi", codes: ["CYCLE_DETECTED"] },
+    { label: "Ogni childrenId esiste nella Map", codes: ["CHILD_NOT_FOUND"] },
+    { label: "Ogni parentId esiste", codes: ["PARENT_NOT_FOUND"] },
+    { label: "La Page ha un rootNodeId valido", codes: ["PAGE_ROOT_NOT_FOUND", "PAGE_ROOT_HAS_PARENT"] },
+  ];
+
+  let history = new History(createDocument());
+  let rootNodeId = history.document.pages.get(history.document.rootPageId).rootNodeId;
+  let selectedId = rootNodeId;
+  let timeline = []; // display-only log of applied commands, kept in sync with History
+  let cursor = 0;
+  let nextIdCounter = 0;
+
+  function nextId(prefix) { nextIdCounter += 1; return `${prefix}-${nextIdCounter}`; }
+
+  function labelForCommand(cmd) {
+    if (cmd.type === "CREATE_NODE") return `+ ${cmd.nodeType === "text" ? "Testo" : "Sezione"} “${cmd.nodeId}” in “${cmd.parentId}”`;
+    if (cmd.type === "UPDATE_PROPS") return `✎ Proprietà “${cmd.nodeId}” aggiornate`;
+    if (cmd.type === "DELETE_NODE") return `− Eliminato “${cmd.nodeId}”`;
+    return cmd.type;
+  }
+
+  function run(cmd) {
+    try {
+      history.execute(cmd);
+      timeline = timeline.slice(0, cursor);
+      timeline.push({ cmd, label: labelForCommand(cmd) });
+      cursor += 1;
+      return true;
+    } catch (err) {
+      window.alert("Comando rifiutato dal CommandBus:\n" + err.message);
+      return false;
+    }
+  }
+
+  function goToCursor(target) {
+    target = Math.max(0, Math.min(timeline.length, target));
+    while (cursor > target) { history.undo(); cursor -= 1; }
+    while (cursor < target) { history.redo(); cursor += 1; }
+  }
+
+  function clampSelection() {
+    if (!history.document.nodes.has(selectedId)) selectedId = rootNodeId;
+  }
+
+  /* ---------- rendering ---------- */
+
+  function el(html) {
+    const t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  }
+
+  function typeTag(type) {
+    if (type === "page-root") return "ROOT";
+    if (type === "text") return "TEXT";
+    if (type === "box") return "BOX";
+    return type.toUpperCase();
+  }
+
+  function nodePreview(doc, node) {
+    if (node.type === "text") {
+      const content = node.props.content;
+      return content ? `“${content}”` : "(testo vuoto)";
+    }
+    if (node.type === "box") {
+      return node.props.background ? `sfondo ${node.props.background}` : "sezione";
+    }
+    const page = Array.from(doc.pages.values()).find(p => p.rootNodeId === node.id);
+    return page ? `pagina “${page.name}”` : "";
+  }
+
+  function renderBadges() {
+    const doc = history.document;
+    document.getElementById("badge-schema").textContent = `schemaVersion ${doc.schemaVersion}`;
+    document.getElementById("badge-nodes").textContent = `${doc.nodes.size} nod${doc.nodes.size === 1 ? "o" : "i"}`;
+    document.getElementById("badge-pages").textContent = `${doc.pages.size} pagin${doc.pages.size === 1 ? "a" : "e"}`;
+    document.getElementById("btn-undo").disabled = !history.canUndo;
+    document.getElementById("btn-redo").disabled = !history.canRedo;
+  }
+
+  function renderTree() {
+    const doc = history.document;
+    const container = document.getElementById("tree");
+    container.innerHTML = "";
+
+    function renderNode(id, depth) {
+      const node = doc.nodes.get(id);
+      if (!node) return;
+      const row = el(`
+        <div class="node-row${id === selectedId ? " selected" : ""}" data-id="${id}">
+          <span class="indent" style="width:${depth * 18}px"></span>
+          <span class="type-tag">${typeTag(node.type)}</span>
+          ${node.type === "box" && node.props.background ? `<span class="swatch" style="background:${node.props.background}"></span>` : ""}
+          <span class="id">${node.id}</span>
+          <span class="preview">${nodePreview(doc, node)}</span>
+        </div>
+      `);
+      row.addEventListener("click", () => { selectedId = id; renderAll(); });
+      container.appendChild(row);
+      for (const childId of node.childrenIds) renderNode(childId, depth + 1);
+    }
+
+    renderNode(rootNodeId, 0);
+  }
+
+  function renderInspector() {
+    const doc = history.document;
+    const node = doc.nodes.get(selectedId);
+    const box = document.getElementById("inspector");
+    box.innerHTML = "";
+    if (!node) return;
+
+    const isRoot = node.parentId === null;
+
+    const summary = el(`
+      <div class="node-summary">
+        <div class="headline"><span class="type-tag">${typeTag(node.type)}</span><span class="id">${node.id}</span></div>
+        <div class="kv">genitore: <b>${node.parentId ?? "— (radice pagina)"}</b></div>
+        <div class="kv">figli: <b>${node.childrenIds.length}</b></div>
+      </div>
+    `);
+    box.appendChild(summary);
+
+    if (node.type === "text") {
+      const contentField = el(`
+        <div class="field">
+          <label>Contenuto testo</label>
+          <input type="text" value="${(node.props.content ?? "").toString().replace(/"/g, "&quot;")}" />
+        </div>
+      `);
+      contentField.querySelector("input").addEventListener("change", (e) => {
+        if (run({ type: "UPDATE_PROPS", nodeId: node.id, props: { content: e.target.value } })) renderAll();
+      });
+      box.appendChild(contentField);
+
+      const colorField = el(`
+        <div class="field">
+          <label>Colore testo</label>
+          <div class="color-field">
+            <input type="color" value="${node.props.color || "#16211f"}" />
+          </div>
+        </div>
+      `);
+      colorField.querySelector("input").addEventListener("change", (e) => {
+        if (run({ type: "UPDATE_PROPS", nodeId: node.id, props: { color: e.target.value } })) renderAll();
+      });
+      box.appendChild(colorField);
+    } else if (node.type === "box") {
+      const colorField = el(`
+        <div class="field">
+          <label>Colore sfondo</label>
+          <div class="color-field">
+            <input type="color" value="${node.props.background || "#eef1f0"}" />
+          </div>
+        </div>
+      `);
+      colorField.querySelector("input").addEventListener("change", (e) => {
+        if (run({ type: "UPDATE_PROPS", nodeId: node.id, props: { background: e.target.value } })) renderAll();
+      });
+      box.appendChild(colorField);
+    } else {
+      box.appendChild(el(`<p class="caption">Radice della pagina: non ha proprietà modificabili in questa demo e non può essere eliminata.</p>`));
+    }
+
+    const deleteBtn = el(`<button class="btn btn-danger btn-block">🗑 Elimina nodo</button>`);
+    deleteBtn.disabled = isRoot;
+    deleteBtn.addEventListener("click", () => {
+      if (run({ type: "DELETE_NODE", nodeId: node.id })) {
+        selectedId = rootNodeId;
+        renderAll();
+      }
+    });
+    box.appendChild(deleteBtn);
+  }
+
+  function renderTimeline() {
+    const list = document.getElementById("timeline-list");
+    list.innerHTML = "";
+
+    const initialItem = el(`
+      <div class="timeline-item${cursor === 0 ? " current" : " applied"}">
+        <span class="dot"></span><span>◆ Documento iniziale</span>
+      </div>
+    `);
+    initialItem.addEventListener("click", () => { goToCursor(0); clampSelection(); renderAll(); });
+    list.appendChild(initialItem);
+
+    if (timeline.length === 0) {
+      list.appendChild(el(`<div class="empty-hint">Nessun comando eseguito ancora — usa i pulsanti "Crea" qui sopra.</div>`));
+    }
+
+    timeline.forEach((entry, i) => {
+      const applied = i < cursor;
+      const isCurrent = i === cursor - 1;
+      const item = el(`
+        <div class="timeline-item${isCurrent ? " current" : applied ? " applied" : ""}">
+          <span class="dot"></span><span>${entry.label}</span>
+        </div>
+      `);
+      item.addEventListener("click", () => { goToCursor(i + 1); clampSelection(); renderAll(); });
+      list.appendChild(item);
+    });
+  }
+
+  function renderInvariants() {
+    const violations = validateDocument(history.document);
+    const box = document.getElementById("invariants");
+    box.innerHTML = "";
+    for (const group of INVARIANT_GROUPS) {
+      const count = violations.filter(v => group.codes.includes(v.code)).length;
+      const item = el(`
+        <div class="inv-item">
+          <span>${group.label}</span>
+          <span class="pill ${count === 0 ? "ok" : "fail"}">${count === 0 ? "OK" : count + " errore/i"}</span>
+        </div>
+      `);
+      box.appendChild(item);
+    }
+  }
+
+  function renderHashPanel() {
+    document.getElementById("hash-current").textContent = hashDocument(history.document);
+  }
+
+  function renderAll() {
+    renderBadges();
+    renderTree();
+    renderInspector();
+    renderTimeline();
+    renderInvariants();
+    renderHashPanel();
+  }
+
+  /* ---------- verify undo <-> redo invariant ---------- */
+
+  function verifyUndoRedoInvariant() {
+    const steps = cursor;
+    const expectedHash = hashDocument(history.document);
+    for (let i = 0; i < steps; i++) history.undo();
+    const initialHash = hashDocument(history.document);
+    for (let i = 0; i < steps; i++) history.redo();
+    const finalHash = hashDocument(history.document);
+    const ok = finalHash === expectedHash;
+
+    const out = document.getElementById("verify-result");
+    out.innerHTML = "";
+    const card = el(`
+      <div class="verify-result ${ok ? "ok" : "fail"}">
+        <div class="headline">${ok ? "✓ Hash identico dopo Annulla→Ripeti" : "✗ Hash diverso — invariante violato"}</div>
+        <div>${steps} comand${steps === 1 ? "o" : "i"} annullat${steps === 1 ? "o" : "i"} e poi ripetut${steps === 1 ? "o" : "i"} in sequenza.</div>
+        <div class="hash-box">prima: ${expectedHash}<br/>dopo: &nbsp;${finalHash}</div>
+      </div>
+    `);
+    out.appendChild(card);
+
+    renderAll();
+  }
+
+  /* ---------- wiring ---------- */
+
+  document.getElementById("btn-add-box").addEventListener("click", () => {
+    const id = nextId("box");
+    if (run({ type: "CREATE_NODE", nodeId: id, nodeType: "box", parentId: selectedId, props: { background: "#eef1f0" } })) {
+      selectedId = id; renderAll();
+    }
+  });
+
+  document.getElementById("btn-add-text").addEventListener("click", () => {
+    const id = nextId("text");
+    if (run({ type: "CREATE_NODE", nodeId: id, nodeType: "text", parentId: selectedId, props: { content: "Nuovo testo", color: "#16211f" } })) {
+      selectedId = id; renderAll();
+    }
+  });
+
+  document.getElementById("btn-undo").addEventListener("click", () => {
+    if (!history.canUndo) return;
+    history.undo(); cursor -= 1; clampSelection(); renderAll();
+  });
+  document.getElementById("btn-redo").addEventListener("click", () => {
+    if (!history.canRedo) return;
+    history.redo(); cursor += 1; clampSelection(); renderAll();
+  });
+
+  document.getElementById("btn-verify").addEventListener("click", verifyUndoRedoInvariant);
+
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod || e.key.toLowerCase() !== "z") return;
+    e.preventDefault();
+    if (e.shiftKey) document.getElementById("btn-redo").click();
+    else document.getElementById("btn-undo").click();
+  });
+
+  renderAll();
+})();
+</script>
