@@ -4,9 +4,28 @@ import { hashDocument } from "../src/document/hash.js";
 import { validateDocument } from "../src/document/invariants.js";
 import { History } from "../src/runtime/history.js";
 import type { Command } from "../src/runtime/commands.js";
+import { CURRENT_SCHEMA_VERSION, type Document, type DocumentNode } from "../src/document/types.js";
 
 function baseDocument() {
   return createDocument({ rootPageId: "page-home", rootNodeId: "root" });
+}
+
+/** Come in performance.test.ts: costruisce N nodi senza passare dal CommandBus, per non pagare il costo O(n^2) noto in un test che non misura tempo. */
+function buildFlatDocumentDirectly(n: number): Document {
+  const nodes = new Map<string, DocumentNode>();
+  const childrenIds: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const id = `n${i}`;
+    childrenIds.push(id);
+    nodes.set(id, { id, type: "box", parentId: "root", childrenIds: [], props: {} });
+  }
+  nodes.set("root", { id: "root", type: "page-root", parentId: null, childrenIds, props: {} });
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    rootPageId: "page-home",
+    nodes,
+    pages: new Map([["page-home", { id: "page-home", name: "Home", rootNodeId: "root" }]]),
+  };
 }
 
 describe("History", () => {
@@ -140,5 +159,34 @@ describe("History", () => {
     expect(history.document.nodes.size).toBe(sizeBeforeDelete);
     expect(hashDocument(history.document)).toBe(hashBeforeDelete);
     expect(validateDocument(history.document)).toEqual([]);
+  });
+
+  it("undo() è O(1) rispetto a N: non ricostruisce il Document, restituisce lo stesso riferimento già calcolato, a qualunque scala", () => {
+    // Test STRUTTURALE, non a soglia temporale (una soglia sui millisecondi
+    // si è rivelata fragile in questo ambiente: vedi performance.test.ts).
+    // Proprietà osservabile usata come prova: History.undo() (history.ts)
+    // fa solo `#past.pop()` + `#future.unshift(#present)` + riassegnazione -
+    // non itera mai su document.nodes/document.pages. Se così è, undo() deve
+    // restituire ESATTAMENTE lo stesso riferimento d'oggetto salvato prima
+    // del comando (identità, non solo contenuto uguale): un'operazione che
+    // dovesse attraversare o ricostruire qualcosa in proporzione a N non
+    // potrebbe produrre lo stesso riferimento di un oggetto preesistente -
+    // ogni comando (CREATE_NODE/UPDATE_PROPS/DELETE_NODE) alloca sempre una
+    // `new Map(document.nodes)` nuova, quindi produce sempre un Document con
+    // identità diversa (vedi commandBus.test.ts, "does not mutate the input
+    // Document"). Verificato a due scale molto diverse per mostrare
+    // esplicitamente che la proprietà non dipende da N.
+    for (const n of [1, 10_000]) {
+      const history = new History(buildFlatDocumentDirectly(n));
+      const documentBeforeCommand = history.document;
+
+      history.execute({ type: "CREATE_NODE", nodeId: "x", nodeType: "box", parentId: "root" });
+      const documentAfterCommand = history.document;
+      expect(documentAfterCommand).not.toBe(documentBeforeCommand); // sanity: il comando alloca davvero un nuovo Document
+
+      const documentAfterUndo = history.undo();
+      expect(documentAfterUndo).toBe(documentBeforeCommand); // identità di riferimento, non deep-equal
+      expect(history.document).toBe(documentBeforeCommand);
+    }
   });
 });
