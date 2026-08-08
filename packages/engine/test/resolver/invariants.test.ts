@@ -75,6 +75,21 @@ describe("validateResolvedModel — violazioni costruite a mano (il grafo del Do
     expect(validateResolvedModel(model).some((v) => v.code === "CYCLE_DETECTED")).toBe(true);
   });
 
+  it("flags un resolved node con parentId=null che è comunque referenziato come figlio da qualcun altro", () => {
+    const model = withNodes(base(), [
+      resolvedNode({ id: "root", childrenIds: ["a"] }),
+      resolvedNode({ id: "a", parentId: null }),
+    ]);
+    expect(validateResolvedModel(model)).toContainEqual(
+      expect.objectContaining({ code: "ORPHAN_PARENT_LINK", nodeId: "a" }),
+    );
+  });
+
+  it("flags una Page il cui resolved root node ha un parent", () => {
+    const model = withNodes(base(), [resolvedNode({ id: "root", parentId: "some-parent" })]);
+    expect(validateResolvedModel(model).some((v) => v.code === "PAGE_ROOT_HAS_PARENT")).toBe(true);
+  });
+
   it("flags una Page il cui rootNodeId non esiste nel modello risolto", () => {
     const model = base();
     const nextPages = new Map(model.pages);

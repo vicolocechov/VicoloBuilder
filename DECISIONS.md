@@ -99,3 +99,31 @@ Le voci D-001/D-002/D-003/D-004 sono un backfill delle decisioni prese durante l
 **Evidenza disponibile**: nessuna misura — è una scelta di scope, non di prestazioni. Costo di migrazione noto e accettato: quando esisterà il registro completo, andrà toccato ciò che oggi consuma la tabella incorporata (`resolver/resolveNode.ts`).
 
 **Rivalutazione**: quando/se si costruirà il registro completo (RFC-002, fuori dallo scope della Fase 2 del vertical slice).
+
+---
+
+## D-009 — Convenzione `props.responsive` per gli override per breakpoint
+
+**Stato**: un nodo rappresenta gli override responsive con una proprietà riservata `props.responsive = { <breakpointName>: { ...override } }` (es. `props.responsive = { desktop: { padding: 24 } }`). È il meccanismo dichiarativo incorporato usato dal Resolver di Fase 2 per applicare la cascata mobile-first tra breakpoint (`resolver/resolveNode.ts`, `applyBreakpointOverrides`).
+
+**Motivazione**: il Resolver deve poter risolvere "breakpoint" (Fase 2, riga 131 del piano operativo) contro un Document i cui nodi hanno un'unica `props: Record<string, unknown>` piatta (RFC-002/Fase 1) — senza un campo dedicato nel modello dati per gli override, serve una convenzione su come questi vengono rappresentati dentro `props` stessa. `responsive` è la chiave scelta, consumata durante la risoluzione e mai presente in `resolvedProps` (l'output finale non la espone).
+
+**Natura della decisione**: è una convenzione interna e minimale, non un Capability/Property Registry completo — nessuna validazione dichiarativa della forma degli override, nessun controllo che le chiavi dentro `responsive` siano breakpoint noti (un nome sconosciuto viene semplicemente ignorato, non segnalato). Stessa scelta di scope di D-008: sufficiente per il vertical slice, non la forma finale.
+
+**Evidenza disponibile**: nessuna misura — è una scelta di rappresentazione dei dati, non di prestazioni. Testata in `test/resolver/breakpoints.test.ts` (cascata mobile-first, assenza della chiave `responsive` in `resolvedProps`, comportamento invariato per nodi senza override).
+
+**Rivalutazione**: quando una fonte successiva (RFC-002 completo, o una revisione di RFC-003) definirà una forma diversa per rappresentare gli override responsive, o quando arriverà il Capability/Property Registry completo (D-008) che potrebbe rendere questa convenzione ridondante o sostituirla con una rappresentazione validata.
+
+---
+
+## D-010 — Superficie pubblica semver: `BREAKPOINTS`/`VARIANT_TABLE` restano dettagli interni
+
+**Stato**: `BREAKPOINTS`, `getBreakpoint`, `cascadingBreakpoints` e `VARIANT_TABLE` non sono esportati da `packages/engine/src/index.ts` (la superficie pubblica versionata per semver, RFC-000 §9/§11). Restano importabili internamente dai moduli dell'Engine e dai test tramite i loro percorsi diretti (`resolver/breakpoints.js`, `resolver/variantTable.js`), invariati.
+
+**Motivazione**: sono strutture dati esplicitamente provvisorie (D-008 per `VARIANT_TABLE`; la lista fissa di breakpoint condivide la stessa natura di scelta di scope minimale per il vertical slice) e non esiste oggi alcun consumer esterno reale che ne richieda l'esposizione — verificato: nessun file nella suite di test importa alcunché dal barrel `src/index.ts`, nemmeno per gli export di Fase 1. Legare a semver (RFC-000 §9: "breaking change = major bump") dati grezzi che si sa già dover cambiare forma esporrebbe l'Engine a un costo di rottura evitabile.
+
+**Nota di simmetria con Fase 1**: a differenza di questi due, i validator/error type di Resolver e Layout (`validateResolvedModel`, `assertValidResolvedModel`, `ResolvedModelInvariantError`, `validateBox`, `assertValidBox`, `BoxInvariantError`, e i relativi tipi) **restano esportati**, per coerenza diretta con l'equivalente già stabilito in Fase 1 (`validateDocument`/`assertValidDocument`/`DocumentInvariantError` sono già Public API dalla Fase 1, senza riserva di provvisorietà) e perché RFC-000 assegna esplicitamente al Test Runner (Fase 4) il compito di verificare gli invariant dall'esterno del package.
+
+**Evidenza disponibile**: nessuna misura — è una scelta di scope della Public API, non di prestazioni.
+
+**Rivalutazione**: quando emergerà un consumer esterno reale (CLI, Fase 3; renderer-react, Fase 5; Test Runner, Fase 4) che necessiti di conoscere i nomi di breakpoint/variant validi dall'esterno del package, o quando una fonte architetturale (es. RFC-002 completo, o una revisione di RFC-003 sul meccanismo di plugin) definirà la forma definitiva di queste strutture. In quel momento la superficie esposta andrà progettata intenzionalmente (es. solo nomi validi, non l'intera struttura dati interna), non ricavata automaticamente da ciò che oggi esiste internamente.

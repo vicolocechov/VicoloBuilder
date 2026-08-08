@@ -25,8 +25,6 @@ export type {
 export { History } from "./runtime/history.js";
 
 export { resolveNode, resolveDocument } from "./resolver/resolveNode.js";
-export { BREAKPOINTS, getBreakpoint, cascadingBreakpoints } from "./resolver/breakpoints.js";
-export { VARIANT_TABLE } from "./resolver/variantTable.js";
 export type { ResolvedNode, ResolvedModel, ResolverContext, Breakpoint, BreakpointName } from "./resolver/types.js";
 export {
   validateResolvedModel,
