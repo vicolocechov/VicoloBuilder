@@ -87,3 +87,15 @@ Le voci D-001/D-002/D-003/D-004 sono un backfill delle decisioni prese durante l
 **Evidenza disponibile**: nessuna — LayoutEngine non esiste ancora, il costo di Resolver+Layout a scala target (proprietà 12 della matrice di apertura Fase 2) non è stato ancora misurato.
 
 **Rivalutazione**: quando il benchmark della proprietà 12 (una volta implementato) mostrerà che il ricalcolo completo viola il budget assegnato a Resolver+Layout — budget la cui soglia numerica non è ancora stata fissata (D-006). Non prima, per evitare di introdurre la complessità dell'incrementale senza una prova che serva.
+
+---
+
+## D-008 — Debito verso RFC-002 (tabella incorporata invece del Capability/Property Registry)
+
+**Stato**: il Resolver di Fase 2 usa un mapping dichiarativo semplice incorporato (`variantTable.ts`), non il Capability Registry + Property Registry completo descritto in RFC-002.
+
+**Motivazione**: coerente con lo scope "Resolver base" del piano operativo di Fase 2 (righe 129-136 del brief), che non menziona un registro — solo "risoluzione breakpoint + variant semantico". Costruire il registro completo ora sarebbe anticipare lavoro di RFC-002 non richiesto dal vertical slice, con il rischio di indovinare una forma sbagliata prima di avere un secondo caso d'uso reale che la vincoli.
+
+**Evidenza disponibile**: nessuna misura — è una scelta di scope, non di prestazioni. Costo di migrazione noto e accettato: quando esisterà il registro completo, andrà toccato ciò che oggi consuma la tabella incorporata (`resolver/resolveNode.ts`).
+
+**Rivalutazione**: quando/se si costruirà il registro completo (RFC-002, fuori dallo scope della Fase 2 del vertical slice).
