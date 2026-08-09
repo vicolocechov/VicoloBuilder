@@ -1,0 +1,170 @@
+<title>VicoloBuilder — Fase 2: Demo di validazione (Resolver + Layout)</title>
+<style>
+  :root {
+    --bg: #f4f6f5; --surface: #ffffff; --surface-2: #eef1f0; --border: #dbe2df;
+    --ink: #16211f; --ink-dim: #5b6b68; --ink-faint: #8a9895;
+    --accent: #0f8a7d; --accent-soft: #e3f3f0;
+    --good: #1f9d63; --good-soft: #e3f6ec; --bad: #c9372c; --bad-soft: #fbe7e5;
+    --font-ui: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1513; --surface: #151d1b; --surface-2: #1b2523; --border: #2b3735;
+      --ink: #e7efec; --ink-dim: #94a6a1; --ink-faint: #6c7d78;
+      --accent: #55d6c4; --accent-soft: #17322e;
+      --good: #4fdb95; --good-soft: #163429; --bad: #f0766e; --bad-soft: #3a1f1d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1513; --surface: #151d1b; --surface-2: #1b2523; --border: #2b3735;
+    --ink: #e7efec; --ink-dim: #94a6a1; --ink-faint: #6c7d78;
+    --accent: #55d6c4; --accent-soft: #17322e;
+    --good: #4fdb95; --good-soft: #163429; --bad: #f0766e; --bad-soft: #3a1f1d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--font-ui); padding: 24px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .subtitle { color: var(--ink-dim); font-size: 13px; margin: 0 0 20px; }
+  .caption { color: var(--ink-dim); font-size: 12.5px; max-width: 70ch; }
+  h2 { font: 700 11px/1 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-dim); margin: 26px 0 10px; }
+  .banner { border-radius: 10px; padding: 14px 16px; font-weight: 700; margin-bottom: 18px; border: 1px solid; }
+  .banner.ok { background: var(--good-soft); border-color: var(--good); color: var(--ink); }
+  .banner.fail { background: var(--bad-soft); border-color: var(--bad); color: var(--ink); }
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; background: var(--surface-2); font-size: 12.5px; }
+  .pill { font: 700 10px/1 var(--font-mono); padding: 4px 8px; border-radius: 20px; flex: none; }
+  .pill.ok { background: var(--good-soft); color: var(--good); }
+  .pill.fail { background: var(--bad-soft); color: var(--bad); }
+  .bp-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .bp-tab { font: 600 12.5px/1 var(--font-ui); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+  .bp-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .columns { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-x: auto; }
+  .panel h3 { font: 700 12px/1 var(--font-ui); margin: 0 0 8px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .04em; }
+  pre { margin: 0; font: 500 11.5px/1.5 var(--font-mono); white-space: pre-wrap; word-break: break-word; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--ink-dim); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  td.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .footer-note { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--ink-faint); }
+</style>
+
+<h1>VicoloBuilder — Fase 2: Demo di validazione</h1>
+<p class="subtitle">Document → Resolver → ResolvedModel → Layout → Box Tree — eseguito con il codice reale del pacchetto (packages/engine/dist/index.js), generato il 2026-08-09T22:03:26.223Z</p>
+<p class="caption">Questa pagina presenta dati già calcolati da uno script Node che importa esclusivamente il barrel pubblico dell'Engine. Nessuna logica di Resolver o Layout viene eseguita qui nel browser — il selettore sotto passa solo tra risultati pre-calcolati.</p>
+
+<div class="banner ok">✓ Tutti i criteri di validazione della Fase 2 sono soddisfatti</div>
+
+<h2>Checklist criteri di validazione</h2>
+<div class="checklist">
+  <div class="check-item"><span class="pill ok">OK</span><span>validateDocument sul Document di input: zero violazioni</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>validateResolvedModel: zero violazioni, in ogni breakpoint</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>validateBox: zero violazioni, in ogni breakpoint</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>L&#39;override responsive su &quot;sidebar&quot; produce valori diversi tra i breakpoint</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>Il nodo di controllo &quot;footer&quot; (nessun override) resta invariato tra i breakpoint</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>variant:&quot;primary&quot; su &quot;hero&quot; espande le proprietà derivate attese</span></div>
+  <div class="check-item"><span class="pill ok">OK</span><span>Corrispondenza nodeId completa: Document → ResolvedModel → Box Tree, in ogni breakpoint</span></div>
+</div>
+
+<h2>Effetto del breakpoint sull'override responsive (nodo "sidebar", proprietà "padding")</h2>
+<table>
+  <tr><th>Breakpoint</th><th>mobile</th><th>tablet</th><th>desktop</th></tr>
+  <tr><td>sidebar.padding</td><td class="mono">8</td><td class="mono">16</td><td class="mono">32</td></tr>
+  <tr><td>footer.content (controllo, nessun override)</td><td class="mono">© Demo Fase 2</td><td class="mono">© Demo Fase 2</td><td class="mono">© Demo Fase 2</td></tr>
+</table>
+
+<h2>Documento risolto e Box Tree per breakpoint</h2>
+<div class="bp-tabs" id="bp-tabs"></div>
+<div class="columns">
+  <div class="panel"><h3>Document (input, non cambia tra breakpoint)</h3><pre>{
+  &quot;id&quot;: &quot;root&quot;,
+  &quot;type&quot;: &quot;page-root&quot;,
+  &quot;props&quot;: {},
+  &quot;children&quot;: [
+    {
+      &quot;id&quot;: &quot;hero&quot;,
+      &quot;type&quot;: &quot;box&quot;,
+      &quot;props&quot;: {
+        &quot;variant&quot;: &quot;primary&quot;
+      },
+      &quot;children&quot;: [
+        {
+          &quot;id&quot;: &quot;heading&quot;,
+          &quot;type&quot;: &quot;text&quot;,
+          &quot;props&quot;: {
+            &quot;content&quot;: &quot;Benvenuto&quot;
+          },
+          &quot;children&quot;: []
+        }
+      ]
+    },
+    {
+      &quot;id&quot;: &quot;sidebar&quot;,
+      &quot;type&quot;: &quot;box&quot;,
+      &quot;props&quot;: {
+        &quot;padding&quot;: 8,
+        &quot;responsive&quot;: {
+          &quot;tablet&quot;: {
+            &quot;padding&quot;: 16
+          },
+          &quot;desktop&quot;: {
+            &quot;padding&quot;: 32
+          }
+        }
+      },
+      &quot;children&quot;: []
+    },
+    {
+      &quot;id&quot;: &quot;footer&quot;,
+      &quot;type&quot;: &quot;text&quot;,
+      &quot;props&quot;: {
+        &quot;content&quot;: &quot;© Demo Fase 2&quot;
+      },
+      &quot;children&quot;: []
+    }
+  ]
+}</pre></div>
+  <div class="panel"><h3>ResolvedModel</h3><pre id="resolved-view"></pre></div>
+  <div class="panel"><h3>Box Tree</h3><pre id="box-view"></pre></div>
+</div>
+
+<h2>Corrispondenza nodeId — Document ↔ ResolvedModel ↔ Box Tree</h2>
+<table>
+  <tr><th>Breakpoint</th><th>Nodi Document</th><th>Nodi ResolvedModel</th><th>Nodi Box (univoci)</th><th>Coerente</th></tr>
+  <tr><td>mobile</td><td class="mono">5</td><td class="mono">5</td><td class="mono">5</td><td>✓</td></tr>
+<tr><td>tablet</td><td class="mono">5</td><td class="mono">5</td><td class="mono">5</td><td>✓</td></tr>
+<tr><td>desktop</td><td class="mono">5</td><td class="mono">5</td><td class="mono">5</td><td>✓</td></tr>
+</table>
+
+<div class="footer-note">Demo di validazione — non un editor. Nessun drag-and-drop, nessuna modifica interattiva. Generata da <code>packages/engine/demo/generate-fase-2-demo.mjs</code>.</div>
+
+<script>
+  const DATA = {"generatedAt":"2026-08-09T22:03:26.223Z","documentTree":{"id":"root","type":"page-root","props":{},"children":[{"id":"hero","type":"box","props":{"variant":"primary"},"children":[{"id":"heading","type":"text","props":{"content":"Benvenuto"},"children":[]}]},{"id":"sidebar","type":"box","props":{"padding":8,"responsive":{"tablet":{"padding":16},"desktop":{"padding":32}}},"children":[]},{"id":"footer","type":"text","props":{"content":"© Demo Fase 2"},"children":[]}]},"documentNodeCount":5,"documentViolations":[],"checks":{"documentValidatorClean":true,"resolvedModelValidatorsClean":true,"boxValidatorsClean":true,"responsiveOverrideHasEffect":true,"controlNodeUnaffectedByBreakpoint":true,"variantExpansionPresent":true,"nodeIdCorrespondenceComplete":true},"allChecksPass":true,"sidebarPaddingByBreakpoint":[{"breakpoint":"mobile","value":8},{"breakpoint":"tablet","value":16},{"breakpoint":"desktop","value":32}],"footerContentByBreakpoint":[{"breakpoint":"mobile","value":"© Demo Fase 2"},{"breakpoint":"tablet","value":"© Demo Fase 2"},{"breakpoint":"desktop","value":"© Demo Fase 2"}],"heroResolvedProps":{"background":"#0f8a7d","color":"#ffffff","padding":12,"radius":8,"variant":"primary"},"scenarios":[{"breakpoint":"mobile","viewportWidth":375,"resolvedTree":{"id":"root","type":"page-root","resolvedProps":{},"children":[{"id":"hero","type":"box","resolvedProps":{"background":"#0f8a7d","color":"#ffffff","padding":12,"radius":8,"variant":"primary"},"children":[{"id":"heading","type":"text","resolvedProps":{"content":"Benvenuto"},"children":[]}]},{"id":"sidebar","type":"box","resolvedProps":{"padding":8},"children":[]},{"id":"footer","type":"text","resolvedProps":{"content":"© Demo Fase 2"},"children":[]}]},"resolvedModelViolations":[],"box":{"nodeId":"root","x":0,"y":0,"width":375,"height":120,"children":[{"nodeId":"hero","x":0,"y":0,"width":375,"height":40,"children":[{"nodeId":"heading","x":0,"y":0,"width":375,"height":40,"children":[]}]},{"nodeId":"sidebar","x":0,"y":40,"width":375,"height":40,"children":[]},{"nodeId":"footer","x":0,"y":80,"width":375,"height":40,"children":[]}]},"boxViolations":[]},{"breakpoint":"tablet","viewportWidth":768,"resolvedTree":{"id":"root","type":"page-root","resolvedProps":{},"children":[{"id":"hero","type":"box","resolvedProps":{"background":"#0f8a7d","color":"#ffffff","padding":12,"radius":8,"variant":"primary"},"children":[{"id":"heading","type":"text","resolvedProps":{"content":"Benvenuto"},"children":[]}]},{"id":"sidebar","type":"box","resolvedProps":{"padding":16},"children":[]},{"id":"footer","type":"text","resolvedProps":{"content":"© Demo Fase 2"},"children":[]}]},"resolvedModelViolations":[],"box":{"nodeId":"root","x":0,"y":0,"width":768,"height":120,"children":[{"nodeId":"hero","x":0,"y":0,"width":768,"height":40,"children":[{"nodeId":"heading","x":0,"y":0,"width":768,"height":40,"children":[]}]},{"nodeId":"sidebar","x":0,"y":40,"width":768,"height":40,"children":[]},{"nodeId":"footer","x":0,"y":80,"width":768,"height":40,"children":[]}]},"boxViolations":[]},{"breakpoint":"desktop","viewportWidth":1280,"resolvedTree":{"id":"root","type":"page-root","resolvedProps":{},"children":[{"id":"hero","type":"box","resolvedProps":{"background":"#0f8a7d","color":"#ffffff","padding":12,"radius":8,"variant":"primary"},"children":[{"id":"heading","type":"text","resolvedProps":{"content":"Benvenuto"},"children":[]}]},{"id":"sidebar","type":"box","resolvedProps":{"padding":32},"children":[]},{"id":"footer","type":"text","resolvedProps":{"content":"© Demo Fase 2"},"children":[]}]},"resolvedModelViolations":[],"box":{"nodeId":"root","x":0,"y":0,"width":1280,"height":120,"children":[{"nodeId":"hero","x":0,"y":0,"width":1280,"height":40,"children":[{"nodeId":"heading","x":0,"y":0,"width":1280,"height":40,"children":[]}]},{"nodeId":"sidebar","x":0,"y":40,"width":1280,"height":40,"children":[]},{"nodeId":"footer","x":0,"y":80,"width":1280,"height":40,"children":[]}]},"boxViolations":[]}],"correspondence":[{"breakpoint":"mobile","documentCount":5,"resolvedCount":5,"boxCount":5,"rawBoxTraversalCount":5,"noDuplicatesInBoxTree":true,"documentResolvedMatch":true,"documentBoxMatch":true,"fullyConsistent":true},{"breakpoint":"tablet","documentCount":5,"resolvedCount":5,"boxCount":5,"rawBoxTraversalCount":5,"noDuplicatesInBoxTree":true,"documentResolvedMatch":true,"documentBoxMatch":true,"fullyConsistent":true},{"breakpoint":"desktop","documentCount":5,"resolvedCount":5,"boxCount":5,"rawBoxTraversalCount":5,"noDuplicatesInBoxTree":true,"documentResolvedMatch":true,"documentBoxMatch":true,"fullyConsistent":true}]};
+  const tabsEl = document.getElementById("bp-tabs");
+  const resolvedView = document.getElementById("resolved-view");
+  const boxView = document.getElementById("box-view");
+
+  function render(breakpoint) {
+    const scenario = DATA.scenarios.find((s) => s.breakpoint === breakpoint);
+    resolvedView.textContent = JSON.stringify(scenario.resolvedTree, null, 2);
+    boxView.textContent = JSON.stringify(scenario.box, null, 2);
+    for (const btn of tabsEl.children) {
+      btn.classList.toggle("on", btn.dataset.bp === breakpoint);
+    }
+  }
+
+  for (const scenario of DATA.scenarios) {
+    const btn = document.createElement("button");
+    btn.className = "bp-tab";
+    btn.type = "button";
+    btn.dataset.bp = scenario.breakpoint;
+    btn.textContent = scenario.breakpoint + " (" + scenario.viewportWidth + "px)";
+    btn.addEventListener("click", () => render(scenario.breakpoint));
+    tabsEl.appendChild(btn);
+  }
+
+  render(DATA.scenarios[0].breakpoint);
+</script>
