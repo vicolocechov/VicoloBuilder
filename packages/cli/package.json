@@ -1,0 +1,27 @@
+{
+  "name": "@vicolobuilder/cli",
+  "version": "0.1.0",
+  "description": "CLI — creazione/export da riga di comando (consumer 2 dell'Engine, per test headless).",
+  "type": "module",
+  "bin": {
+    "builder": "./dist/bin/builder.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@vicolobuilder/engine": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
+  },
+  "_todo": "CI: 'npm run build --workspaces' dalla root non garantisce che @vicolobuilder/engine sia buildato prima di questo package (npm non ordina gli script per dipendenza tra workspace). 'pretest' qui builda solo il CLI, assumendo l'engine già buildato. Da risolvere esplicitamente quando si introdurrà una pipeline CI reale — fuori scope del batch 'builder create'."
+}
