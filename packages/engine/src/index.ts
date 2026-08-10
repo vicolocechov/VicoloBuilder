@@ -41,3 +41,8 @@ export type { ComputeLayoutOptions } from "./layout/computeLayout.js";
 export type { Box } from "./layout/types.js";
 export { validateBox, assertValidBox, BoxInvariantError } from "./layout/invariants.js";
 export type { BoxInvariantViolation, BoxInvariantCode } from "./layout/invariants.js";
+
+export { deserializeDocument, DocumentParseError } from "./document/deserialize.js";
+
+export { exportIR } from "./export/exportIR.js";
+export type { IR, ExportContext } from "./export/types.js";

@@ -60,7 +60,7 @@ describe("builder create — binario compilato (riga #10 matrice Fase 3: invocab
 
   it("fallisce in modo pulito su un comando sconosciuto", () => {
     const dir = mkdtempSync(join(tmpdir(), "builder-create-"));
-    const result = runBin(["export", "demo.json"], dir);
+    const result = runBin(["delete", "demo.json"], dir);
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("comando sconosciuto");
