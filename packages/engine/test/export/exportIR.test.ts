@@ -3,6 +3,7 @@ import { createDocument } from "../../src/document/document.js";
 import { applyCommand } from "../../src/runtime/commands.js";
 import { resolveDocument } from "../../src/resolver/resolveNode.js";
 import { computeLayout } from "../../src/layout/computeLayout.js";
+import { serializeDocument } from "../../src/document/hash.js";
 import { exportIR } from "../../src/export/exportIR.js";
 import type { Document } from "../../src/document/types.js";
 
@@ -64,6 +65,17 @@ describe("exportIR — purezza/determinismo (byte-per-byte)", () => {
     const narrow = exportIR(doc, { ...CONTEXT, viewportWidth: 375 });
     const wide = exportIR(doc, { ...CONTEXT, viewportWidth: 1280 });
     expect(narrow.box.width).not.toBe(wide.box.width);
+  });
+});
+
+describe('exportIR — non muta l\'input (RFC-000 §12: "Exporter senza side effect")', () => {
+  it("exportIR non muta il Document in ingresso", () => {
+    const doc = buildSampleDocument();
+    const snapshotBefore = serializeDocument(doc);
+
+    exportIR(doc, CONTEXT);
+
+    expect(serializeDocument(doc)).toBe(snapshotBefore);
   });
 });
 
