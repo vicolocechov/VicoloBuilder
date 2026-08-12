@@ -1,0 +1,18 @@
+{
+  "name": "@vicolobuilder/test-runner",
+  "version": "0.1.0",
+  "description": "Test Runner — consumer 3, suite headless che verifica gli invariant dell'Engine attraverso la sua public API.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@vicolobuilder/engine": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
+  }
+}

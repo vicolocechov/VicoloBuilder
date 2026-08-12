@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "workspaces": [
     "packages/engine",
-    "packages/cli"
+    "packages/cli",
+    "packages/test-runner"
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
