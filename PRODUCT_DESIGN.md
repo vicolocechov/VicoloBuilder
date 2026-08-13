@@ -221,7 +221,7 @@ Rispetto alla bozza precedente, lo scope si allarga su alcuni punti per effetto 
 7. Responsive: 3 fasce (Desktop/Tablet/Mobile), **convenzione Desktop-first imposta esplicitamente in UI (Decisione 1)**, **indicatore ereditato/overridato (Decisione 5).**
 8. **Posizionamento libero, ridimensionamento con maniglie, guide di base (Decisione 3)** — con revisione della regola `CHILD_OUT_OF_BOUNDS` e delle tre assunzioni strutturali trovate in sez. 6.
 9. Comando pagina: creazione/eliminazione **+ riordino (Decisione 4)**.
-10. Vincolo invariato: nessuna modifica alla Public API Engine esistente.
+10. Vincolo invariato: nessuna modifica alla Public API Engine esistente, solo estensioni additive (verificato in sede di audit di chiusura: solo nuovi export/campi opzionali aggiunti, nessuna firma/comportamento esistente cambiato — vedi DECISIONS.md D-013/D-014/D-016/D-017).
 11. **Vincolo di disciplina (sez. 12bis): ogni azione passa dal Command Bus, nessuna scorciatoia diretta sul Document.**
 
 **Esplicitamente FUORI dalla Fase 5** (confermato, ora esplicitamente "porte future riservate"): embed, State/Interaction/Behavior di navigazione, Cervello di design AI, Component, SEO Assistant, Exporter reale, device preview realistico con cornici/notch, guide avanzate, tipografia fluida, Capability Registry completo, "griglia che va a capo" (in attesa di conferma se analizzarla).

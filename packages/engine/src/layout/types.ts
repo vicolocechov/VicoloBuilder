@@ -21,7 +21,7 @@ export interface Box {
    * offset locali). Opzionale: verificato additivo prima dell'implementazione
    * (nessun test esistente confronta la forma esatta di un Box con
    * `toStrictEqual`/`toEqual` contro un letterale scritto a mano senza
-   * questo campo - vedi DECISIONS.md). Consumato da layout/invariants.ts
+   * questo campo - vedi DECISIONS.md, D-014). Consumato da layout/invariants.ts
    * per decidere se CHILD_OUT_OF_BOUNDS si applica ai figli di questo nodo.
    */
   readonly mode?: "pila" | "libero";

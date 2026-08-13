@@ -153,3 +153,87 @@ Le voci D-001/D-002/D-003/D-004 sono un backfill delle decisioni prese durante l
 **Evidenza disponibile**: nessuna misura di prestazioni — scelta di rappresentazione dati, verificata sul codice esistente (citazioni sopra).
 
 **Rivalutazione**: quando un vero Exporter (HTML/React/Vue, fuori scope) rivelerà un bisogno concreto non coperto da questa Meta minimale, o quando RFC-005 verrà completata.
+
+---
+
+## D-013 — `Document.pageOrder` esplicito (Fase 5, Blocco A)
+
+**Stato**: `Document` porta un campo `pageOrder: readonly PageId[]`, obbligatorio sul tipo in memoria, opzionale nel formato JSON esterno (`deserializeDocument` calcola un fallback alfabetico se assente). `serializeDocument` lo scrive preservando l'ordine reale (non riordinato alfabeticamente, a differenza di `pages`/`nodes`). Nuovi comandi `CREATE_PAGE`/`DELETE_PAGE`/`REORDER_PAGES` lo mantengono coerente (append in coda, rimozione, sostituzione completa via permutazione validata).
+
+**Motivazione**: l'ordine di inserimento in una `Map` non sopravvive alla serializzazione (`serializeDocument` ordina `pages`/`nodes` alfabeticamente per id, di proposito, per il determinismo dell'hash — vedi `document/hash.ts`), esattamente lo stesso problema già risolto in Fase 1 per i figli di un nodo con `childrenIds`. Il riordino di pagine è un requisito esplicito di prodotto (PRODUCT_DESIGN.md, Decisione 4) che richiede un ordine osservabile e persistente, non solo un ordine implicito di iterazione.
+
+**Natura della decisione**: `DELETE_PAGE` rifiuta di eliminare la pagina che coincide con `Document.rootPageId`, oltre a rifiutare l'eliminazione dell'ultima pagina rimasta — scelta conservativa emersa durante l'implementazione (non nel piano originale, segnalata a parte): nessun comando oggi permette di riassegnare `rootPageId`, quindi eliminarne la pagina lascerebbe il Document privo di una pagina predefinita valida (violazione `ROOT_PAGE_NOT_FOUND`) senza modo di ripararlo.
+
+**Evidenza disponibile**: nessuna misura di prestazioni — scelta di rappresentazione dati, stessa natura di D-009. Verificato: rendere il campo obbligatorio sul tipo `Document` (non opzionale) richiede che ogni `Document` costruito a mano nei test esistenti lo includa — 3 file (`hash.test.ts`, `history.test.ts`, `performance.test.ts`) aggiornati di conseguenza; nessun consumer reale (`packages/cli`, `packages/test-runner`) costruisce `Document` a mano (solo `createDocument`/`deserializeDocument`), quindi nessuna rottura effettiva nonostante il campo sia obbligatorio e non opzionale sul tipo. Testato in `test/pages.test.ts` (12 test), estensioni a `test/invariants.test.ts` e `test/deserialize.test.ts`.
+
+**Rivalutazione**: quando emergerà un comando per riassegnare `rootPageId` — a quel punto va deciso esplicitamente cosa succede a `DELETE_PAGE` sulla pagina che era radice.
+
+---
+
+## D-014 — `Box.mode` e condizionalità di `CHILD_OUT_OF_BOUNDS` (Fase 5, Blocco B)
+
+**Stato**: `Box` porta un campo opzionale `mode?: "pila" | "libero"`, impostato da `layoutNode()` in base a `resolvedProps.layoutMode` del nodo stesso (non del genitore) — descrive come QUEL nodo dispone i propri figli. `layout/invariants.ts` applica `CHILD_OUT_OF_BOUNDS` solo se il genitore ha `mode !== "libero"` (quindi anche quando `mode` è assente, per compatibilità con l'algoritmo a pila preesistente).
+
+**Motivazione**: tre assunzioni strutturali del LayoutEngine di Fase 2 (documentate in PRODUCT_DESIGN.md, sez. 6, decisione 3) bloccavano il posizionamento libero: il controllo dei bordi si applicava incondizionatamente a ogni livello; la larghezza era un parametro sempre ereditato top-down, mai letto dalle proprietà di un nodo; un contenitore non leggeva mai proprie dimensioni esplicite. Aggiungere un campo di modalità al `Box` (anziché, ad esempio, dedurre la modalità dalla sola presenza di `x`/`y` su un figlio) rende la biforcazione pila/libero determinata esplicitamente dalla modalità propria del GENITORE, non dalla presenza casuale di un prop su un figlio — scelta esplicitamente verificata per evitare che una `width` esplicita su un figlio possa silenziosamente alterare il comportamento a pila già testato.
+
+**Natura della decisione**: campo verificato additivo prima dell'implementazione (nessun test esistente confrontava la forma esatta di un `Box` con `toStrictEqual`/`toEqual` contro un letterale scritto a mano senza questo campo — l'unico punto a rischio, `test/layout/invariants.ts`, costruisce `Box` a mano solo per `validateBox()`, mai confrontato con l'output di `computeLayout()`). Il comportamento a pila resta byte-per-byte invariato quando `layoutMode` è assente, verificato con un test di regressione a `toEqual` sull'intero Box Tree (`test/layout/libero.test.ts`).
+
+**Evidenza disponibile**: 10 nuovi test in `test/layout/libero.test.ts` — posizionamento esplicito, ancora del contenitore che trascina i figli liberi, bounds-check condizionale, oltre ai casi in D-015.
+
+**Rivalutazione**: quando le guide di allineamento avanzate (PRODUCT_DESIGN.md, sez. 7) richiederanno di leggere `mode` per decidere quali box offrono snap; quando/se emergerà una terza modalità di disposizione (es. griglia — PRODUCT_DESIGN.md, sez. D, "griglia che va a capo", esplicitamente non ancora analizzata).
+
+---
+
+## D-015 — Coordinate locali e dimensionamento esplicito-o-automatico in modalità libera (Fase 5, Blocco B)
+
+**Stato**: un figlio posizionato liberamente ha `resolvedProps.x`/`y` interpretati come offset LOCALE rispetto all'ancora assoluta del proprio contenitore (default 0 se assente), sommato all'ancora per ottenere la posizione assoluta nel Box Tree. La larghezza è obbligatoria senza default per un nodo senza figli propri posizionato liberamente (nessun fallback), estesa anche a un nodo CON figli la cui modalità propria è "pila" (una pila non ha un concetto di larghezza calcolata dal contenuto, eredita sempre dall'alto — quindi, priva di un'ereditarietà disponibile perché il genitore è libero, non ha alcun modo di determinare la propria larghezza se non esplicito). Un contenitore la cui modalità propria è "libero", senza `width`/`height` esplicite, usa un riquadro automatico che racchiude i figli: l'ancora del contenitore resta il punto di riferimento e il riquadro si allarga solo verso l'esterno per includere ogni figlio (anche con offset negativo), senza mai ri-basare le coordinate dei figli.
+
+**Motivazione**: coordinate locali (anziché assolute) scelte esplicitamente perché rendono "gratuito" lo spostamento di un contenitore che trascina con sé i figli liberi, e preservano l'economia Desktop-first (non serve ri-overridare ogni figlio quando si sposta un contenitore su una fascia più stretta). Il riquadro automatico ancorato (anziché un bounding-box puro dei soli figli) è stato necessario per restare compatibile con un genitore a pila: un bounding-box che ignora l'ancora del genitore fa "vagare" il contenitore rispetto alla posizione che la pila gli ha assegnato, rompendo il contenimento anche senza alcuno sconfinamento negativo — verificato empiricamente durante l'implementazione (primo giro di test fallito, corretto prima del commit).
+
+**Natura della decisione**: due default impliciti non decisi esplicitamente altrove, applicati per coerenza interna: offset locale assente → 0; altezza di un figlio libero senza figli propri, se assente, → `DEFAULT_LEAF_HEIGHT` (40, la stessa costante già usata in modalità pila), non un valore obbligatorio come la larghezza (la Decisione 3 del proprietario del prodotto restringeva l'obbligo alla sola larghezza).
+
+**Evidenza disponibile**: `test/layout/libero.test.ts` — riquadro automatico con e senza sconfinamento negativo, larghezza obbligatoria (leaf e contenitore-a-pila-senza-larghezza-ereditabile), conseguenza collaterale testata esplicitamente: un contenitore libero che si espande in negativo può comunque violare `CHILD_OUT_OF_BOUNDS` se il SUO genitore è a pila (comportamento corretto e voluto, non un bug).
+
+**Rivalutazione**: quando le guide di allineamento (non ancora implementate, vedi analisi separata di questo turno) definiranno come vengono proposti gli snap sui bordi di un riquadro automatico che si sposta a ogni modifica dei figli.
+
+---
+
+## D-016 — Selezione separata da undo/redo dentro `History` (Fase 5, Blocco C)
+
+**Stato**: `History` possiede `#selection: NodeId | null` (singola, non un insieme), con `select()`/`deselect()`/`get selection()`. Campo indipendente da `#past`/`#present`/`#future`: `select()`/`deselect()` non chiamano mai `applyCommand`, non creano una voce di undo/redo, non vengono toccati da `execute()`/`undo()`/`redo()`.
+
+**Motivazione**: il codice di `History` dichiara esplicitamente se stesso come "il livello di stato 'Workspace'" a cui fa riferimento RFC-000 §1 (No Hidden State) — la selezione è stato di sessione dell'editor, non deve vivere in `useState` locale della UI. Verificato prima dell'implementazione che l'estensione fosse strutturalmente sicura: `undo()`/`redo()` in Fase 1-2 toccano solo i tre array esistenti, senza possibilità di toccare un campo indipendente aggiunto in seguito, per costruzione.
+
+**Natura della decisione**: conseguenza esplicita e voluta del disaccoppiamento, non decisa altrove: la selezione NON viene convalidata contro il Document corrente. Se il nodo selezionato scompare (`DELETE_NODE`, o `undo()` di una `CREATE_NODE`), la selezione resta "pendente" (punta a un `nodeId` inesistente) finché qualcosa non chiama di nuovo `select()`/`deselect()`. Un consumer (renderer-react) deve trattare `selection` come potenzialmente non risolvibile — gestito esplicitamente in `PropertyPanel.tsx`.
+
+**Evidenza disponibile**: `test/selection.test.ts` (8 test) — inclusa la verifica esplicita che `undo()`/`redo()` non toccano la selezione anche quando il nodo selezionato scompare.
+
+**Rivalutazione**: se in una fase futura si deciderà selezione multipla (esplicitamente fuori scope per Fase 5, PRODUCT_DESIGN.md Decisione 5) — la forma `NodeId | null` andrebbe sostituita, non estesa.
+
+---
+
+## D-017 — `History.activeBreakpoint` (Fase 5, Blocco D)
+
+**Stato**: `History` possiede `#activeBreakpoint: BreakpointName`, default `"desktop"`, con `get activeBreakpoint()`/`setActiveBreakpoint()`. Stesse garanzie di `#selection` (D-016): separato da undo/redo, nessun comando. A differenza della selezione, `setActiveBreakpoint()` convalida il nome contro l'elenco dei breakpoint noti (`resolver/breakpoints.ts`, interno — D-010), lanciando su un nome sconosciuto.
+
+**Motivazione**: decide se una scrittura di un consumer va sui props base di un nodo (vista "desktop", la fascia di default per la convenzione Desktop-first di PRODUCT_DESIGN.md, Decisione 1) o dentro `props.responsive.<fascia>` (viste più strette) — è stato di sessione dell'editor con lo stesso status della selezione, non un valore locale della UI, per lo stesso principio RFC-000 §1 di D-016. La convalida (a differenza della selezione) è stata scelta perché un nome di fascia sconosciuto non ha un "nodo scomparso" plausibile da tollerare: è quasi certamente un refuso di chi chiama.
+
+**Evidenza disponibile**: `test/activeBreakpoint.test.ts` (6 test).
+
+**Rivalutazione**: quando le fasce responsive verranno estese oltre le 3 attuali (PRODUCT_DESIGN.md, sez. 8) — `setActiveBreakpoint` non richiede modifiche (già generico), ma la costante di sola UI `renderer-react/src/breakpoints.ts` (che duplica l'ORDINE dei nomi, non i `minWidth`, perché quell'ordine non è pubblico — D-010) andrebbe aggiornata in corrispondenza.
+
+---
+
+## D-018 — Adattatore di scrittura Desktop-first: separazione geometria/contenuto e congelamento automatico (Fase 5, Blocco D)
+
+**Stato**: `renderer-react` (non l'Engine) implementa `buildUpdatePropsCommand`, che instrada ogni scrittura in base a due elenchi CHIUSI: GEOMETRIA (`x`, `y`, `width`, `height`, `layoutMode`) e CONTENUTO (`text`, `color`); qualunque altra chiave lancia un errore esplicito. Il CONTENUTO scrive sempre sui props base, indipendentemente dalla vista attiva. La GEOMETRIA, se la vista attiva è la fascia base, scrive direttamente sui props base; altrimenti scrive sulla fascia attiva e "congela" automaticamente (Opzione A) la prima fascia più larga priva di override proprio per quella chiave, al suo valore RISOLTO per quella fascia (via `resolveNode`, non il valore di base) — un solo comando `UPDATE_PROPS` per gesto, anche quando tocca più fasce.
+
+**Motivazione**: il Resolver (Fase 2, invariato) applica una cascata tecnicamente mobile-first (un override lasciato solo su una fascia stretta si propaga verso le fasce più larghe se queste non hanno un proprio override) — comportamento verificato e documentato in PRODUCT_DESIGN.md, sez. 6, Decisione 1, che richiede esplicitamente che l'editor imponga la convenzione Desktop-first invece di lasciarla ambigua. Senza congelamento, un cambiamento fatto solo su una fascia stretta (es. Mobile) si propagherebbe silenziosamente anche a Tablet/Desktop — verificato concretamente prima di scegliere l'Opzione A (vedi turno di analisi dedicato). Il congelamento usa il valore RISOLTO per fascia (non il valore di base) su richiesta esplicita del proprietario del prodotto, per non perdere un override già presente su una fascia intermedia. La separazione geometria/contenuto (due elenchi chiusi, non un'euristica) e "il contenuto non varia mai per fascia sullo stesso nodo" sono entrambe decisioni esplicite del proprietario del prodotto, non dedotte dal codice.
+
+**Natura della decisione**: vive interamente in `renderer-react` (`src/write/buildUpdatePropsCommand.ts`), non nell'Engine — coerente con PRODUCT_DESIGN.md riga 79 ("vincolo di design della UI derivato da un comportamento del motore, non un cambiamento del motore stesso"). L'algoritmo esamina solo la prima fascia più larga priva di override proprio per una chiave (non tutte le fasce più larghe): una volta che una chiave ha un override esplicito su una fascia T (preesistente o appena congelato), quell'override vince per costruzione su ogni fascia ancora più larga nella cascata del Resolver, quindi non serve congelare oltre — dimostrato in `DECISIONS.md` con un ragionamento per induzione, verificato dai test (congelamento su Mobile non tocca Desktop quando Tablet ha già un override proprio).
+
+**Conseguenza nota, non risolta**: l'indicatore "ereditato vs cambiato" (PRODUCT_DESIGN.md, Decisione 5) può distinguere solo 2 stati su 3 possibili (ereditato / con override su questa fascia) — un override scritto a mano e uno scritto dal congelamento automatico hanno esattamente la stessa forma nel Document, quindi non sono distinguibili senza un metadato di provenienza non ancora progettato (vedi PRODUCT_DESIGN.md, sez. 6, aggiornamento Blocco D, Opzione 1 preferita per il futuro).
+
+**Evidenza disponibile**: `test/write/buildUpdatePropsCommand.test.ts` (11 test, inclusi i casi di congelamento per-chiave indipendente e "Tablet ha già un override proprio"). Verificato anche in un browser reale (Vite + Chromium via CDP): trascinamento su Mobile → congelamento corretto su Tablet al valore preesistente → Desktop invariato → un solo `undo()` annulla l'intero gesto (compreso il congelamento).
+
+**Rivalutazione**: se si deciderà di implementare il metadato di provenienza (sopra) — toccherebbe l'Engine (il Resolver dovrebbe "spacchettare" il metadato prima di leggere il valore), quindi meriterebbe una propria voce di decisione quando ripreso.
