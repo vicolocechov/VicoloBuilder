@@ -6,6 +6,7 @@ import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument } from "./hist
 import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
 import { PageManager } from "./pages/PageManager.js";
+import { ElementPalette } from "./elements/ElementPalette.js";
 import { TIER_ORDER } from "./breakpoints.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
@@ -63,6 +64,7 @@ export function App(): JSX.Element {
             Redo
           </button>
         </div>
+        <ElementPalette store={store} activePageId={activePageId} />
         <Canvas store={store} pageId={activePageId} />
       </div>
       <div style={{ width: 260, borderLeft: "1px solid #e5e7eb", overflow: "auto" }}>

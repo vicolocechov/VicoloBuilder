@@ -4,6 +4,7 @@ import type { BreakpointName, NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxes.js";
+import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 
@@ -53,6 +54,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
 
   const [moveDrag, setMoveDrag] = useState<MoveDrag | null>(null);
   const [moveDelta, setMoveDelta] = useState({ dx: 0, dy: 0 });
+  const [guides, setGuides] = useState<{ x: AxisGuide | null; y: AxisGuide | null }>({ x: null, y: null });
   const [resizeDrag, setResizeDrag] = useState<ResizeDrag | null>(null);
   const [resizeDelta, setResizeDelta] = useState({ dx: 0, dy: 0 });
 
@@ -70,14 +72,51 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   // Decisione D2: il gesto intero vive in stato locale del Canvas (mai in
   // Document/History) e produce un solo comando UPDATE_PROPS al rilascio
   // del puntatore (pointerup), non uno per pointermove.
+  //
+  // Guide di allineamento (solo allo spostamento, come da paletto dato):
+  // `entries` è stabile per tutta la durata del gesto (il Document non
+  // cambia finché non si esegue il comando al pointerup), quindi calcolare
+  // qui una volta sola l'entry trascinata/i fratelli/il contenitore è
+  // corretto anche se l'effect non viene ricreato a ogni pointermove.
   useEffect(() => {
     if (!moveDrag) return;
+    const draggedEntry = entries.find((e) => e.box.nodeId === moveDrag.nodeId) ?? null;
+    const container = draggedEntry?.parentBox ?? null;
+    const siblings =
+      draggedEntry && container
+        ? entries.filter((e) => e.parentBox === container && e.box.nodeId !== draggedEntry.box.nodeId).map((e) => e.box)
+        : [];
+
+    function snappedPosition(rawDx: number, rawDy: number) {
+      if (!draggedEntry || !container) {
+        return { x: rawDx, y: rawDy, guideX: null as AxisGuide | null, guideY: null as AxisGuide | null };
+      }
+      const dragged = {
+        x: draggedEntry.box.x + rawDx,
+        y: draggedEntry.box.y + rawDy,
+        width: draggedEntry.box.width,
+        height: draggedEntry.box.height,
+      };
+      return computeAlignmentSnap(dragged, siblings, container);
+    }
+
     function onMove(e: PointerEvent): void {
-      setMoveDelta({ dx: e.clientX - moveDrag!.startClientX, dy: e.clientY - moveDrag!.startClientY });
+      const rawDx = e.clientX - moveDrag!.startClientX;
+      const rawDy = e.clientY - moveDrag!.startClientY;
+      const snapped = snappedPosition(rawDx, rawDy);
+      const anchorX = draggedEntry?.box.x ?? 0;
+      const anchorY = draggedEntry?.box.y ?? 0;
+      setMoveDelta({ dx: snapped.x - anchorX, dy: snapped.y - anchorY });
+      setGuides({ x: snapped.guideX, y: snapped.guideY });
     }
     function onUp(e: PointerEvent): void {
-      const dx = e.clientX - moveDrag!.startClientX;
-      const dy = e.clientY - moveDrag!.startClientY;
+      const rawDx = e.clientX - moveDrag!.startClientX;
+      const rawDy = e.clientY - moveDrag!.startClientY;
+      const snapped = snappedPosition(rawDx, rawDy);
+      const anchorX = draggedEntry?.box.x ?? 0;
+      const anchorY = draggedEntry?.box.y ?? 0;
+      const dx = snapped.x - anchorX;
+      const dy = snapped.y - anchorY;
       if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
         const command = buildUpdatePropsCommand(store.getDocument(), moveDrag!.nodeId, store.getActiveBreakpoint(), {
           x: moveDrag!.startLocalX + dx,
@@ -87,6 +126,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       }
       setMoveDrag(null);
       setMoveDelta({ dx: 0, dy: 0 });
+      setGuides({ x: null, y: null });
     }
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -94,7 +134,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [moveDrag, store]);
+  }, [moveDrag, store, entries]);
 
   useEffect(() => {
     if (!resizeDrag) return;
@@ -233,6 +273,37 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       }}
     >
       {entries.map(renderBox)}
+      {/* Linee guida: attraversano l'intero Canvas per semplicità di
+          rendering - lo snap che le genera resta comunque limitato a
+          fratelli + centro del contenitore libero immediato (vedi
+          alignmentGuides.ts), solo l'estensione visiva della linea è
+          semplificata. */}
+      {guides.x ? (
+        <div
+          style={{
+            position: "absolute",
+            left: guides.x.position,
+            top: 0,
+            width: 1,
+            height: "100%",
+            background: "#ec4899",
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
+      {guides.y ? (
+        <div
+          style={{
+            position: "absolute",
+            top: guides.y.position,
+            left: 0,
+            height: 1,
+            width: "100%",
+            background: "#ec4899",
+            pointerEvents: "none",
+          }}
+        />
+      ) : null}
     </div>
   );
 }
