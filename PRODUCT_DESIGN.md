@@ -102,6 +102,12 @@ Questa sezione registra tre decisioni chiuse insieme, perché sono strettamente 
 
 **[Raccomandazione, non ancora verificata costruendo nulla]**: l'informazione resta comunque calcolabile leggendo il dato grezzo (`node.props.responsive.<fascia>`, che è pubblico) senza modifiche all'Engine — va scritta esplicitamente nel Renderer come parte della Fase 5.
 
+**Aggiornamento — Fase 5, Blocco D (implementato)**: con l'introduzione del congelamento automatico delle fasce più larghe (Opzione A, per la geometria — vedi sez. 6 sopra e DECISIONS.md), l'indicatore dovrebbe distinguere TRE stati, non due: ereditato dalla base; override esplicito scritto apposta su questa fascia; override creato automaticamente dal congelamento. **[Fatto verificato: `packages/renderer-react/src/panel/geometryFieldState.ts`]**: implementati solo i primi due — un override scritto a mano e uno scritto dal congelamento hanno esattamente la stessa forma in `props.responsive.<fascia>`, quindi il terzo stato non è distinguibile leggendo solo il Document.
+
+**[Decisione presa dal proprietario del prodotto]**: terzo stato rimandato a un miglioramento futuro, non nel Blocco D. Tra le due strade individuate, **Opzione 1 preferita**:
+1. **(preferita)** Un metadato di provenienza dentro `props.responsive.<fascia>.<chiave>` (tocca l'Engine: il resolver dovrebbe "spacchettare" il metadato prima di leggere il valore — non additivo in modo ovvio, richiede progettazione propria quando verrà ripresa).
+2. (scartata) Provenienza tenuta solo in memoria locale del Renderer per la sessione corrente — scartata perché non sopravvive a un ricaricamento/persistenza ed è essa stessa uno stato "nascosto" fuori da Document/History, in tensione con RFC-000 §1.
+
 ---
 
 ## 7. Guide e allineamento
