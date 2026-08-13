@@ -214,17 +214,19 @@ Rispetto alla bozza precedente, lo scope si allarga su alcuni punti per effetto 
 **Dentro Fase 5 (aggiornato)**:
 1. Scaffolding `packages/renderer-react/`.
 2. Canvas che disegna i Box reali, una pagina/scena alla volta.
-3. Pochi tipi di elemento (testo, immagine, contenitore).
+3. Pochi tipi di elemento (testo, immagine, contenitore). **[Fatto verificato: `packages/renderer-react/src/elements/createElementCommand.ts`, `ElementPalette.tsx`]**: implementati "testo" e "contenitore" (9 test in `test/elements/createElementCommand.test.ts`); "immagine" rimandata esplicitamente — richiederebbe una nuova chiave nell'elenco chiuso `CONTENT_KEYS` del write-adapter (Blocco D), lasciato bloccato com'è.
 4. Pannello proprietà minimale (non auto-generato).
 5. Undo/redo (binding su `History`).
 6. **Selezione dentro `History`, separata dagli snapshot di undo/redo (Decisione 2).**
 7. Responsive: 3 fasce (Desktop/Tablet/Mobile), **convenzione Desktop-first imposta esplicitamente in UI (Decisione 1)**, **indicatore ereditato/overridato (Decisione 5).**
-8. **Posizionamento libero, ridimensionamento con maniglie, guide di base (Decisione 3)** — con revisione della regola `CHILD_OUT_OF_BOUNDS` e delle tre assunzioni strutturali trovate in sez. 6.
+8. **Posizionamento libero, ridimensionamento con maniglie, guide di base (Decisione 3)** — con revisione della regola `CHILD_OUT_OF_BOUNDS` e delle tre assunzioni strutturali trovate in sez. 6. **[Fatto verificato: `packages/renderer-react/src/canvas/alignmentGuides.ts`]**: guide di base implementate (8 test in `test/canvas/alignmentGuides.test.ts`) con soglia di 6px, limitate ai fratelli nello stesso contenitore libero e al centro del contenitore libero immediato ("scena"), solo per lo spostamento (non il ridimensionamento, per tenere il primo giro piccolo).
 9. Comando pagina: creazione/eliminazione **+ riordino (Decisione 4)**.
 10. Vincolo invariato: nessuna modifica alla Public API Engine esistente, solo estensioni additive (verificato in sede di audit di chiusura: solo nuovi export/campi opzionali aggiunti, nessuna firma/comportamento esistente cambiato — vedi DECISIONS.md D-013/D-014/D-016/D-017).
 11. **Vincolo di disciplina (sez. 12bis): ogni azione passa dal Command Bus, nessuna scorciatoia diretta sul Document.**
 
-**Esplicitamente FUORI dalla Fase 5** (confermato, ora esplicitamente "porte future riservate"): embed, State/Interaction/Behavior di navigazione, Cervello di design AI, Component, SEO Assistant, Exporter reale, device preview realistico con cornici/notch, guide avanzate, tipografia fluida, Capability Registry completo, "griglia che va a capo" (in attesa di conferma se analizzarla).
+**Esplicitamente FUORI dalla Fase 5** (confermato, ora esplicitamente "porte future riservate"): embed, State/Interaction/Behavior di navigazione, Cervello di design AI, Component, SEO Assistant, Exporter reale, device preview realistico con cornici/notch, guide avanzate, tipografia fluida, Capability Registry completo, "griglia che va a capo" (in attesa di conferma se analizzarla), elemento "immagine" (punto 3 sopra).
+
+**[Decisione presa dal proprietario del prodotto]**: Fase 5 chiusa. Tutti gli 11 punti dell'elenco "Dentro Fase 5" sopra sono implementati e testati (Blocchi A-E più i due moduli di chiusura audit — guide di allineamento e creazione interattiva di elementi). Vedi `DECISIONS.md` D-013..D-018 per le decisioni tecniche corrispondenti.
 
 ---
 
