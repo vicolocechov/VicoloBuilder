@@ -1,5 +1,7 @@
 import { applyCommand, type Command } from "./commands.js";
+import { getBreakpoint } from "../resolver/breakpoints.js";
 import type { Document, NodeId } from "../document/types.js";
+import type { BreakpointName } from "../resolver/types.js";
 
 /**
  * Owns the single, canonical Document instance for a session plus its
@@ -20,12 +22,25 @@ import type { Document, NodeId } from "../document/types.js";
  * selezione resta "pendente" (punta a un nodeId che non esiste più) finché
  * qualcosa non chiama di nuovo select()/deselect(). Un consumer (Blocco D)
  * dovrà quindi trattare `selection` come potenzialmente non risolvibile.
+ *
+ * Possiede anche la "vista attiva" per l'editing responsive (Fase 5,
+ * Blocco D - Decisione D4): `#activeBreakpoint` decide se una scrittura di
+ * un consumer va sui props base di un nodo (vista "desktop", la fascia di
+ * default - convenzione Desktop-first, PRODUCT_DESIGN.md) o dentro
+ * `props.responsive.<fascia>` (viste più strette). Stesse garanzie di
+ * `#selection`: separata da `#past`/`#present`/`#future`, mai un comando,
+ * mai un effetto su Document/undo/redo. A differenza della selezione, il
+ * nome passato viene convalidato contro l'elenco dei breakpoint noti
+ * (stessa validazione già usata dal resolver) - qui un valore sconosciuto
+ * non ha un "nodo scomparso" plausibile da tollerare, è quasi certamente un
+ * errore di chi chiama (refuso nel nome della fascia).
  */
 export class History {
   #past: Document[] = [];
   #present: Document;
   #future: Document[] = [];
   #selection: NodeId | null = null;
+  #activeBreakpoint: BreakpointName = "desktop";
 
   constructor(initialDocument: Document) {
     this.#present = initialDocument;
@@ -80,5 +95,15 @@ export class History {
   /** Azzera la selezione. Stessa garanzia di select(): nessun effetto su Document/undo/redo. */
   deselect(): void {
     this.#selection = null;
+  }
+
+  get activeBreakpoint(): BreakpointName {
+    return this.#activeBreakpoint;
+  }
+
+  /** Imposta la vista attiva. Nessun comando, nessun effetto su Document/undo/redo. Lancia se il nome non è un breakpoint noto. */
+  setActiveBreakpoint(breakpoint: BreakpointName): void {
+    getBreakpoint(breakpoint); // valida, lancia su nome sconosciuto; il valore di ritorno non serve qui
+    this.#activeBreakpoint = breakpoint;
   }
 }

@@ -1,0 +1,28 @@
+{
+  "name": "@vicolobuilder/renderer-react",
+  "version": "0.1.0",
+  "description": "Renderer React — Canvas, pannello proprietà, drag/resize (consumer 4 dell'Engine, Fase 5 Blocco D).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@vicolobuilder/engine": "^0.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
+}
