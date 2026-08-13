@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
-import type { Document } from "@vicolobuilder/engine";
+import type { Document, PageId } from "@vicolobuilder/engine";
 import { ReactiveHistory } from "./history/ReactiveHistory.js";
-import { useActiveBreakpoint, useCanRedo, useCanUndo } from "./history/useHistoryStore.js";
+import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument } from "./history/useHistoryStore.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
+import { PageManager } from "./pages/PageManager.js";
 import { TIER_ORDER } from "./breakpoints.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
@@ -30,12 +31,20 @@ function buildDemoDocument(): Document {
 
 export function App(): JSX.Element {
   const store = useMemo(() => new ReactiveHistory(buildDemoDocument()), []);
+  const document = useDocument(store);
   const activeBreakpoint = useActiveBreakpoint(store);
   const canUndo = useCanUndo(store);
   const canRedo = useCanRedo(store);
 
+  // Fase 5, Blocco E: quale pagina sta guardando/modificando il Canvas -
+  // stato locale di App, non di History (vedi commento in PageManager.tsx).
+  const [activePageId, setActivePageId] = useState<PageId>(document.rootPageId);
+
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
+      <div style={{ width: 260, borderRight: "1px solid #e5e7eb", overflow: "auto" }}>
+        <PageManager store={store} activePageId={activePageId} onActivePageChange={setActivePageId} />
+      </div>
       <div style={{ flex: 1, overflow: "auto", padding: 16, background: "#f3f4f6" }}>
         <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
           {TIER_ORDER.map((tier) => (
@@ -54,7 +63,7 @@ export function App(): JSX.Element {
             Redo
           </button>
         </div>
-        <Canvas store={store} />
+        <Canvas store={store} pageId={activePageId} />
       </div>
       <div style={{ width: 260, borderLeft: "1px solid #e5e7eb", overflow: "auto" }}>
         <PropertyPanel store={store} />

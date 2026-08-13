@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
-import type { BreakpointName, NodeId } from "@vicolobuilder/engine";
+import type { BreakpointName, NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxes.js";
@@ -46,7 +46,7 @@ interface ResizeDrag {
   readonly resizeHeight: boolean;
 }
 
-export function Canvas({ store }: { store: ReactiveHistory }): JSX.Element {
+export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: PageId }): JSX.Element {
   const document = useDocument(store);
   const activeBreakpoint = useActiveBreakpoint(store);
   const selection = useSelection(store);
@@ -58,7 +58,13 @@ export function Canvas({ store }: { store: ReactiveHistory }): JSX.Element {
 
   const model = useMemo(() => resolveDocument(document, { breakpoint: activeBreakpoint }), [document, activeBreakpoint]);
   const viewportWidth = PREVIEW_WIDTH[activeBreakpoint] ?? 1280;
-  const box = useMemo(() => computeLayout(model, { viewportWidth }), [model, viewportWidth]);
+  // Fase 5, Blocco E: `pageId` opzionale (già supportato da computeLayout,
+  // non usato finora) - se assente, invariato rispetto al Blocco D
+  // (computeLayout ricade sulla pagina radice del ResolvedModel).
+  const box = useMemo(
+    () => computeLayout(model, pageId !== undefined ? { pageId, viewportWidth } : { viewportWidth }),
+    [model, pageId, viewportWidth],
+  );
   const entries = useMemo(() => flattenBoxes(box), [box]);
 
   // Decisione D2: il gesto intero vive in stato locale del Canvas (mai in
