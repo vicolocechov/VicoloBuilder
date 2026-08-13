@@ -54,7 +54,13 @@ export function validateBox(box: Box): BoxInvariantViolation[] {
       });
     }
 
-    if (parent && !isContained(node, parent)) {
+    // Fase 5, Blocco B (Decisione 1B): il contenimento nei bound del parent
+    // è verificato solo se il parent dispone i figli in modalità "pila"
+    // (default, anche quando `mode` è assente - vedi layout/types.ts). Un
+    // parent in modalità "libero" può avere figli che sporgono di proposito
+    // (posizionamento libero, guide di allineamento future): non è un
+    // errore, è la modalità stessa.
+    if (parent && parent.mode !== "libero" && !isContained(node, parent)) {
       violations.push({
         code: "CHILD_OUT_OF_BOUNDS",
         message: `Box "${node.nodeId}" is not contained within the bounds of its parent "${parent.nodeId}".`,

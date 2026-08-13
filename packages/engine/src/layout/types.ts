@@ -14,4 +14,15 @@ export interface Box {
   readonly width: number;
   readonly height: number;
   readonly children: readonly Box[];
+  /**
+   * Modalità con cui QUESTO nodo dispone i propri figli (Fase 5, Blocco B -
+   * Decisione 1B): "pila" (stack verticale, comportamento storico, default
+   * se assente) oppure "libero" (posizionamento libero dei figli via
+   * offset locali). Opzionale: verificato additivo prima dell'implementazione
+   * (nessun test esistente confronta la forma esatta di un Box con
+   * `toStrictEqual`/`toEqual` contro un letterale scritto a mano senza
+   * questo campo - vedi DECISIONS.md). Consumato da layout/invariants.ts
+   * per decidere se CHILD_OUT_OF_BOUNDS si applica ai figli di questo nodo.
+   */
+  readonly mode?: "pila" | "libero";
 }

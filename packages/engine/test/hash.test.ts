@@ -23,6 +23,7 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
       rootPageId: "page-1",
       nodes: new Map([["root", root], ["a", a], ["b", b]]),
       pages: new Map([["page-1", page]]),
+      pageOrder: ["page-1"],
     };
 
     const docInsertionOrderB: Document = {
@@ -30,6 +31,7 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
       rootPageId: "page-1",
       nodes: new Map([["b", b], ["root", root], ["a", a]]), // stesso contenuto, ordine diverso
       pages: new Map([["page-1", page]]),
+      pageOrder: ["page-1"],
     };
 
     expect(hashDocument(docInsertionOrderA)).toBe(hashDocument(docInsertionOrderB));
@@ -47,12 +49,14 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
       rootPageId: pageId,
       nodes: new Map([["root", nodeOrderA]]),
       pages: new Map([[pageId, page]]),
+      pageOrder: [pageId],
     };
     const docB: Document = {
       schemaVersion: 1,
       rootPageId: pageId,
       nodes: new Map([["root", nodeOrderB]]),
       pages: new Map([[pageId, page]]),
+      pageOrder: [pageId],
     };
 
     expect(hashDocument(docA)).toBe(hashDocument(docB));
@@ -69,6 +73,7 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
         ["b", node({ id: "b", parentId: "root", type: "text", props: { content: "ciao", color: "#000" } })],
       ]),
       pages: new Map([["page-1", { id: "page-1", name: "Home", rootNodeId: "root" }]]),
+      pageOrder: ["page-1"],
     };
 
     // Costruito "dal basso in alto", ordine di dichiarazione e ordine delle
@@ -85,6 +90,7 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
         ["root", rootIndependent],
       ]),
       pages: new Map([["page-1", { id: "page-1", name: "Home", rootNodeId: "root" }]]),
+      pageOrder: ["page-1"],
     };
 
     expect(hashDocument(docTopDown)).toBe(hashDocument(docBottomUp));
@@ -99,12 +105,14 @@ describe("hashDocument — determinismo (RFC-005: export IR byte-identico)", () 
       rootPageId: pageId,
       nodes: new Map([["root", node({ id: "root", props: { color: "red" } })]]),
       pages: new Map([[pageId, page]]),
+      pageOrder: [pageId],
     };
     const docB: Document = {
       schemaVersion: 1,
       rootPageId: pageId,
       nodes: new Map([["root", node({ id: "root", props: { color: "blue" } })]]),
       pages: new Map([[pageId, page]]),
+      pageOrder: [pageId],
     };
 
     expect(hashDocument(docA)).not.toBe(hashDocument(docB));

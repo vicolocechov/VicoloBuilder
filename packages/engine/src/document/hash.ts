@@ -40,6 +40,10 @@ export function serializeDocument(document: Document): string {
     rootPageId: document.rootPageId,
     pages,
     nodes,
+    // A differenza di pages/nodes (ordinati per id: l'ordine di inserimento
+    // nella Map non è dato significativo), pageOrder va preservato così
+    // com'è: qui l'ordine *è* il dato (Fase 5, Blocco A).
+    pageOrder: [...document.pageOrder],
   });
 }
 

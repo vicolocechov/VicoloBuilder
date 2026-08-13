@@ -7,7 +7,9 @@ export type InvariantCode =
   | "ORPHAN_PARENT_LINK"
   | "CYCLE_DETECTED"
   | "PAGE_ROOT_NOT_FOUND"
-  | "PAGE_ROOT_HAS_PARENT";
+  | "PAGE_ROOT_HAS_PARENT"
+  | "ROOT_PAGE_NOT_FOUND"
+  | "PAGE_ORDER_MISMATCH";
 
 export interface InvariantViolation {
   readonly code: InvariantCode;
@@ -123,6 +125,33 @@ export function validateDocument(document: Document): InvariantViolation[] {
         nodeId: rootNode.id,
       });
     }
+  }
+
+  // Document.rootPageId deve puntare a una pagina realmente esistente
+  // (Fase 5, Blocco A: nessun invariante lo controllava prima che esistesse
+  // più di una pagina - un documento con una sola pagina non poteva mai
+  // violarlo per costruzione).
+  if (!document.pages.has(document.rootPageId)) {
+    violations.push({
+      code: "ROOT_PAGE_NOT_FOUND",
+      message: `Document.rootPageId "${document.rootPageId}" does not match any page.`,
+      pageId: document.rootPageId,
+    });
+  }
+
+  // pageOrder deve essere esattamente una permutazione delle pagine esistenti
+  // (Fase 5, Blocco A) - nessun id mancante, nessuno in più, nessun duplicato.
+  const pageIds = new Set(document.pages.keys());
+  const orderIds = new Set(document.pageOrder);
+  const isPermutation =
+    document.pageOrder.length === orderIds.size &&
+    pageIds.size === orderIds.size &&
+    [...pageIds].every((id) => orderIds.has(id));
+  if (!isPermutation) {
+    violations.push({
+      code: "PAGE_ORDER_MISMATCH",
+      message: `Document.pageOrder must be exactly a permutation of the existing page ids (pages: [${[...pageIds].join(", ")}], pageOrder: [${document.pageOrder.join(", ")}]).`,
+    });
   }
 
   return violations;

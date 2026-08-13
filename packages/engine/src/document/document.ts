@@ -34,6 +34,7 @@ export function createDocument(options: CreateDocumentOptions = {}): Document {
     rootPageId: pageId,
     nodes: new Map([[nodeId, rootNode]]),
     pages: new Map([[pageId, page]]),
+    pageOrder: [pageId],
   };
 }
 

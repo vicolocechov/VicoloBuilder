@@ -95,4 +95,33 @@ describe("validateDocument — RFC-000 §12 invariants", () => {
     const violations = validateDocument(doc);
     expect(violations.some((v) => v.code === "PAGE_ROOT_HAS_PARENT")).toBe(true);
   });
+
+  // Fase 5, Blocco A.
+  it("flags a Document whose rootPageId does not match any existing page", () => {
+    const doc = createDocument({ rootPageId: "page-1", rootNodeId: "root" });
+
+    const violations = validateDocument({ ...doc, rootPageId: "page-ghost" });
+    expect(violations).toContainEqual(expect.objectContaining({ code: "ROOT_PAGE_NOT_FOUND", pageId: "page-ghost" }));
+  });
+
+  it("flags a pageOrder that is missing a page id", () => {
+    const doc = createDocument({ rootPageId: "page-1", rootNodeId: "root" });
+
+    const violations = validateDocument({ ...doc, pageOrder: [] });
+    expect(violations.some((v) => v.code === "PAGE_ORDER_MISMATCH")).toBe(true);
+  });
+
+  it("flags a pageOrder with a duplicate entry", () => {
+    const doc = createDocument({ rootPageId: "page-1", rootNodeId: "root" });
+
+    const violations = validateDocument({ ...doc, pageOrder: ["page-1", "page-1"] });
+    expect(violations.some((v) => v.code === "PAGE_ORDER_MISMATCH")).toBe(true);
+  });
+
+  it("flags a pageOrder with an id that does not match any page", () => {
+    const doc = createDocument({ rootPageId: "page-1", rootNodeId: "root" });
+
+    const violations = validateDocument({ ...doc, pageOrder: ["page-ghost"] });
+    expect(violations.some((v) => v.code === "PAGE_ORDER_MISMATCH")).toBe(true);
+  });
 });

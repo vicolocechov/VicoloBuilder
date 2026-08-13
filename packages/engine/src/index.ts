@@ -20,6 +20,9 @@ export type {
   CreateNodeCommand,
   UpdatePropsCommand,
   DeleteNodeCommand,
+  CreatePageCommand,
+  DeletePageCommand,
+  ReorderPagesCommand,
 } from "./runtime/commands.js";
 
 export { History } from "./runtime/history.js";

@@ -93,7 +93,7 @@ export function deserializeDocument(json: string): Document {
   }
 
   if (!isPlainObject(parsed)) fail("Il contenuto deserializzato deve essere un oggetto JSON.");
-  const { schemaVersion, rootPageId, pages, nodes } = parsed;
+  const { schemaVersion, rootPageId, pages, nodes, pageOrder } = parsed;
 
   if (typeof schemaVersion !== "number") fail('Campo "schemaVersion" mancante o non numerico.');
   if (schemaVersion !== CURRENT_SCHEMA_VERSION) {
@@ -106,10 +106,26 @@ export function deserializeDocument(json: string): Document {
   const pageEntries = pages.map(parsePage);
   const nodeEntries = nodes.map(parseNode);
 
+  // pageOrder è opzionale nel JSON esterno (Fase 5, Blocco A, Decisione 1):
+  // un file scritto prima della sua introduzione non lo ha. Fallback:
+  // ordine alfabetico per id, stesso criterio già usato da serializeDocument
+  // per pages/nodes - nessun incremento di schemaVersion, nessuna necessità
+  // di una vera migrazione.
+  let resolvedPageOrder: string[];
+  if (pageOrder === undefined) {
+    resolvedPageOrder = pageEntries.map((p) => p.id).sort();
+  } else {
+    if (!Array.isArray(pageOrder) || !pageOrder.every((id) => typeof id === "string")) {
+      fail('Campo "pageOrder", se presente, deve essere un array di stringhe.');
+    }
+    resolvedPageOrder = [...pageOrder];
+  }
+
   return {
     schemaVersion,
     rootPageId,
     pages: new Map(pageEntries.map((p) => [p.id, p])),
     nodes: new Map(nodeEntries.map((n) => [n.id, n])),
+    pageOrder: resolvedPageOrder,
   };
 }

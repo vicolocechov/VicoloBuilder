@@ -25,6 +25,7 @@ function buildFlatDocumentDirectly(n: number): Document {
     rootPageId: "page-home",
     nodes,
     pages: new Map([["page-home", { id: "page-home", name: "Home", rootNodeId: "root" }]]),
+    pageOrder: ["page-home"],
   };
 }
 

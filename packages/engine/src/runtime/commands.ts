@@ -1,6 +1,6 @@
 import { requireNode, collectSubtreeIds } from "../document/document.js";
 import { assertValidDocument } from "../document/invariants.js";
-import type { Document, DocumentNode, NodeId } from "../document/types.js";
+import type { Document, DocumentNode, NodeId, Page, PageId } from "../document/types.js";
 
 /**
  * A Command is a plain, serializable description of a single mutation.
@@ -12,7 +12,10 @@ import type { Document, DocumentNode, NodeId } from "../document/types.js";
 export type Command =
   | CreateNodeCommand
   | UpdatePropsCommand
-  | DeleteNodeCommand;
+  | DeleteNodeCommand
+  | CreatePageCommand
+  | DeletePageCommand
+  | ReorderPagesCommand;
 
 export interface CreateNodeCommand {
   readonly type: "CREATE_NODE";
@@ -34,6 +37,27 @@ export interface UpdatePropsCommand {
 export interface DeleteNodeCommand {
   readonly type: "DELETE_NODE";
   readonly nodeId: NodeId;
+}
+
+/** Fase 5, Blocco A. Stesso schema di CreateNodeCommand: chi chiama fornisce gli id, per restare deterministico/replayabile. */
+export interface CreatePageCommand {
+  readonly type: "CREATE_PAGE";
+  readonly pageId: PageId;
+  readonly name: string;
+  readonly rootNodeId: NodeId;
+  readonly rootNodeType?: string;
+}
+
+/** Fase 5, Blocco A. Elimina anche l'intero sottoalbero di nodi della pagina (Decisione 2, cascata). */
+export interface DeletePageCommand {
+  readonly type: "DELETE_PAGE";
+  readonly pageId: PageId;
+}
+
+/** Fase 5, Blocco A. Riceve l'ordine completo, non uno spostamento incrementale - deve essere una permutazione esatta delle pagine esistenti. */
+export interface ReorderPagesCommand {
+  readonly type: "REORDER_PAGES";
+  readonly pageOrder: readonly PageId[];
 }
 
 export class CommandError extends Error {
@@ -123,6 +147,78 @@ function applyDeleteNode(document: Document, command: DeleteNodeCommand): Docume
   return { ...document, nodes: nextNodes };
 }
 
+function applyCreatePage(document: Document, command: CreatePageCommand): Document {
+  if (document.pages.has(command.pageId)) {
+    throw new CommandError(command, `Page id "${command.pageId}" already exists.`);
+  }
+  if (document.nodes.has(command.rootNodeId)) {
+    throw new CommandError(command, `Node id "${command.rootNodeId}" already exists.`);
+  }
+
+  const rootNode: DocumentNode = {
+    id: command.rootNodeId,
+    type: command.rootNodeType ?? "page-root",
+    parentId: null,
+    childrenIds: [],
+    props: {},
+  };
+  const page: Page = { id: command.pageId, name: command.name, rootNodeId: command.rootNodeId };
+
+  const nextNodes = new Map(document.nodes);
+  nextNodes.set(rootNode.id, rootNode);
+  const nextPages = new Map(document.pages);
+  nextPages.set(page.id, page);
+
+  return { ...document, nodes: nextNodes, pages: nextPages, pageOrder: [...document.pageOrder, page.id] };
+}
+
+function applyDeletePage(document: Document, command: DeletePageCommand): Document {
+  const page = document.pages.get(command.pageId);
+  if (!page) {
+    throw new CommandError(command, `Page id "${command.pageId}" does not exist.`);
+  }
+  if (document.pages.size <= 1) {
+    throw new CommandError(command, `Cannot delete "${command.pageId}": it is the only remaining page.`);
+  }
+  // Nessun comando oggi permette di cambiare Document.rootPageId - eliminare
+  // la pagina che lo è renderebbe il documento privo di una pagina
+  // predefinita valida (ROOT_PAGE_NOT_FOUND), senza modo di ripararlo dopo.
+  // Scelta conservativa (Fase 5, Blocco A, non nel piano originale - vedi
+  // il messaggio riportato all'utente): la pagina rootPageId non è eliminabile.
+  if (command.pageId === document.rootPageId) {
+    throw new CommandError(command, `Cannot delete "${command.pageId}": it is the document's root page (rootPageId).`);
+  }
+
+  const nextNodes = new Map(document.nodes);
+  for (const id of collectSubtreeIds(document, page.rootNodeId)) {
+    nextNodes.delete(id);
+  }
+  const nextPages = new Map(document.pages);
+  nextPages.delete(command.pageId);
+
+  return {
+    ...document,
+    nodes: nextNodes,
+    pages: nextPages,
+    pageOrder: document.pageOrder.filter((id) => id !== command.pageId),
+  };
+}
+
+function applyReorderPages(document: Document, command: ReorderPagesCommand): Document {
+  const currentIds = new Set(document.pages.keys());
+  const newIds = new Set(command.pageOrder);
+  const isValidPermutation =
+    command.pageOrder.length === currentIds.size &&
+    newIds.size === command.pageOrder.length &&
+    [...currentIds].every((id) => newIds.has(id));
+
+  if (!isValidPermutation) {
+    throw new CommandError(command, `"pageOrder" must be exactly a permutation of the existing page ids.`);
+  }
+
+  return { ...document, pageOrder: [...command.pageOrder] };
+}
+
 /**
  * Applies a single Command to a Document and returns a new Document.
  * Pure: never mutates its input. Always validates the result against
@@ -141,6 +237,15 @@ export function applyCommand(document: Document, command: Command): Document {
       break;
     case "DELETE_NODE":
       next = applyDeleteNode(document, command);
+      break;
+    case "CREATE_PAGE":
+      next = applyCreatePage(document, command);
+      break;
+    case "DELETE_PAGE":
+      next = applyDeletePage(document, command);
+      break;
+    case "REORDER_PAGES":
+      next = applyReorderPages(document, command);
       break;
     default: {
       const exhaustive: never = command;

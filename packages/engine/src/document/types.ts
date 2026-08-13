@@ -34,4 +34,14 @@ export interface Document {
   readonly rootPageId: PageId;
   readonly nodes: ReadonlyMap<NodeId, DocumentNode>;
   readonly pages: ReadonlyMap<PageId, Page>;
+  /**
+   * Ordine esplicito delle pagine (Fase 5, Blocco A). Necessario perché
+   * l'ordine di inserimento in `pages` non sopravvive alla serializzazione
+   * (serializeDocument ordina alfabeticamente per id, di proposito, per il
+   * determinismo dell'hash - vedi document/hash.ts) - stesso problema già
+   * risolto per i figli di un nodo con `childrenIds`, stessa soluzione.
+   * Sempre presente sugli oggetti Document in memoria; opzionale solo nel
+   * formato JSON esterno (deserializeDocument calcola un fallback se assente).
+   */
+  readonly pageOrder: readonly PageId[];
 }

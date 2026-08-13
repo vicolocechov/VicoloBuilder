@@ -93,6 +93,49 @@ describe("deserializeDocument — schemaVersion", () => {
   });
 });
 
+describe("deserializeDocument — pageOrder (Fase 5, Blocco A)", () => {
+  it("round-trip: l'ordine reale delle pagine sopravvive, non solo l'ordine alfabetico", () => {
+    let doc = createDocument({ rootPageId: "page-home", rootNodeId: "root" });
+    doc = applyCommand(doc, { type: "CREATE_PAGE", pageId: "page-zzz", name: "Z", rootNodeId: "root-zzz" });
+    doc = applyCommand(doc, { type: "CREATE_PAGE", pageId: "page-aaa", name: "A", rootNodeId: "root-aaa" });
+    // pageOrder reale: home, zzz, aaa - NON l'ordine alfabetico (aaa, home, zzz).
+    expect(doc.pageOrder).toEqual(["page-home", "page-zzz", "page-aaa"]);
+
+    const restored = deserializeDocument(serializeDocument(doc));
+    expect(restored.pageOrder).toEqual(["page-home", "page-zzz", "page-aaa"]);
+  });
+
+  it('un JSON senza "pageOrder" (formato precedente a questo blocco) usa il fallback alfabetico, senza lanciare', () => {
+    const json = JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      rootPageId: "page-b",
+      pages: [
+        { id: "page-b", name: "B", rootNodeId: "root-b" },
+        { id: "page-a", name: "A", rootNodeId: "root-a" },
+      ],
+      nodes: [
+        { id: "root-a", type: "page-root", parentId: null, childrenIds: [], props: [] },
+        { id: "root-b", type: "page-root", parentId: null, childrenIds: [], props: [] },
+      ],
+    });
+
+    const restored = deserializeDocument(json);
+    expect(restored.pageOrder).toEqual(["page-a", "page-b"]);
+    expect(validateDocument(restored)).toEqual([]);
+  });
+
+  it('lancia DocumentParseError se "pageOrder" è presente ma non è un array di stringhe', () => {
+    const json = JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      rootPageId: "p",
+      pages: [{ id: "p", name: "Home", rootNodeId: "root" }],
+      nodes: [{ id: "root", type: "box", parentId: null, childrenIds: [], props: [] }],
+      pageOrder: [42],
+    });
+    expect(() => deserializeDocument(json)).toThrow(DocumentParseError);
+  });
+});
+
 describe("deserializeDocument — non valida gli invarianti del grafo (responsabilità separata)", () => {
   it("un Document strutturalmente valido ma con un ciclo viene deserializzato senza lanciare, e viene poi rifiutato da assertValidDocument", () => {
     const json = JSON.stringify({
