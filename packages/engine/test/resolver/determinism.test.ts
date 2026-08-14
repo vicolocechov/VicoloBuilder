@@ -35,8 +35,8 @@ describe("resolveDocument — determinismo (matrice #4)", () => {
       props: { variant: "primary" },
     });
 
-    const first = resolveDocument(doc, { breakpoint: "tablet" });
-    const second = resolveDocument(doc, { breakpoint: "tablet" });
+    const first = resolveDocument(doc, { breakpoint: "tablet-verticale" });
+    const second = resolveDocument(doc, { breakpoint: "tablet-verticale" });
 
     expect(serializeResolvedModel(first)).toBe(serializeResolvedModel(second));
   });
@@ -74,7 +74,7 @@ describe("resolveDocument — determinismo (matrice #4)", () => {
       props: { padding: 8, responsive: { desktop: { padding: 40 } } },
     });
 
-    const mobile = resolveDocument(doc, { breakpoint: "mobile" });
+    const mobile = resolveDocument(doc, { breakpoint: "mobile-verticale" });
     const desktop = resolveDocument(doc, { breakpoint: "desktop" });
 
     expect(serializeResolvedModel(mobile)).not.toBe(serializeResolvedModel(desktop));

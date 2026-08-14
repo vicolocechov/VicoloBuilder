@@ -34,8 +34,8 @@ describe("computeLayout — determinismo (matrice #6)", () => {
       docB = applyCommand(docB, command);
     }
 
-    const boxA = computeLayout(resolveDocument(docA, { breakpoint: "tablet" }), { viewportWidth: 768 });
-    const boxB = computeLayout(resolveDocument(docB, { breakpoint: "tablet" }), { viewportWidth: 768 });
+    const boxA = computeLayout(resolveDocument(docA, { breakpoint: "tablet-verticale" }), { viewportWidth: 768 });
+    const boxB = computeLayout(resolveDocument(docB, { breakpoint: "tablet-verticale" }), { viewportWidth: 768 });
 
     expect(boxA).toEqual(boxB);
   });

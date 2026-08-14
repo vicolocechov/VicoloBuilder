@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDocument, applyCommand, serializeDocument, exportIR, DocumentInvariantError } from "@vicolobuilder/engine";
+import { createDocument, applyCommand, serializeDocument, exportIR, DocumentInvariantError, CURRENT_SCHEMA_VERSION } from "@vicolobuilder/engine";
 import { DocumentParseError } from "@vicolobuilder/engine";
 import { runExport } from "../../src/core/exportCommand.js";
 
@@ -32,7 +32,7 @@ describe("runExport — core puro di `builder export`", () => {
 
   it("lancia DocumentInvariantError su un Document strutturalmente invalido (es. un ciclo)", () => {
     const json = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       rootPageId: "p",
       pages: [{ id: "p", name: "Home", rootNodeId: "root" }],
       nodes: [

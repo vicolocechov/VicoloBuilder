@@ -1,8 +1,22 @@
 export type NodeId = string;
 export type PageId = string;
 
-/** Current schema version for the Document format. Bump on breaking layout changes. */
-export const CURRENT_SCHEMA_VERSION = 1;
+/**
+ * Current schema version for the Document format. Bump on breaking layout changes.
+ *
+ * Fase 6 (D-019): bump 1 -> 2. L'insieme dei nomi di fascia validi è
+ * cambiato (7 fasce nominate sostituiscono le 3 lineari, DECISIONS.md
+ * D-019) - un Document serializzato con schemaVersion 1 che avesse
+ * `props.responsive.mobile`/`.tablet`/`.desktop` non verrebbe corrotto
+ * silenziosamente (quelle chiavi diventerebbero semplicemente inerti, mai
+ * lette dal nuovo `cascadingBreakpoints`), ma è un cambiamento di
+ * comportamento abbastanza significativo da meritare un rifiuto esplicito
+ * in deserializzazione (DocumentParseError) piuttosto che un degrado
+ * silenzioso - nessun dato reale esistente da migrare in questo repository
+ * (solo fixture di test e il documento demo di renderer-react, aggiornati
+ * insieme a questo bump).
+ */
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export interface DocumentNode {
   readonly id: NodeId;

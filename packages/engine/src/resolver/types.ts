@@ -2,10 +2,26 @@ import type { NodeId, Page, PageId } from "../document/types.js";
 
 export type BreakpointName = string;
 
+/**
+ * Fase 6 (DECISIONS.md, D-019): "combinazioni nominate", non assi
+ * ortogonali indipendenti. Ogni fascia è un nome opaco con un predicato
+ * descrittivo proprio - `minWidth`/`maxWidth`/`orientation`/`minHeight`/
+ * `maxHeight` sono tutti opzionali e indipendenti tra loro (una fascia può
+ * usarne solo alcuni, esattamente come le fasce reali che hanno motivato
+ * questo modello: 3 delle 7 non hanno alcun vincolo di orientamento).
+ * Il predicato NON viene mai valutato contro un viewport reale in questo
+ * pacchetto (nessun consumer esistente ne ha bisogno - vedi D-019): serve
+ * solo (a) come base per l'ordine di cascata curato in `CASCADE_ORDER`
+ * (breakpoints.ts) e (b) come riferimento descrittivo per chi definisce le
+ * fasce.
+ */
 export interface Breakpoint {
   readonly name: BreakpointName;
-  /** Larghezza minima, in px, a cui questo breakpoint si applica (mobile-first, come min-width CSS). */
-  readonly minWidth: number;
+  readonly minWidth?: number;
+  readonly maxWidth?: number;
+  readonly orientation?: "portrait" | "landscape";
+  readonly minHeight?: number;
+  readonly maxHeight?: number;
 }
 
 /**

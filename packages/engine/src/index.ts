@@ -29,6 +29,16 @@ export { History } from "./runtime/history.js";
 
 export { resolveNode, resolveDocument } from "./resolver/resolveNode.js";
 export type { ResolvedNode, ResolvedModel, ResolverContext, Breakpoint, BreakpointName } from "./resolver/types.js";
+/**
+ * Fase 6 (D-019): superficie pubblica minima e mirata sulle fasce - non
+ * `BREAKPOINTS` (l'array intero coi predicati resta interno, D-010
+ * invariato nella sostanza), solo i nomi e la relazione di cascata
+ * "più larga", perché renderer-react (consumer esterno reale) ne ha
+ * bisogno per il pulsante di cambio vista e per il congelamento
+ * Desktop-first - esattamente il trigger di rivalutazione che D-010 aveva
+ * già previsto esplicitamente.
+ */
+export { listBreakpointNames, widerBreakpoints, BASE_BREAKPOINT } from "./resolver/breakpoints.js";
 export {
   validateResolvedModel,
   assertValidResolvedModel,

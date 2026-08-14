@@ -1,6 +1,6 @@
-import { requireNode, resolveNode } from "@vicolobuilder/engine";
+import { requireNode, resolveNode, widerBreakpoints } from "@vicolobuilder/engine";
 import type { BreakpointName, Document, NodeId, UpdatePropsCommand } from "@vicolobuilder/engine";
-import { BASE_TIER, widerTiers } from "../breakpoints.js";
+import { BASE_TIER } from "../breakpoints.js";
 
 /**
  * Fase 5, Blocco D — regola Desktop-first di scrittura (PRODUCT_DESIGN.md,
@@ -28,22 +28,27 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /**
  * Ricostruisce `props.responsive` per una scrittura di geometria su una
  * fascia diversa dalla base (Opzione A, "congelamento"): scrive l'edit sulla
- * fascia attiva, poi - per ciascuna chiave cambiata priva già di un override
- * proprio sulla prima fascia più larga - congela lì il valore RISOLTO per
- * quella fascia (via `resolveNode`, non il valore di base), così l'edit non
- * si propaga verso le fasce più larghe (rischio descritto in
- * PRODUCT_DESIGN.md sez. 6, Decisione 1).
+ * fascia attiva, poi - per ciascuna fascia in cui l'edit si propagherebbe
+ * (`widerBreakpoints`, Fase 6/D-019) e per ciascuna chiave cambiata priva
+ * già di un override proprio LÌ - congela il valore RISOLTO per quella
+ * fascia (via `resolveNode`, non il valore di base), così l'edit non si
+ * propaga oltre (rischio descritto in PRODUCT_DESIGN.md sez. 6, Decisione 1).
  *
- * Perché basta esaminare solo la prima fascia più larga priva di override
- * proprio (non serve iterare oltre): una volta che una chiave ha un
- * override esplicito su una fascia T (preesistente o appena congelato),
- * quell'override vince per costruzione su ogni fascia ancora più larga di T
- * nella cascata del resolver (`cascadingBreakpoints`, ordine crescente,
- * l'ultimo che scrive vince) - quindi ogni fascia oltre T resta corretta
- * senza bisogno di un proprio congelamento esplicito. La `for` sotto
- * comunque itera esplicitamente (non si ferma "per assunzione" al primo
- * giro) così il codice resta corretto anche se in futuro le fasce
- * diventassero più di 3 (PRODUCT_DESIGN.md, sez. 8).
+ * Fase 6: `widerBreakpoints` restituisce solo i vicini DIRETTI (un passo),
+ * non l'intera catena - e questo basta, non serve risalire oltre: una volta
+ * che una fascia T ha un override esplicito (preesistente o appena
+ * congelato), quell'override vince per costruzione ogni volta che T stessa
+ * compare nella cascata di una fascia ancora più larga - quindi qualunque
+ * fascia "a valle" di T riceve comunque il valore corretto quando viene
+ * risolta, senza bisogno di congelarla esplicitamente qui.
+ *
+ * A differenza della Fase 5 (dove ogni fascia aveva AL PIÙ una fascia più
+ * larga, una semplice catena), Fase 6 introduce fasce con PIÙ vicini diretti
+ * indipendenti in linea di principio - per questo ogni fascia restituita da
+ * `widerBreakpoints` viene congelata INDIPENDENTEMENTE con l'intero insieme
+ * di chiavi cambiate (non un pool che si esaurisce dopo la prima fascia
+ * processata, bug presente nella versione Fase 5 e mai emerso allora solo
+ * perché nessuna fascia aveva più di un vicino diretto).
  */
 function buildFrozenResponsive(
   document: Document,
@@ -60,13 +65,9 @@ function buildFrozenResponsive(
     : {};
   nextResponsive[activeBreakpoint] = { ...existingActiveTier, ...geometryChanges };
 
-  let remaining: readonly string[] = Object.keys(geometryChanges);
-
-  for (const tier of widerTiers(activeBreakpoint)) {
-    if (remaining.length === 0) break;
-
+  for (const tier of widerBreakpoints(activeBreakpoint)) {
     const tierExisting = isPlainObject(existingResponsive[tier]) ? existingResponsive[tier] : undefined;
-    const toFreeze = remaining.filter((key) => tierExisting?.[key] === undefined);
+    const toFreeze = Object.keys(geometryChanges).filter((key) => tierExisting?.[key] === undefined);
 
     if (toFreeze.length > 0) {
       const resolvedAtTier = resolveNode(node, { breakpoint: tier }).resolvedProps;
@@ -74,12 +75,6 @@ function buildFrozenResponsive(
       for (const key of toFreeze) freeze[key] = resolvedAtTier[key];
       nextResponsive[tier] = { ...(tierExisting ?? {}), ...freeze };
     }
-
-    // Ogni chiave rimasta è ora "sistemata" a questa fascia, o perché aveva
-    // già un override proprio (tierExisting), o perché l'abbiamo appena
-    // congelata (toFreeze): nessuna delle due deve essere ricontrollata su
-    // una fascia ancora più larga (vedi il commento sopra la funzione).
-    remaining = [];
   }
 
   return nextResponsive;

@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDocument, applyCommand, serializeDocument, exportIR } from "@vicolobuilder/engine";
+import { createDocument, applyCommand, serializeDocument, exportIR, CURRENT_SCHEMA_VERSION } from "@vicolobuilder/engine";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BIN_PATH = join(__dirname, "..", "..", "dist", "bin", "builder.js");
@@ -37,7 +37,7 @@ function deepChainJson(depth: number): string {
     });
   }
   return JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     rootPageId: "p",
     pages: [{ id: "p", name: "Home", rootNodeId: "n0" }],
     nodes,
@@ -94,7 +94,7 @@ describe("builder export — binario compilato", () => {
   it("fallisce in modo pulito su un Document strutturalmente invalido (ciclo)", () => {
     const dir = mkdtempSync(join(tmpdir(), "builder-export-"));
     const json = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       rootPageId: "p",
       pages: [{ id: "p", name: "Home", rootNodeId: "root" }],
       nodes: [

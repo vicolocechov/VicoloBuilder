@@ -18,11 +18,11 @@ describe("History — activeBreakpoint", () => {
 
   it("setActiveBreakpoint() cambia la vista attiva a un breakpoint noto", () => {
     const history = new History(baseDocument());
-    history.setActiveBreakpoint("tablet");
-    expect(history.activeBreakpoint).toBe("tablet");
+    history.setActiveBreakpoint("tablet-verticale");
+    expect(history.activeBreakpoint).toBe("tablet-verticale");
 
-    history.setActiveBreakpoint("mobile");
-    expect(history.activeBreakpoint).toBe("mobile");
+    history.setActiveBreakpoint("mobile-verticale");
+    expect(history.activeBreakpoint).toBe("mobile-verticale");
   });
 
   it("lancia su un nome di breakpoint sconosciuto, e non cambia la vista attiva", () => {
@@ -35,7 +35,7 @@ describe("History — activeBreakpoint", () => {
     const history = new History(baseDocument());
     const documentBefore = history.document;
 
-    history.setActiveBreakpoint("tablet");
+    history.setActiveBreakpoint("tablet-verticale");
 
     expect(history.canUndo).toBe(false);
     expect(history.canRedo).toBe(false);
@@ -45,19 +45,19 @@ describe("History — activeBreakpoint", () => {
   it("undo/redo non toccano activeBreakpoint", () => {
     const history = new History(baseDocument());
     history.execute({ type: "CREATE_NODE", nodeId: "a", nodeType: "box", parentId: "root" });
-    history.setActiveBreakpoint("mobile");
+    history.setActiveBreakpoint("mobile-verticale");
 
     history.undo();
-    expect(history.activeBreakpoint).toBe("mobile");
+    expect(history.activeBreakpoint).toBe("mobile-verticale");
 
     history.redo();
-    expect(history.activeBreakpoint).toBe("mobile");
+    expect(history.activeBreakpoint).toBe("mobile-verticale");
   });
 
   it("execute() non azzera né altera activeBreakpoint", () => {
     const history = new History(baseDocument());
-    history.setActiveBreakpoint("tablet");
+    history.setActiveBreakpoint("tablet-verticale");
     history.execute({ type: "CREATE_NODE", nodeId: "a", nodeType: "box", parentId: "root" });
-    expect(history.activeBreakpoint).toBe("tablet");
+    expect(history.activeBreakpoint).toBe("tablet-verticale");
   });
 });

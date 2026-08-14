@@ -68,7 +68,7 @@ describe("resolveDocument — variant resolution (matrice #9, RFC-000 §8)", () 
       props: { content: "ciao" },
     });
 
-    const model = resolveDocument(doc, { breakpoint: "mobile" });
+    const model = resolveDocument(doc, { breakpoint: "mobile-verticale" });
     expect(model.nodes.get("txt")!.resolvedProps).toEqual({ content: "ciao" });
   });
 });

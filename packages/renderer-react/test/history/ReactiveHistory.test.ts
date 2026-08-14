@@ -45,8 +45,8 @@ describe("ReactiveHistory", () => {
     const listener = vi.fn();
     store.subscribe(listener);
 
-    store.setActiveBreakpoint("mobile");
-    expect(store.getActiveBreakpoint()).toBe("mobile");
+    store.setActiveBreakpoint("mobile-verticale");
+    expect(store.getActiveBreakpoint()).toBe("mobile-verticale");
     expect(listener).toHaveBeenCalledTimes(1);
   });
 

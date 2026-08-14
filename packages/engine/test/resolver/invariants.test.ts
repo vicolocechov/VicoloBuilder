@@ -37,7 +37,7 @@ describe("validateResolvedModel — caso reale", () => {
 describe("validateResolvedModel — violazioni costruite a mano (il grafo del Document non le produce mai oggi)", () => {
   function base(): ResolvedModel {
     const doc = createDocument({ rootNodeId: "root" });
-    return resolveDocument(doc, { breakpoint: "mobile" });
+    return resolveDocument(doc, { breakpoint: "mobile-verticale" });
   }
 
   it("flags a childrenId inesistente", () => {

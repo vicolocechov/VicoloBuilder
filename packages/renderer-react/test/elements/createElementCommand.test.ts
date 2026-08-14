@@ -85,9 +85,10 @@ describe("resolveNewElementParent", () => {
   it("rispetta un override responsive di layoutMode alla fascia attiva (risolto, non solo il prop base)", () => {
     let doc = baseDoc();
     // props base: nessun layoutMode (equivale a "pila"). Override esplicito
-    // SOLO sulla fascia desktop (la più larga: non si propaga a mobile
-    // nella cascata mobile-first del resolver - vedi DECISIONS.md D-018 -
-    // a differenza di un override lasciato su una fascia stretta).
+    // SOLO sulla fascia desktop (la più larga: non si propaga a
+    // mobile-verticale - diramazioni di orientamento diverse, vedi
+    // DECISIONS.md D-019 - a differenza di un override lasciato su una
+    // fascia stretta della STESSA diramazione).
     doc = applyCommand(doc, {
       type: "CREATE_NODE",
       nodeId: "canvas",
@@ -95,7 +96,7 @@ describe("resolveNewElementParent", () => {
       parentId: "root",
       props: { responsive: { desktop: { layoutMode: "libero" } } },
     });
-    expect(resolveNewElementParent(doc, "root", "canvas", "mobile")).toBe("root");
+    expect(resolveNewElementParent(doc, "root", "canvas", "mobile-verticale")).toBe("root");
     expect(resolveNewElementParent(doc, "root", "canvas", "desktop")).toBe("canvas");
   });
 });

@@ -9,14 +9,27 @@ import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 
 /**
- * Larghezza di anteprima per fascia (Fase 5, Blocco D). Non è la stessa
- * cosa della "device preview" descritta in PRODUCT_DESIGN.md sez. 10 (che
- * resta un dato UI puro, non ancora costruito): qui è solo il numero che
- * serve a `computeLayout` per calcolare qualcosa di visibile per ciascuna
- * delle 3 fasce salvate. Costante locale, non una nuova decisione di
- * prodotto - segnalata come tale.
+ * Larghezza/altezza di anteprima per fascia (Fase 6, Punto 3 dell'analisi
+ * delle fondamenta). Non è la stessa cosa della "device preview" descritta
+ * in PRODUCT_DESIGN.md sez. 10 (che resta un dato UI puro, non ancora
+ * costruito): qui sono solo i due numeri che servono a `computeLayout`
+ * (larghezza) e al contenitore del Canvas (altezza minima) per mostrare
+ * qualcosa di visivamente coerente con ciascuna delle 7 fasce - non un vero
+ * frame di dispositivo (niente clipping, niente rotazione). Ogni coppia
+ * rispetta il predicato reale della propria fascia (D-019) - verificato a
+ * mano, non a caso: es. "mobile-orizzontale" ha altezza <= 550 (il vincolo
+ * `maxHeight` della fascia), "tablet-verticale" ha altezza > larghezza
+ * (portrait). Costanti locali, non una nuova decisione di prodotto.
  */
-const PREVIEW_WIDTH: Record<BreakpointName, number> = { mobile: 375, tablet: 834, desktop: 1280 };
+const PREVIEW_SIZE: Record<BreakpointName, { readonly width: number; readonly height: number }> = {
+  "mobile-verticale": { width: 375, height: 812 },
+  "mobile-orizzontale": { width: 700, height: 400 },
+  "tablet-verticale": { width: 834, height: 1194 },
+  "tablet-orizzontale": { width: 1024, height: 768 },
+  "laptop-compatto": { width: 1100, height: 700 },
+  "desktop-compatto": { width: 1300, height: 800 },
+  desktop: { width: 1600, height: 900 },
+};
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per
@@ -59,7 +72,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [resizeDelta, setResizeDelta] = useState({ dx: 0, dy: 0 });
 
   const model = useMemo(() => resolveDocument(document, { breakpoint: activeBreakpoint }), [document, activeBreakpoint]);
-  const viewportWidth = PREVIEW_WIDTH[activeBreakpoint] ?? 1280;
+  const previewSize = PREVIEW_SIZE[activeBreakpoint] ?? { width: 1600, height: 900 };
+  const viewportWidth = previewSize.width;
   // Fase 5, Blocco E: `pageId` opzionale (già supportato da computeLayout,
   // non usato finora) - se assente, invariato rispetto al Blocco D
   // (computeLayout ricade sulla pagina radice del ResolvedModel).
@@ -267,7 +281,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       style={{
         position: "relative",
         width: viewportWidth,
-        height: Math.max(box.height, 40),
+        height: Math.max(box.height, previewSize.height),
         background: "#ffffff",
         boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
       }}

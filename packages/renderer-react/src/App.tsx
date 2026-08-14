@@ -7,7 +7,7 @@ import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
 import { PageManager } from "./pages/PageManager.js";
 import { ElementPalette } from "./elements/ElementPalette.js";
-import { TIER_ORDER } from "./breakpoints.js";
+import { TIER_NAMES } from "./breakpoints.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
 function buildDemoDocument(): Document {
@@ -47,8 +47,8 @@ export function App(): JSX.Element {
         <PageManager store={store} activePageId={activePageId} onActivePageChange={setActivePageId} />
       </div>
       <div style={{ flex: 1, overflow: "auto", padding: 16, background: "#f3f4f6" }}>
-        <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
-          {TIER_ORDER.map((tier) => (
+        <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {TIER_NAMES.map((tier) => (
             <button
               key={tier}
               onClick={() => store.setActiveBreakpoint(tier)}
