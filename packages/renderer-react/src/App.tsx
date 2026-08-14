@@ -7,6 +7,7 @@ import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
 import { PageManager } from "./pages/PageManager.js";
 import { ElementPalette } from "./elements/ElementPalette.js";
+import { Preview } from "./preview/Preview.js";
 import { TIER_NAMES } from "./breakpoints.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
@@ -41,6 +42,10 @@ export function App(): JSX.Element {
   // stato locale di App, non di History (vedi commento in PageManager.tsx).
   const [activePageId, setActivePageId] = useState<PageId>(document.rootPageId);
 
+  // Fase 7, Punto 3/6: come `activePageId`, stato locale (non History) -
+  // la Preview sostituisce il Canvas quando attiva, non gira in parallelo.
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
       <div style={{ width: 260, borderRight: "1px solid #e5e7eb", overflow: "auto" }}>
@@ -63,9 +68,18 @@ export function App(): JSX.Element {
           <button onClick={() => store.redo()} disabled={!canRedo}>
             Redo
           </button>
+          <button onClick={() => setPreviewOpen(true)} disabled={previewOpen}>
+            Anteprima
+          </button>
         </div>
-        <ElementPalette store={store} activePageId={activePageId} />
-        <Canvas store={store} pageId={activePageId} />
+        {previewOpen ? (
+          <Preview store={store} initialPageId={activePageId} onClose={() => setPreviewOpen(false)} />
+        ) : (
+          <>
+            <ElementPalette store={store} activePageId={activePageId} />
+            <Canvas store={store} pageId={activePageId} />
+          </>
+        )}
       </div>
       <div style={{ width: 260, borderLeft: "1px solid #e5e7eb", overflow: "auto" }}>
         <PropertyPanel store={store} />

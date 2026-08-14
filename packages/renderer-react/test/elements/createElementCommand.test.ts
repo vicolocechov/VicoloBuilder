@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, createDocument } from "@vicolobuilder/engine";
+import { applyCommand, computeLayout, createDocument, resolveDocument } from "@vicolobuilder/engine";
 import {
   buildCreateElementCommand,
   elementIdBase,
@@ -14,6 +14,7 @@ describe("elementIdBase", () => {
   it("restituisce una base leggibile per ciascun tipo", () => {
     expect(elementIdBase("text")).toBe("testo");
     expect(elementIdBase("container")).toBe("contenitore");
+    expect(elementIdBase("scene")).toBe("scena");
   });
 });
 
@@ -38,6 +39,32 @@ describe("buildCreateElementCommand", () => {
       parentId: "root",
       props: { x: 20, y: 20, width: 200, height: 120, layoutMode: "libero" },
     });
+  });
+
+  it("costruisce un CREATE_NODE 'scene' con x/y/width/height espliciti (Fase 7: serve anche se il genitore è in modalità 'libero', vedi createElementCommand.ts)", () => {
+    const command = buildCreateElementCommand("scene", "scena-1", "root");
+    expect(command).toEqual({
+      type: "CREATE_NODE",
+      nodeId: "scena-1",
+      nodeType: "scene",
+      parentId: "root",
+      props: { x: 0, y: 0, width: 800, height: 400 },
+    });
+  });
+
+  it("una 'scene' non manda in crash computeLayout sotto una radice pagina in modalità 'libero' (regressione: bug trovato verificando in browser)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("scene", "scena-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+  });
+
+  it("una 'scene' non manda in crash computeLayout sotto una radice pagina in modalità 'pila' (default)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, buildCreateElementCommand("scene", "scena-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
   });
 });
 

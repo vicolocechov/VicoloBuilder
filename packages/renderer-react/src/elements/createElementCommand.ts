@@ -6,8 +6,15 @@ import type { BreakpointName, CreateNodeCommand, Document, NodeId } from "@vicol
  * solo "testo" e "contenitore" in questo giro. "Immagine" rimandata
  * esplicitamente (toccherebbe l'elenco chiuso CONTENT_KEYS in
  * write/buildUpdatePropsCommand.ts, che resta bloccato com'è).
+ *
+ * Fase 7 — aggiunto "scene": nessuno schema dedicato nel Document Model
+ * (`DocumentNode.type` resta una stringa libera, invariata da Fase 1 - qui
+ * usata col valore "scene" così come finora con "box"/"text"), solo una
+ * convenzione che il motore di navigazione (preview/scenes.ts) riconosce
+ * filtrando i figli diretti della radice pagina per `node.type === "scene"`
+ * (analisi Fase 7, Punto 1 - Opzione B, DECISIONS.md).
  */
-export type ElementType = "text" | "container";
+export type ElementType = "text" | "container" | "scene";
 
 /**
  * Valori di default approvati esplicitamente (versione uniforme, non
@@ -20,6 +27,20 @@ export type ElementType = "text" | "container";
 const ELEMENT_DEFAULTS: Record<ElementType, { readonly nodeType: string; readonly idBase: string; readonly props: Readonly<Record<string, unknown>> }> = {
   text: { nodeType: "text", idBase: "testo", props: { x: 20, y: 20, width: 160, height: 40, text: "Testo" } },
   container: { nodeType: "box", idBase: "contenitore", props: { x: 20, y: 20, width: 200, height: 120, layoutMode: "libero" } },
+  // x/y/width/height tutti espliciti: una scena è sempre figlia diretta
+  // della radice pagina (vedi ElementPalette.tsx), ma la radice PUÒ essere
+  // in modalità "libero" (es. il documento demo di App.tsx) oppure "pila"
+  // (default per una pagina nuova) - non si può assumere quale delle due.
+  // In modalità "pila" del genitore, `x`/`y`/`width` qui sono ignorati
+  // (widthFromParent vince sempre, vedi layout/computeLayout.ts) e solo
+  // `height` conta. In modalità "libero" del genitore, invece, un figlio
+  // senza figli propri (una scena appena creata lo è) DEVE avere `width`
+  // esplicito - nessun default (Decisione 3, D-014/D-015) - o
+  // `computeLayout` lancia. Bug trovato verificando in browser (documento
+  // demo, radice "libero") con solo `height` impostata: non coperto dai
+  // test unitari esistenti, che non creano mai un elemento sotto una
+  // radice "libero".
+  scene: { nodeType: "scene", idBase: "scena", props: { x: 0, y: 0, width: 800, height: 400 } },
 };
 
 export function elementIdBase(elementType: ElementType): string {

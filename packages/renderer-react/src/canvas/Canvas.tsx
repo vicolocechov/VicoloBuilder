@@ -1,35 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
-import type { BreakpointName, NodeId, PageId } from "@vicolobuilder/engine";
+import type { NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxes.js";
 import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
-
-/**
- * Larghezza/altezza di anteprima per fascia (Fase 6, Punto 3 dell'analisi
- * delle fondamenta). Non è la stessa cosa della "device preview" descritta
- * in PRODUCT_DESIGN.md sez. 10 (che resta un dato UI puro, non ancora
- * costruito): qui sono solo i due numeri che servono a `computeLayout`
- * (larghezza) e al contenitore del Canvas (altezza minima) per mostrare
- * qualcosa di visivamente coerente con ciascuna delle 7 fasce - non un vero
- * frame di dispositivo (niente clipping, niente rotazione). Ogni coppia
- * rispetta il predicato reale della propria fascia (D-019) - verificato a
- * mano, non a caso: es. "mobile-orizzontale" ha altezza <= 550 (il vincolo
- * `maxHeight` della fascia), "tablet-verticale" ha altezza > larghezza
- * (portrait). Costanti locali, non una nuova decisione di prodotto.
- */
-const PREVIEW_SIZE: Record<BreakpointName, { readonly width: number; readonly height: number }> = {
-  "mobile-verticale": { width: 375, height: 812 },
-  "mobile-orizzontale": { width: 700, height: 400 },
-  "tablet-verticale": { width: 834, height: 1194 },
-  "tablet-orizzontale": { width: 1024, height: 768 },
-  "laptop-compatto": { width: 1100, height: 700 },
-  "desktop-compatto": { width: 1300, height: 800 },
-  desktop: { width: 1600, height: 900 },
-};
+import { PREVIEW_SIZE } from "../previewSize.js";
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per
