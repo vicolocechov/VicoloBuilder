@@ -38,7 +38,17 @@ export type ElementType = "text" | "container" | "scene" | "griglia";
  * funzione), non per comodità implementativa (DECISIONS.md, D-015).
  */
 const ELEMENT_DEFAULTS: Record<ElementType, { readonly nodeType: string; readonly idBase: string; readonly props: Readonly<Record<string, unknown>> }> = {
-  text: { nodeType: "text", idBase: "testo", props: { x: 20, y: 20, width: 160, height: 40, text: "Testo" } },
+  // Fase 10 — `fontSize` come stringa CSS `clamp()` letterale, opaca per
+  // l'Engine (stesso trattamento di `text`/`color` - nessuna validazione,
+  // nessuna interpretazione qui: solo il Renderer la assegna a
+  // `style.fontSize`, vedi Canvas.tsx/Preview.tsx). Valore di esempio, non
+  // vincolante - dimostra il meccanismo, non una scala tipografica del
+  // prodotto (analisi Fase 10, Punto 1 - Opzione A).
+  text: {
+    nodeType: "text",
+    idBase: "testo",
+    props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" },
+  },
   container: { nodeType: "box", idBase: "contenitore", props: { x: 20, y: 20, width: 200, height: 120, layoutMode: "libero" } },
   // x/y/width/height tutti espliciti: una scena è sempre figlia diretta
   // della radice pagina (vedi ElementPalette.tsx), ma la radice PUÒ essere

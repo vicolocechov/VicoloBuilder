@@ -20,14 +20,14 @@ describe("elementIdBase", () => {
 });
 
 describe("buildCreateElementCommand", () => {
-  it("costruisce un CREATE_NODE 'text' con i default approvati", () => {
+  it("costruisce un CREATE_NODE 'text' con i default approvati, incluso 'fontSize' (Fase 10 - stringa clamp() letterale)", () => {
     const command = buildCreateElementCommand("text", "testo-1", "root");
     expect(command).toEqual({
       type: "CREATE_NODE",
       nodeId: "testo-1",
       nodeType: "text",
       parentId: "root",
-      props: { x: 20, y: 20, width: 160, height: 40, text: "Testo" },
+      props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" },
     });
   });
 

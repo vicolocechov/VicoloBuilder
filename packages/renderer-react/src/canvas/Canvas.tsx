@@ -195,6 +195,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
 
     const backgroundColor = typeof resolvedNode.resolvedProps.color === "string" ? resolvedNode.resolvedProps.color : undefined;
     const text = typeof resolvedNode.resolvedProps.text === "string" ? resolvedNode.resolvedProps.text : null;
+    // Fase 10: stringa CSS opaca (es. "clamp(16px, 2vw, 24px)") - nessuna
+    // interpretazione qui, solo passata a `style.fontSize` così com'è
+    // (stesso trattamento di `color`). Fallback al valore fisso preesistente
+    // se il nodo non ha il prop (documenti creati prima di questa fase).
+    const fontSize = typeof resolvedNode.resolvedProps.fontSize === "string" ? resolvedNode.resolvedProps.fontSize : 12;
 
     return (
       <div
@@ -252,7 +257,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           background: backgroundColor ?? "transparent",
           cursor: caps.canMoveXY ? "move" : "default",
           userSelect: "none",
-          fontSize: 12,
+          fontSize,
           padding: 4,
         }}
       >

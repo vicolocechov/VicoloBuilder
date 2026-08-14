@@ -30,6 +30,9 @@ function renderStaticBox(box: Box, resolvedProps: (nodeId: string) => Record<str
     const props = resolvedProps(entry.box.nodeId) ?? {};
     const backgroundColor = typeof props.color === "string" ? props.color : undefined;
     const text = typeof props.text === "string" ? props.text : null;
+    // Fase 10: stesso trattamento di Canvas.tsx - stringa CSS opaca (es.
+    // "clamp(...)"), fallback al valore fisso preesistente se assente.
+    const fontSize = typeof props.fontSize === "string" ? props.fontSize : 12;
     return (
       <div
         key={entry.box.nodeId}
@@ -41,7 +44,7 @@ function renderStaticBox(box: Box, resolvedProps: (nodeId: string) => Record<str
           height: entry.box.height,
           boxSizing: "border-box",
           background: backgroundColor ?? "transparent",
-          fontSize: 12,
+          fontSize,
           padding: 4,
         }}
       >
