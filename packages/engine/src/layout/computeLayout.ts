@@ -63,8 +63,28 @@ function requireResolvedNode(model: ResolvedModel, nodeId: string): ResolvedNode
   return node;
 }
 
-function ownLayoutMode(node: ResolvedNode): "pila" | "libero" {
-  return node.resolvedProps.layoutMode === "libero" ? "libero" : "pila";
+function ownLayoutMode(node: ResolvedNode): "pila" | "libero" | "griglia" {
+  if (node.resolvedProps.layoutMode === "libero") return "libero";
+  if (node.resolvedProps.layoutMode === "griglia") return "griglia";
+  return "pila";
+}
+
+/**
+ * `columns` obbligatoria per un nodo in modalità "griglia" (Fase 8, Punto 3
+ * dell'analisi: nessun default sensato - un default silenzioso, es. 1,
+ * trasformerebbe silenziosamente una griglia a card in una pila verticale).
+ * Stesso trattamento di `requireExplicitWidth` per la larghezza in "libero"
+ * (Decisione 3, D-015): un errore esplicito, non un fallback silenzioso.
+ */
+function requireColumns(node: ResolvedNode): number {
+  const raw = node.resolvedProps.columns;
+  if (typeof raw !== "number" || !Number.isFinite(raw) || !Number.isInteger(raw) || raw < 1) {
+    throw new Error(
+      `Layout: node "${node.id}" is in "griglia" mode and has no valid "columns" (a finite positive integer) ` +
+        `in resolvedProps. In "griglia" mode, "columns" is mandatory with no default (see DECISIONS.md).`,
+    );
+  }
+  return raw;
 }
 
 /**
@@ -139,10 +159,44 @@ function layoutNode(
     return { nodeId: node.id, x, y, width, height: cursorY - y, children, mode };
   }
 
-  // mode === "libero": i figli sono posizionati con un offset locale
-  // sommato all'ancora (x, y) di questo nodo (Decisione 2A). Nessuna
-  // larghezza viene propagata dall'alto ai figli: ognuno determina la
-  // propria in base a `layoutMode`.
+  if (mode === "griglia") {
+    // Fase 8: N colonne uguali (larghezza cella = (larghezza - gap*(N-1))/N)
+    // + gap uniforme, generalizzazione diretta di "pila" lungo un asse in
+    // più. I figli sono raggruppati in righe da `columns` elementi
+    // nell'ordine di `childrenIds` (stessa convenzione d'ordine di "pila" -
+    // nessun concetto di "cella": una griglia con 5 figli e 3 colonne ha
+    // 2 righe, l'ultima con 2 celle occupate e nessun placeholder per le
+    // 3 mancanti). Altezza di riga = altezza della sua cella più alta
+    // (non uniforme sull'intera griglia): ogni figlio determina la propria
+    // altezza con `layoutNode` esattamente come farebbe in "pila" (nessuna
+    // nuova primitiva di posizionamento).
+    const width = widthFromParent ?? requireExplicitWidth(node);
+    const columns = requireColumns(node);
+    const gap = asFiniteNumber(node.resolvedProps.gap) ?? 0;
+    const cellWidth = (width - gap * (columns - 1)) / columns;
+
+    const children: Box[] = [];
+    let cursorY = y;
+    for (let rowStart = 0; rowStart < node.childrenIds.length; rowStart += columns) {
+      const rowIds = node.childrenIds.slice(rowStart, rowStart + columns);
+      let rowHeight = 0;
+      rowIds.forEach((childId, column) => {
+        const childNode = requireResolvedNode(model, childId);
+        const childX = x + column * (cellWidth + gap);
+        const childBox = layoutNode(childNode, model, childX, cursorY, cellWidth);
+        children.push(childBox);
+        rowHeight = Math.max(rowHeight, childBox.height);
+      });
+      cursorY += rowHeight;
+      if (rowStart + columns < node.childrenIds.length) cursorY += gap;
+    }
+    return { nodeId: node.id, x, y, width, height: cursorY - y, children, mode };
+  }
+
+  // mode === "libero" (unico ramo rimasto): i figli sono posizionati con un
+  // offset locale sommato all'ancora (x, y) di questo nodo (Decisione 2A).
+  // Nessuna larghezza viene propagata dall'alto ai figli: ognuno determina
+  // la propria in base a `layoutMode`.
   const children: Box[] = [];
   for (const childId of node.childrenIds) {
     const childNode = requireResolvedNode(model, childId);

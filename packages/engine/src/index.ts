@@ -20,6 +20,7 @@ export type {
   CreateNodeCommand,
   UpdatePropsCommand,
   DeleteNodeCommand,
+  MoveNodeCommand,
   CreatePageCommand,
   DeletePageCommand,
   ReorderPagesCommand,

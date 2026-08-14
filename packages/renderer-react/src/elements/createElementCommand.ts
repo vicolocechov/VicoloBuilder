@@ -13,8 +13,21 @@ import type { BreakpointName, CreateNodeCommand, Document, NodeId } from "@vicol
  * convenzione che il motore di navigazione (preview/scenes.ts) riconosce
  * filtrando i figli diretti della radice pagina per `node.type === "scene"`
  * (analisi Fase 7, Punto 1 - Opzione B, DECISIONS.md).
+ *
+ * Fase 8 — aggiunto "griglia": un contenitore NORMALE come "contenitore"
+ * (`nodeType: "box"`, nessuna "cella" nel Document Model - principio
+ * corretto esplicitamente prima dell'implementazione) con
+ * `layoutMode: "griglia"`. A differenza di "scene", NON ha un parent fisso:
+ * segue la stessa regola di collocamento di "testo"/"contenitore"
+ * (`resolveNewElementParent` - dentro un contenitore libero selezionato,
+ * altrimenti la radice pagina), perché una griglia può stare ovunque un
+ * contenitore normale può stare. Nasce vuota (nessun figlio pre-creato,
+ * `columns`/`gap` sono un default di comodo per quando arriveranno figli
+ * via MOVE_NODE - vedi analisi Fase 8 su MOVE_NODE) - finché è vuota si
+ * comporta come un box qualunque (ramo "foglia" di `computeLayout`, non
+ * legge affatto `columns`/`gap`).
  */
-export type ElementType = "text" | "container" | "scene";
+export type ElementType = "text" | "container" | "scene" | "griglia";
 
 /**
  * Valori di default approvati esplicitamente (versione uniforme, non
@@ -41,6 +54,15 @@ const ELEMENT_DEFAULTS: Record<ElementType, { readonly nodeType: string; readonl
   // test unitari esistenti, che non creano mai un elemento sotto una
   // radice "libero".
   scene: { nodeType: "scene", idBase: "scena", props: { x: 0, y: 0, width: 800, height: 400 } },
+  // x/y/width/height espliciti per lo stesso motivo di "scene" (Punto sopra:
+  // il genitore selezionato/la radice pagina possono essere in modalità
+  // "libero"). `columns`/`gap` sono un default [Proposta, non vincolante] -
+  // ignorati finché la griglia è vuota (ramo "foglia" di computeLayout).
+  griglia: {
+    nodeType: "box",
+    idBase: "griglia",
+    props: { x: 20, y: 20, width: 600, height: 200, layoutMode: "griglia", columns: 3, gap: 16 },
+  },
 };
 
 export function elementIdBase(elementType: ElementType): string {

@@ -15,6 +15,7 @@ describe("elementIdBase", () => {
     expect(elementIdBase("text")).toBe("testo");
     expect(elementIdBase("container")).toBe("contenitore");
     expect(elementIdBase("scene")).toBe("scena");
+    expect(elementIdBase("griglia")).toBe("griglia");
   });
 });
 
@@ -63,6 +64,32 @@ describe("buildCreateElementCommand", () => {
   it("una 'scene' non manda in crash computeLayout sotto una radice pagina in modalità 'pila' (default)", () => {
     let doc = baseDoc();
     doc = applyCommand(doc, buildCreateElementCommand("scene", "scena-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+  });
+
+  it("costruisce un CREATE_NODE 'griglia' (box + layoutMode:'griglia') con i default approvati, nessun figlio pre-creato", () => {
+    const command = buildCreateElementCommand("griglia", "griglia-1", "root");
+    expect(command).toEqual({
+      type: "CREATE_NODE",
+      nodeId: "griglia-1",
+      nodeType: "box",
+      parentId: "root",
+      props: { x: 20, y: 20, width: 600, height: 200, layoutMode: "griglia", columns: 3, gap: 16 },
+    });
+  });
+
+  it("una 'griglia' appena creata (vuota) non manda in crash computeLayout sotto una radice 'libero' (stessa regressione già coperta per 'scene')", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("griglia", "griglia-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+  });
+
+  it("una 'griglia' appena creata (vuota) non manda in crash computeLayout sotto una radice 'pila' (default)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, buildCreateElementCommand("griglia", "griglia-1", "root"));
     const model = resolveDocument(doc, { breakpoint: "desktop" });
     expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
   });

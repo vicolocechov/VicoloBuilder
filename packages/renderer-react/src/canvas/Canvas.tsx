@@ -49,6 +49,15 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [resizeDrag, setResizeDrag] = useState<ResizeDrag | null>(null);
   const [resizeDelta, setResizeDelta] = useState({ dx: 0, dy: 0 });
 
+  // Fase 8 (analisi MOVE_NODE, Punto 6 - Opzione B, azione esplicita
+  // minima): "Sposta dentro" è un'azione a due click, non un
+  // drag-and-drop - seleziona la sorgente, poi clicca il contenitore di
+  // destinazione. Stato locale del Canvas, come gli altri gesti di
+  // editing (moveDrag/resizeDrag): non è stato di sessione al livello di
+  // selection/activeBreakpoint, è transitorio a un singolo gesto utente.
+  const [moveSourceId, setMoveSourceId] = useState<NodeId | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
+
   const model = useMemo(() => resolveDocument(document, { breakpoint: activeBreakpoint }), [document, activeBreakpoint]);
   const previewSize = PREVIEW_SIZE[activeBreakpoint] ?? { width: 1600, height: 900 };
   const viewportWidth = previewSize.width;
@@ -193,6 +202,30 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         data-node-id={entry.box.nodeId}
         onClick={(e) => {
           e.stopPropagation();
+          if (moveSourceId !== null) {
+            // Un secondo click sulla sorgente stessa annulla (oltre al
+            // pulsante "Annulla" della barra di stato) - scorciatoia, non
+            // l'unico modo di uscire dalla modalità.
+            if (moveSourceId === entry.box.nodeId) {
+              setMoveSourceId(null);
+              return;
+            }
+            try {
+              store.execute({ type: "MOVE_NODE", nodeId: moveSourceId, newParentId: entry.box.nodeId });
+              setMoveError(null);
+            } catch (err) {
+              // Fase 8 (analisi MOVE_NODE, Punto 2): un tentativo non valido
+              // (es. il bersaglio è un discendente della sorgente) è
+              // respinto da CommandError - qui va solo mostrato, non
+              // rilanciato (a differenza del resto del Canvas, che oggi non
+              // intercetta mai gli errori di store.execute - qui serve,
+              // perché il bersaglio è scelto dall'utente via click e un
+              // errore è un esito plausibile, non un bug).
+              setMoveError(err instanceof Error ? err.message : String(err));
+            }
+            setMoveSourceId(null);
+            return;
+          }
           store.select(entry.box.nodeId);
         }}
         onPointerDown={(e) => {
@@ -224,6 +257,28 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         }}
       >
         {text}
+        {isSelected && moveSourceId === null && entry.parentBox !== null ? (
+          // `entry.parentBox !== null` esclude la radice della pagina: non
+          // spostabile (Engine: MOVE_NODE rifiuta un nodo con parentId
+          // null), meglio non offrire l'azione che farla fallire.
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMoveSourceId(entry.box.nodeId);
+              setMoveError(null);
+            }}
+            style={{
+              position: "absolute",
+              top: -22,
+              left: 0,
+              fontSize: 10,
+              lineHeight: 1,
+              padding: "2px 4px",
+            }}
+          >
+            Sposta dentro…
+          </button>
+        ) : null}
         {isSelected && (caps.canResizeWidth || caps.canResizeHeight) ? (
           <div
             onPointerDown={(e) => {
@@ -254,48 +309,71 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   }
 
   return (
-    <div
-      onClick={() => store.deselect()}
-      style={{
-        position: "relative",
-        width: viewportWidth,
-        height: Math.max(box.height, previewSize.height),
-        background: "#ffffff",
-        boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-      }}
-    >
-      {entries.map(renderBox)}
-      {/* Linee guida: attraversano l'intero Canvas per semplicità di
-          rendering - lo snap che le genera resta comunque limitato a
-          fratelli + centro del contenitore libero immediato (vedi
-          alignmentGuides.ts), solo l'estensione visiva della linea è
-          semplificata. */}
-      {guides.x ? (
-        <div
-          style={{
-            position: "absolute",
-            left: guides.x.position,
-            top: 0,
-            width: 1,
-            height: "100%",
-            background: "#ec4899",
-            pointerEvents: "none",
-          }}
-        />
+    <>
+      {moveSourceId !== null ? (
+        <div style={{ marginBottom: 8, fontSize: 12, display: "flex", gap: 8, alignItems: "center" }}>
+          <span>
+            Sposto <code>{moveSourceId}</code>: clicca il contenitore di destinazione (clicca di nuovo l&apos;elemento
+            per annullare).
+          </span>
+          <button onClick={() => setMoveSourceId(null)}>Annulla</button>
+        </div>
       ) : null}
-      {guides.y ? (
-        <div
-          style={{
-            position: "absolute",
-            top: guides.y.position,
-            left: 0,
-            height: 1,
-            width: "100%",
-            background: "#ec4899",
-            pointerEvents: "none",
-          }}
-        />
+      {moveError ? (
+        <div style={{ marginBottom: 8, fontSize: 12, color: "#b91c1c", display: "flex", gap: 8, alignItems: "center" }}>
+          <span>Spostamento non riuscito: {moveError}</span>
+          <button onClick={() => setMoveError(null)}>OK</button>
+        </div>
       ) : null}
-    </div>
+      <div
+        onClick={() => {
+          if (moveSourceId !== null) {
+            setMoveSourceId(null);
+            return;
+          }
+          store.deselect();
+        }}
+        style={{
+          position: "relative",
+          width: viewportWidth,
+          height: Math.max(box.height, previewSize.height),
+          background: "#ffffff",
+          boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+        }}
+      >
+        {entries.map(renderBox)}
+        {/* Linee guida: attraversano l'intero Canvas per semplicità di
+            rendering - lo snap che le genera resta comunque limitato a
+            fratelli + centro del contenitore libero immediato (vedi
+            alignmentGuides.ts), solo l'estensione visiva della linea è
+            semplificata. */}
+        {guides.x ? (
+          <div
+            style={{
+              position: "absolute",
+              left: guides.x.position,
+              top: 0,
+              width: 1,
+              height: "100%",
+              background: "#ec4899",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+        {guides.y ? (
+          <div
+            style={{
+              position: "absolute",
+              top: guides.y.position,
+              left: 0,
+              height: 1,
+              width: "100%",
+              background: "#ec4899",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
+      </div>
+    </>
   );
 }

@@ -13,6 +13,7 @@ export type Command =
   | CreateNodeCommand
   | UpdatePropsCommand
   | DeleteNodeCommand
+  | MoveNodeCommand
   | CreatePageCommand
   | DeletePageCommand
   | ReorderPagesCommand;
@@ -37,6 +38,36 @@ export interface UpdatePropsCommand {
 export interface DeleteNodeCommand {
   readonly type: "DELETE_NODE";
   readonly nodeId: NodeId;
+}
+
+/**
+ * Fase 8 (analisi dedicata, approvata): riassegna il genitore di un nodo
+ * ESISTENTE — capacità generale (vale per qualunque `layoutMode` del
+ * genitore, non specifica della griglia), non esisteva prima di Fase 8.
+ *
+ * `index`: posizione tra i figli del nuovo genitore, default fine lista.
+ * Se `newParentId` è lo STESSO genitore attuale del nodo (riordino),
+ * `index` è interpretato DOPO aver rimosso il nodo dalla lista - "posizione
+ * finale desiderata tra gli altri figli" (decisione esplicita del
+ * proprietario del prodotto, stesso comportamento intuitivo di un
+ * drag-and-drop di riordino).
+ *
+ * `props`: eccezione MINIMA, non una seconda via generale di scrittura -
+ * serve solo a permettere, nello stesso comando/passo di undo, di
+ * aggiornare le coordinate che uno spostamento tra contenitori può rendere
+ * insensate (x/y locali di D-015, relative all'ancora del contenitore
+ * ATTUALE - vedi analisi Fase 8). Qualunque altro aggiornamento di
+ * proprietà non strettamente necessario a questo scopo deve continuare a
+ * passare da `buildUpdatePropsCommand` (renderer-react), l'unico che
+ * applica il congelamento responsive Desktop-first (D-018) - vincolo
+ * esplicito del proprietario del prodotto, da non allargare in autonomia.
+ */
+export interface MoveNodeCommand {
+  readonly type: "MOVE_NODE";
+  readonly nodeId: NodeId;
+  readonly newParentId: NodeId;
+  readonly index?: number;
+  readonly props?: Readonly<Record<string, unknown>>;
 }
 
 /** Fase 5, Blocco A. Stesso schema di CreateNodeCommand: chi chiama fornisce gli id, per restare deterministico/replayabile. */
@@ -147,6 +178,65 @@ function applyDeleteNode(document: Document, command: DeleteNodeCommand): Docume
   return { ...document, nodes: nextNodes };
 }
 
+/**
+ * Vedi il commento su `MoveNodeCommand`. Riusa lo stesso pattern già usato
+ * da `applyCreateNode`/`applyDeleteNode`: più voci della stessa `Map` vengono
+ * scritte (qui: vecchio genitore, nuovo genitore, il nodo stesso) prima di
+ * restituire un unico `Document` nuovo - nessuno stato intermedio è mai
+ * osservabile da chi chiama. `assertValidDocument` (fine di `applyCommand`)
+ * resta la rete di sicurezza generica per MULTIPLE_PARENTS/ORPHAN_PARENT_LINK
+ * nel caso (già escluso dalle guardie qui sotto) di una scrittura incompleta.
+ */
+function applyMoveNode(document: Document, command: MoveNodeCommand): Document {
+  const node = requireNode(document, command.nodeId);
+  const newParent = requireNode(document, command.newParentId);
+
+  if (node.parentId === null) {
+    throw new CommandError(command, `Cannot move "${node.id}": it is a page root node (parentId is null).`);
+  }
+  if (command.newParentId === node.id) {
+    throw new CommandError(command, `Cannot move "${node.id}": a node cannot become its own parent.`);
+  }
+  // Guardia esplicita anti-ciclo (messaggio leggibile) prima di costruire il
+  // documento - il controllo generico dei cicli in assertValidDocument lo
+  // intercetterebbe comunque, ma dopo il fatto e con un errore meno chiaro.
+  if (collectSubtreeIds(document, node.id).includes(command.newParentId)) {
+    throw new CommandError(
+      command,
+      `Cannot move "${node.id}" into "${command.newParentId}": the target is a descendant of the node being moved (would create a cycle).`,
+    );
+  }
+
+  const oldParent = requireNode(document, node.parentId);
+  const nextNodes = new Map(document.nodes);
+
+  if (oldParent.id === newParent.id) {
+    // Riordino nello stesso genitore: `index` è già "posizione finale tra
+    // gli altri figli" (decisione esplicita) - si applica alla lista DOPO
+    // aver tolto il nodo, non prima.
+    const withoutNode = oldParent.childrenIds.filter((id) => id !== node.id);
+    const nextChildrenIds = [...withoutNode];
+    nextChildrenIds.splice(command.index ?? nextChildrenIds.length, 0, node.id);
+    nextNodes.set(oldParent.id, { ...oldParent, childrenIds: nextChildrenIds });
+  } else {
+    const nextOldChildrenIds = oldParent.childrenIds.filter((id) => id !== node.id);
+    nextNodes.set(oldParent.id, { ...oldParent, childrenIds: nextOldChildrenIds });
+
+    const nextNewChildrenIds = [...newParent.childrenIds];
+    nextNewChildrenIds.splice(command.index ?? nextNewChildrenIds.length, 0, node.id);
+    nextNodes.set(newParent.id, { ...newParent, childrenIds: nextNewChildrenIds });
+  }
+
+  const nextNode: DocumentNode = {
+    ...node,
+    parentId: command.newParentId,
+    props: command.props ? { ...node.props, ...command.props } : node.props,
+  };
+  nextNodes.set(nextNode.id, nextNode);
+
+  return { ...document, nodes: nextNodes };
+}
+
 function applyCreatePage(document: Document, command: CreatePageCommand): Document {
   if (document.pages.has(command.pageId)) {
     throw new CommandError(command, `Page id "${command.pageId}" already exists.`);
@@ -237,6 +327,9 @@ export function applyCommand(document: Document, command: Command): Document {
       break;
     case "DELETE_NODE":
       next = applyDeleteNode(document, command);
+      break;
+    case "MOVE_NODE":
+      next = applyMoveNode(document, command);
       break;
     case "CREATE_PAGE":
       next = applyCreatePage(document, command);

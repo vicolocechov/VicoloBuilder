@@ -50,6 +50,28 @@ describe("History", () => {
     expect(getNode(history.document, "a")).toBeDefined();
   });
 
+  it("MOVE_NODE con riposizionamento (props) è un solo comando: un solo undo ripristina sia il genitore sia le coordinate (Fase 8, Punto 3 dell'analisi)", () => {
+    const history = new History(baseDocument());
+    history.execute({ type: "CREATE_NODE", nodeId: "a", nodeType: "box", parentId: "root", props: { layoutMode: "libero" } });
+    history.execute({ type: "CREATE_NODE", nodeId: "b", nodeType: "box", parentId: "root", props: { layoutMode: "libero" } });
+    history.execute({
+      type: "CREATE_NODE",
+      nodeId: "leaf",
+      nodeType: "text",
+      parentId: "a",
+      props: { x: 200, y: 150 },
+    });
+
+    history.execute({ type: "MOVE_NODE", nodeId: "leaf", newParentId: "b", props: { x: 0, y: 0 } });
+    expect(getNode(history.document, "leaf")).toMatchObject({ parentId: "b", props: { x: 0, y: 0 } });
+
+    history.undo();
+    expect(getNode(history.document, "leaf")).toMatchObject({ parentId: "a", props: { x: 200, y: 150 } });
+    expect(getNode(history.document, "a")!.childrenIds).toEqual(["leaf"]);
+    expect(getNode(history.document, "b")!.childrenIds).toEqual([]);
+    expect(history.canRedo).toBe(true);
+  });
+
   it("executing a new command after undo clears the redo stack", () => {
     const history = new History(baseDocument());
     history.execute({ type: "CREATE_NODE", nodeId: "a", nodeType: "text", parentId: "root" });
