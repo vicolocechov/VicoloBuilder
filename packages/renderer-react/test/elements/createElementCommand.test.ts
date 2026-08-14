@@ -16,6 +16,11 @@ describe("elementIdBase", () => {
     expect(elementIdBase("container")).toBe("contenitore");
     expect(elementIdBase("scene")).toBe("scena");
     expect(elementIdBase("griglia")).toBe("griglia");
+    expect(elementIdBase("h1")).toBe("h1");
+    expect(elementIdBase("h2")).toBe("h2");
+    expect(elementIdBase("h3")).toBe("h3");
+    expect(elementIdBase("paragraph")).toBe("paragrafo");
+    expect(elementIdBase("link")).toBe("link");
   });
 });
 
@@ -93,6 +98,58 @@ describe("buildCreateElementCommand", () => {
     const model = resolveDocument(doc, { breakpoint: "desktop" });
     expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
   });
+
+  // Fase 9: h1/h2/h3/paragraph riusano ESATTAMENTE x/y/width/height/text/
+  // fontSize di "text" (nessun valore nuovo inventato, correzione esplicita
+  // del proprietario del prodotto - vedi createElementCommand.ts) - solo
+  // `nodeType` cambia, mappato a un tag HTML diverso nel Renderer.
+  it.each([
+    ["h1", "h1"],
+    ["h2", "h2"],
+    ["h3", "h3"],
+    ["paragraph", "paragraph"],
+  ] as const)("costruisce un CREATE_NODE '%s' con esattamente i default di 'text' (solo nodeType cambia)", (elementType, nodeType) => {
+    const command = buildCreateElementCommand(elementType, `${elementType}-1`, "root");
+    expect(command).toEqual({
+      type: "CREATE_NODE",
+      nodeId: `${elementType}-1`,
+      nodeType,
+      parentId: "root",
+      props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" },
+    });
+  });
+
+  it("costruisce un CREATE_NODE 'link' con gli stessi default di 'text' più 'href' (deciso esplicitamente: stringa vuota, nessun precedente lo determinava)", () => {
+    const command = buildCreateElementCommand("link", "link-1", "root");
+    expect(command).toEqual({
+      type: "CREATE_NODE",
+      nodeId: "link-1",
+      nodeType: "link",
+      parentId: "root",
+      props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", href: "", fontSize: "clamp(16px, 2vw, 24px)" },
+    });
+  });
+
+  it.each(["h1", "h2", "h3", "paragraph", "link"] as const)(
+    "un '%s' appena creato non manda in crash computeLayout sotto una radice 'libero' (stessa regressione già coperta per 'scene'/'griglia')",
+    (elementType) => {
+      let doc = baseDoc();
+      doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+      doc = applyCommand(doc, buildCreateElementCommand(elementType, `${elementType}-1`, "root"));
+      const model = resolveDocument(doc, { breakpoint: "desktop" });
+      expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+    },
+  );
+
+  it.each(["h1", "h2", "h3", "paragraph", "link"] as const)(
+    "un '%s' appena creato non manda in crash computeLayout sotto una radice 'pila' (default)",
+    (elementType) => {
+      let doc = baseDoc();
+      doc = applyCommand(doc, buildCreateElementCommand(elementType, `${elementType}-1`, "root"));
+      const model = resolveDocument(doc, { breakpoint: "desktop" });
+      expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+    },
+  );
 });
 
 describe("resolveNewElementParent", () => {

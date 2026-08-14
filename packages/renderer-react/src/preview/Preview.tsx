@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { ElementType, KeyboardEvent, MouseEvent } from "react";
 import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
-import type { Box, PageId } from "@vicolobuilder/engine";
+import type { Box, PageId, ResolvedNode } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument } from "../history/useHistoryStore.js";
 import { flattenBoxes } from "../canvas/flattenBoxes.js";
 import { PREVIEW_SIZE } from "../previewSize.js";
+import { htmlTagFor } from "../elements/htmlTag.js";
 import { sceneNodeIds } from "./scenes.js";
 import { initialPosition, navigatePage, navigateScene, type PreviewPosition } from "./navigation.js";
 
@@ -25,17 +26,27 @@ const TRANSITION_MS = 400;
  * che è denso di stato di editing estraneo a questa vista - analisi Fase 7,
  * Punto 2).
  */
-function renderStaticBox(box: Box, resolvedProps: (nodeId: string) => Record<string, unknown> | undefined): JSX.Element[] {
+function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => ResolvedNode | undefined): JSX.Element[] {
   return flattenBoxes(box).map((entry) => {
-    const props = resolvedProps(entry.box.nodeId) ?? {};
+    const node = resolvedNodeFor(entry.box.nodeId);
+    const props = node?.resolvedProps ?? {};
     const backgroundColor = typeof props.color === "string" ? props.color : undefined;
     const text = typeof props.text === "string" ? props.text : null;
     // Fase 10: stesso trattamento di Canvas.tsx - stringa CSS opaca (es.
     // "clamp(...)"), fallback al valore fisso preesistente se assente.
     const fontSize = typeof props.fontSize === "string" ? props.fontSize : 12;
+    // Fase 9, Punto 4: tag HTML reale in base a `type` (h1/h2/h3/p/a),
+    // fallback a "div" per ogni altro tipo (comportamento invariato).
+    const Tag = htmlTagFor(node?.type ?? "") as ElementType;
+    const href = typeof props.href === "string" ? props.href : undefined;
     return (
-      <div
+      <Tag
         key={entry.box.nodeId}
+        // Fase 9, Punto 5: la Preview è una vista di sola lettura (Fase 7,
+        // Punto 6) - un link non deve navigare via da qui più di quanto non
+        // debba farlo nel Canvas di editing.
+        href={Tag === "a" ? href : undefined}
+        onClick={Tag === "a" ? (e: MouseEvent<HTMLElement>) => e.preventDefault() : undefined}
         style={{
           position: "absolute",
           left: entry.box.x,
@@ -49,7 +60,7 @@ function renderStaticBox(box: Box, resolvedProps: (nodeId: string) => Record<str
         }}
       >
         {text}
-      </div>
+      </Tag>
     );
   });
 }
@@ -85,8 +96,8 @@ export function Preview({
   const currentSceneBox = scenes.length > 0 ? box.children.find((child) => child.nodeId === scenes[position.sceneIndex]) : undefined;
   const scrollY = currentSceneBox?.y ?? 0;
 
-  function resolvedPropsFor(nodeId: string): Record<string, unknown> | undefined {
-    return model.nodes.get(nodeId)?.resolvedProps;
+  function resolvedNodeFor(nodeId: string): ResolvedNode | undefined {
+    return model.nodes.get(nodeId);
   }
 
   /**
@@ -196,7 +207,7 @@ export function Preview({
             opacity: fadeOpacity,
           }}
         >
-          {renderStaticBox(box, resolvedPropsFor)}
+          {renderStaticBox(box, resolvedNodeFor)}
         </div>
       </div>
     </div>

@@ -26,8 +26,28 @@ import type { BreakpointName, CreateNodeCommand, Document, NodeId } from "@vicol
  * via MOVE_NODE - vedi analisi Fase 8 su MOVE_NODE) - finché è vuota si
  * comporta come un box qualunque (ramo "foglia" di `computeLayout`, non
  * legge affatto `columns`/`gap`).
+ *
+ * Fase 9 — aggiunti "h1"/"h2"/"h3" (distinzione heading, analisi Punto 1 -
+ * Opzione B: un `type` per livello, non `type:"heading"`+`level`, per
+ * coerenza con `layoutMode` - già un piccolo insieme chiuso di stringhe,
+ * non un tipo+parametro numerico - e perché il sito reale usa solo 3
+ * livelli, mai h4-h6), "paragraph" (stessa forma di "text", solo tag
+ * diverso in uscita) e "link" (`props.href`, Punto 3 - nessuna evidenza
+ * reale di un link-contenitore, resta un leaf come "text"). Seguono TUTTI
+ * la regola di collocamento standard di "testo"/"contenitore"/"griglia"
+ * (`resolveNewElementParent`), non quella fissa di "scene".
+ *
+ * Default: nessun valore nuovo inventato per renderli visibili - x/y/
+ * width/height/text/fontSize sono ESATTAMENTE quelli già usati da "text"
+ * (stessa natura di elemento foglia testuale; differenziare le dimensioni
+ * per livello di heading sarebbe una decisione di scala tipografica non
+ * ancora presa - la stessa lasciata esplicitamente aperta in D-023 per
+ * S2). L'unico valore genuinamente nuovo, `href` per "link" (nessun
+ * precedente nel codice/roadmap lo determinava), è stato segnalato e
+ * deciso esplicitamente dal proprietario del prodotto prima di scrivere
+ * questo file: stringa vuota `""`.
  */
-export type ElementType = "text" | "container" | "scene" | "griglia";
+export type ElementType = "text" | "container" | "scene" | "griglia" | "h1" | "h2" | "h3" | "paragraph" | "link";
 
 /**
  * Valori di default approvati esplicitamente (versione uniforme, non
@@ -72,6 +92,25 @@ const ELEMENT_DEFAULTS: Record<ElementType, { readonly nodeType: string; readonl
     nodeType: "box",
     idBase: "griglia",
     props: { x: 20, y: 20, width: 600, height: 200, layoutMode: "griglia", columns: 3, gap: 16 },
+  },
+  // h1/h2/h3/paragraph: stessi x/y/width/height/text/fontSize di "text" -
+  // nessun valore nuovo, solo `nodeType` diverso (mappato a un tag HTML
+  // diverso nel Renderer, vedi Canvas.tsx/Preview.tsx).
+  h1: { nodeType: "h1", idBase: "h1", props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" } },
+  h2: { nodeType: "h2", idBase: "h2", props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" } },
+  h3: { nodeType: "h3", idBase: "h3", props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" } },
+  paragraph: {
+    nodeType: "paragraph",
+    idBase: "paragrafo",
+    props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", fontSize: "clamp(16px, 2vw, 24px)" },
+  },
+  // Stesso x/y/width/height/text/fontSize di "text" + `href` (deciso
+  // esplicitamente dal proprietario del prodotto: stringa vuota, nessun
+  // precedente lo determinava).
+  link: {
+    nodeType: "link",
+    idBase: "link",
+    props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", href: "", fontSize: "clamp(16px, 2vw, 24px)" },
   },
 };
 

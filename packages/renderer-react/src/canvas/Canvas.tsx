@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ElementType, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
 import type { NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
@@ -8,6 +9,7 @@ import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE } from "../previewSize.js";
+import { htmlTagFor } from "../elements/htmlTag.js";
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per
@@ -200,12 +202,21 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // (stesso trattamento di `color`). Fallback al valore fisso preesistente
     // se il nodo non ha il prop (documenti creati prima di questa fase).
     const fontSize = typeof resolvedNode.resolvedProps.fontSize === "string" ? resolvedNode.resolvedProps.fontSize : 12;
+    // Fase 9, Punto 4: tag HTML reale in base a `type` (h1/h2/h3/p/a),
+    // fallback a "div" per ogni altro tipo (comportamento invariato).
+    const Tag = htmlTagFor(resolvedNode.type) as ElementType;
+    const href = typeof resolvedNode.resolvedProps.href === "string" ? resolvedNode.resolvedProps.href : undefined;
 
     return (
-      <div
+      <Tag
         key={entry.box.nodeId}
         data-node-id={entry.box.nodeId}
-        onClick={(e) => {
+        href={Tag === "a" ? href : undefined}
+        onClick={(e: MouseEvent<HTMLElement>) => {
+          // Fase 9, Punto 5: un <a> nell'editor non deve mai navigare -
+          // selezionarlo/spostarlo deve restare dentro l'editor. Innocuo per
+          // ogni altro tag (nessun comportamento di default da prevenire).
+          e.preventDefault();
           e.stopPropagation();
           if (moveSourceId !== null) {
             // Un secondo click sulla sorgente stessa annulla (oltre al
@@ -233,7 +244,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           }
           store.select(entry.box.nodeId);
         }}
-        onPointerDown={(e) => {
+        onPointerDown={(e: ReactPointerEvent<HTMLElement>) => {
           if (!caps.canMoveXY) return;
           e.stopPropagation();
           const startLocalX = asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0;
@@ -268,6 +279,10 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           // null), meglio non offrire l'azione che farla fallire.
           <button
             onClick={(e) => {
+              // Vedi il commento sull'onClick del box: se il box è un <a>
+              // (Fase 9), un click su questo pulsante annidato non deve
+              // far scattare la navigazione nativa dell'anchor antenato.
+              e.preventDefault();
               e.stopPropagation();
               setMoveSourceId(entry.box.nodeId);
               setMoveError(null);
@@ -309,7 +324,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             }}
           />
         ) : null}
-      </div>
+      </Tag>
     );
   }
 
