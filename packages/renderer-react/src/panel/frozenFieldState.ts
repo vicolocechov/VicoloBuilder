@@ -1,10 +1,18 @@
 import type { BreakpointName, DocumentNode } from "@vicolobuilder/engine";
 import { BASE_TIER } from "../breakpoints.js";
-import type { GeometryKey } from "../write/buildUpdatePropsCommand.js";
+import type { GeometryKey, StyleKey } from "../write/buildUpdatePropsCommand.js";
 
 /**
  * Indicatore ereditato/overridato (Decisione 5, PRODUCT_DESIGN.md sez. 6) -
- * SOLO per la geometria, come richiesto.
+ * per qualunque chiave "congelabile" (geometria O stile, Fase S1 - stesso
+ * comportamento di congelamento in `buildUpdatePropsCommand.ts`, quindi
+ * stesso indicatore). Rinominato da `geometryFieldState` (era limitato a
+ * `GeometryKey`) quando `STYLE_KEYS` è stata introdotta come terza
+ * categoria: chiamarlo ancora "geometry" sarebbe stato fuorviante per un
+ * campo come `columns`, che non è geometria del box. Non copre le chiavi di
+ * CONTENUTO (`text`/`color`): quelle scrivono sempre sulla base
+ * indipendentemente dalla fascia (D-018), un indicatore "ereditato/
+ * overridden per fascia" non avrebbe senso per loro.
  *
  * Stati implementati QUI: 2 su 3 di quelli richiesti. Il Document non porta
  * alcuna informazione di provenienza per un valore dentro
@@ -25,17 +33,17 @@ import type { GeometryKey } from "../write/buildUpdatePropsCommand.js";
  * "overridden-here" (senza distinguere automatico da esplicito dentro
  * "overridden-here").
  */
-export type GeometryFieldState = "inherited" | "overridden-here";
+export type FrozenFieldState = "inherited" | "overridden-here";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function geometryFieldState(
+export function frozenFieldState(
   node: DocumentNode,
   activeBreakpoint: BreakpointName,
-  key: GeometryKey,
-): GeometryFieldState {
+  key: GeometryKey | StyleKey,
+): FrozenFieldState {
   // Alla fascia base non esiste "ereditato da una fascia più larga" (è la
   // più larga): il valore è sempre "proprio" del nodo.
   if (activeBreakpoint === BASE_TIER) return "overridden-here";

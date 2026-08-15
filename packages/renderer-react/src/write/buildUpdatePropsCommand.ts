@@ -7,18 +7,30 @@ import { BASE_TIER } from "../breakpoints.js";
  * sez. 6, Decisione 1) + separazione geometria/contenuto (decisione del
  * proprietario del prodotto, turno di approvazione dell'Opzione A).
  *
- * Due elenchi CHIUSI: nessun'altra chiave entra senza approvazione esplicita
+ * Fase S1 (analisi griglia responsive, Punto 1 - decisione esplicita del
+ * proprietario del prodotto): terza categoria, `STYLE_KEYS` - stesso
+ * comportamento di congelamento di `GEOMETRY_KEYS` (varia per fascia, un
+ * edit su una fascia stretta congela le fasce più larghe prive di override
+ * proprio), ma non è box-geometry in senso stretto - un nome proprio evita
+ * di rendere fuorviante `GEOMETRY_KEYS`. Stessa decisione chiude anche la
+ * domanda lasciata esplicitamente aperta in D-023 per `fontSize`: entra qui,
+ * non in `GEOMETRY_KEYS`.
+ *
+ * Tre elenchi CHIUSI: nessun'altra chiave entra senza approvazione esplicita
  * (vedi `buildUpdatePropsCommand`, che lancia su qualunque chiave fuori da
- * questi due elenchi).
+ * questi tre elenchi).
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
+export const STYLE_KEYS = ["columns", "gap", "fontSize"] as const;
 export const CONTENT_KEYS = ["text", "color"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];
+export type StyleKey = (typeof STYLE_KEYS)[number];
 export type ContentKey = (typeof CONTENT_KEYS)[number];
-export type EditableKey = GeometryKey | ContentKey;
+export type EditableKey = GeometryKey | StyleKey | ContentKey;
 
 const GEOMETRY_KEY_SET: ReadonlySet<string> = new Set(GEOMETRY_KEYS);
+const STYLE_KEY_SET: ReadonlySet<string> = new Set(STYLE_KEYS);
 const CONTENT_KEY_SET: ReadonlySet<string> = new Set(CONTENT_KEYS);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -26,9 +38,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Ricostruisce `props.responsive` per una scrittura di geometria su una
- * fascia diversa dalla base (Opzione A, "congelamento"): scrive l'edit sulla
- * fascia attiva, poi - per ciascuna fascia in cui l'edit si propagherebbe
+ * Ricostruisce `props.responsive` per una scrittura di geometria E/O stile
+ * (Fase S1: stesso comportamento di congelamento per entrambe le categorie,
+ * vedi commento su `STYLE_KEYS` sopra) su una fascia diversa dalla base
+ * (Opzione A, "congelamento"): scrive l'edit sulla fascia attiva, poi - per
+ * ciascuna fascia in cui l'edit si propagherebbe
  * (`widerBreakpoints`, Fase 6/D-019) e per ciascuna chiave cambiata priva
  * già di un override proprio LÌ - congela il valore RISOLTO per quella
  * fascia (via `resolveNode`, non il valore di base), così l'edit non si
@@ -54,7 +68,7 @@ function buildFrozenResponsive(
   document: Document,
   nodeId: NodeId,
   activeBreakpoint: BreakpointName,
-  geometryChanges: Readonly<Record<string, unknown>>,
+  frozenChanges: Readonly<Record<string, unknown>>,
 ): Record<string, unknown> {
   const node = requireNode(document, nodeId);
   const existingResponsive = isPlainObject(node.props.responsive) ? node.props.responsive : {};
@@ -63,11 +77,11 @@ function buildFrozenResponsive(
   const existingActiveTier = isPlainObject(existingResponsive[activeBreakpoint])
     ? existingResponsive[activeBreakpoint]
     : {};
-  nextResponsive[activeBreakpoint] = { ...existingActiveTier, ...geometryChanges };
+  nextResponsive[activeBreakpoint] = { ...existingActiveTier, ...frozenChanges };
 
   for (const tier of widerBreakpoints(activeBreakpoint)) {
     const tierExisting = isPlainObject(existingResponsive[tier]) ? existingResponsive[tier] : undefined;
-    const toFreeze = Object.keys(geometryChanges).filter((key) => tierExisting?.[key] === undefined);
+    const toFreeze = Object.keys(frozenChanges).filter((key) => tierExisting?.[key] === undefined);
 
     if (toFreeze.length > 0) {
       const resolvedAtTier = resolveNode(node, { breakpoint: tier }).resolvedProps;
@@ -85,10 +99,12 @@ function buildFrozenResponsive(
  * (un trascinamento, un campo del pannello proprietà). Non esegue nulla:
  * il chiamante lo passa a `History.execute()`.
  *
- * - Chiavi di GEOMETRIA: se la vista attiva è la fascia base (`desktop`),
- *   scrivono direttamente sui props del nodo (nessun congelamento
- *   necessario: non esiste una fascia più larga della base). Altrimenti
- *   passano da `buildFrozenResponsive` (Opzione A).
+ * - Chiavi di GEOMETRIA e di STILE (Fase S1): stesso trattamento - se la
+ *   vista attiva è la fascia base (`desktop`), scrivono direttamente sui
+ *   props del nodo (nessun congelamento necessario: non esiste una fascia
+ *   più larga della base). Altrimenti passano da `buildFrozenResponsive`
+ *   (Opzione A), insieme nella stessa chiamata (un solo `props.responsive`
+ *   ricostruito, non uno per categoria).
  * - Chiavi di CONTENUTO: scrivono sempre sui props base, indipendentemente
  *   dalla vista attiva (nessuna variazione di contenuto per fascia sullo
  *   stesso nodo - decisione del proprietario del prodotto).
@@ -105,29 +121,30 @@ export function buildUpdatePropsCommand(
     throw new Error("buildUpdatePropsCommand: changedProps è vuoto - nessuna modifica da scrivere.");
   }
 
-  const geometryChanges: Record<string, unknown> = {};
+  const frozenChanges: Record<string, unknown> = {};
   const contentChanges: Record<string, unknown> = {};
 
   for (const key of keys) {
-    if (GEOMETRY_KEY_SET.has(key)) {
-      geometryChanges[key] = changedProps[key as EditableKey];
+    if (GEOMETRY_KEY_SET.has(key) || STYLE_KEY_SET.has(key)) {
+      frozenChanges[key] = changedProps[key as EditableKey];
     } else if (CONTENT_KEY_SET.has(key)) {
       contentChanges[key] = changedProps[key as EditableKey];
     } else {
       throw new Error(
         `buildUpdatePropsCommand: proprietà "${key}" non riconosciuta. Deve essere geometria ` +
-          `(${GEOMETRY_KEYS.join(", ")}) o contenuto (${CONTENT_KEYS.join(", ")}) - elenchi chiusi.`,
+          `(${GEOMETRY_KEYS.join(", ")}), stile (${STYLE_KEYS.join(", ")}) o contenuto ` +
+          `(${CONTENT_KEYS.join(", ")}) - elenchi chiusi.`,
       );
     }
   }
 
   const props: Record<string, unknown> = { ...contentChanges };
 
-  if (Object.keys(geometryChanges).length > 0) {
+  if (Object.keys(frozenChanges).length > 0) {
     if (activeBreakpoint === BASE_TIER) {
-      Object.assign(props, geometryChanges);
+      Object.assign(props, frozenChanges);
     } else {
-      props.responsive = buildFrozenResponsive(document, nodeId, activeBreakpoint, geometryChanges);
+      props.responsive = buildFrozenResponsive(document, nodeId, activeBreakpoint, frozenChanges);
     }
   }
 

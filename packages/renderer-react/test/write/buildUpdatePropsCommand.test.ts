@@ -6,6 +6,8 @@ import { buildUpdatePropsCommand } from "../../src/write/buildUpdatePropsCommand
 // separazione geometria/contenuto (Opzione A per la geometria).
 // Fase 6 (D-019): 7 fasce nominate, congelamento generalizzato a
 // `widerBreakpoints` (vicini diretti, non più "la fascia successiva").
+// Fase S1: terza categoria STYLE_KEYS (columns/gap/fontSize) - stesso
+// comportamento di congelamento di GEOMETRY_KEYS, nome proprio.
 
 function baseDoc() {
   let doc = createDocument({ rootPageId: "page-home", rootNodeId: "root" });
@@ -19,10 +21,29 @@ function baseDoc() {
   return doc;
 }
 
+function gridDoc() {
+  let doc = createDocument({ rootPageId: "page-home", rootNodeId: "root" });
+  doc = applyCommand(doc, {
+    type: "CREATE_NODE",
+    nodeId: "grid",
+    nodeType: "box",
+    parentId: "root",
+    props: { layoutMode: "griglia", columns: 4, gap: 20 },
+  });
+  return doc;
+}
+
 describe("buildUpdatePropsCommand — chiavi non riconosciute", () => {
-  it("lancia su una chiave fuori dai due elenchi chiusi", () => {
+  it("lancia su una chiave fuori dai tre elenchi chiusi", () => {
     const doc = baseDoc();
     expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { flexDirection: "row" } as never)).toThrow();
+  });
+
+  it("il messaggio d'errore elenca tutte e tre le categorie (geometria, stile, contenuto)", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { flexDirection: "row" } as never)).toThrow(
+      /geometria.*stile.*contenuto/i,
+    );
   });
 
   it("lancia se changedProps è vuoto", () => {
@@ -186,6 +207,99 @@ describe("buildUpdatePropsCommand — GEOMETRIA + CONTENUTO insieme", () => {
       type: "UPDATE_PROPS",
       nodeId: "card",
       props: { text: "ciao", responsive: { "mobile-verticale": { x: 5 }, "tablet-verticale": { x: 10 } } },
+    });
+  });
+});
+
+describe("buildUpdatePropsCommand — STILE (Fase S1): vista Desktop scrive direttamente sulla base", () => {
+  it("nessun responsive coinvolto quando activeBreakpoint è 'desktop'", () => {
+    const doc = gridDoc();
+    const command = buildUpdatePropsCommand(doc, "grid", "desktop", { columns: 2 });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "grid", props: { columns: 2 } });
+  });
+});
+
+describe("buildUpdatePropsCommand — STILE (Fase S1): stesso congelamento della geometria, non un meccanismo separato", () => {
+  it("scrive su mobile-verticale e congela tablet-verticale (unico vicino più largo) al valore risolto pre-modifica", () => {
+    const doc = gridDoc();
+    const command = buildUpdatePropsCommand(doc, "grid", "mobile-verticale", { columns: 2 });
+
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "grid",
+      props: { responsive: { "mobile-verticale": { columns: 2 }, "tablet-verticale": { columns: 4 } } },
+    });
+  });
+
+  it("il documento risultante mostra 2 su mobile-verticale e 4 (invariato) su tablet-verticale/laptop-compatto/desktop", () => {
+    const doc = gridDoc();
+    const command = buildUpdatePropsCommand(doc, "grid", "mobile-verticale", { columns: 2 });
+    const next = applyCommand(doc, command);
+    const node = getNode(next, "grid")!;
+
+    expect(resolveNode(node, { breakpoint: "mobile-verticale" }).resolvedProps.columns).toBe(2);
+    expect(resolveNode(node, { breakpoint: "tablet-verticale" }).resolvedProps.columns).toBe(4);
+    expect(resolveNode(node, { breakpoint: "laptop-compatto" }).resolvedProps.columns).toBe(4);
+    expect(resolveNode(node, { breakpoint: "desktop" }).resolvedProps.columns).toBe(4);
+  });
+
+  it("editare laptop-compatto non congela nulla: nessuna fascia più larga lo include nella propria cascata (stesso comportamento già visto per la geometria)", () => {
+    const doc = gridDoc();
+    const command = buildUpdatePropsCommand(doc, "grid", "laptop-compatto", { columns: 2 });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "grid",
+      props: { responsive: { "laptop-compatto": { columns: 2 } } },
+    });
+  });
+
+  it("STILE ('columns') + GEOMETRIA ('x') insieme finiscono nello STESSO oggetto responsive congelato, non due separati", () => {
+    let doc = gridDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "grid", props: { x: 100 } });
+    const command = buildUpdatePropsCommand(doc, "grid", "mobile-verticale", { columns: 2, x: 5 });
+
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "grid",
+      props: {
+        responsive: {
+          "mobile-verticale": { columns: 2, x: 5 },
+          "tablet-verticale": { columns: 4, x: 100 }, // entrambe congelate insieme, unico oggetto responsive
+        },
+      },
+    });
+  });
+
+  it("'gap' segue lo stesso trattamento di 'columns' (entrambe in STYLE_KEYS)", () => {
+    const doc = gridDoc();
+    const command = buildUpdatePropsCommand(doc, "grid", "mobile-verticale", { gap: 8 });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "grid",
+      props: { responsive: { "mobile-verticale": { gap: 8 }, "tablet-verticale": { gap: 20 } } },
+    });
+  });
+});
+
+describe("buildUpdatePropsCommand — 'fontSize' accettato come STYLE_KEYS (classificazione D-023 chiusa insieme a questa fase)", () => {
+  it("non lancia più 'proprietà non riconosciuta' per fontSize (prima di S1 non era in nessun elenco)", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { fontSize: "clamp(16px, 2vw, 24px)" })).not.toThrow();
+  });
+
+  it("congela come qualunque altra chiave di STYLE_KEYS quando editato su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { fontSize: "clamp(10px, 1vw, 14px)" } });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { fontSize: "clamp(20px, 4vw, 30px)" });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { fontSize: "clamp(20px, 4vw, 30px)" },
+          "tablet-verticale": { fontSize: "clamp(10px, 1vw, 14px)" },
+        },
+      },
     });
   });
 });
