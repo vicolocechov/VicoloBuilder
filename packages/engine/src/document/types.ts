@@ -72,4 +72,23 @@ export interface Document {
    * formato JSON esterno (deserializeDocument calcola un fallback se assente).
    */
   readonly pageOrder: readonly PageId[];
+  /**
+   * Fase 16 (Font custom, Punto 1 - decisione esplicita del proprietario
+   * del prodotto: Opzione B) - bag libero, mirror di `Page.props`
+   * (Fase 14) un livello più in alto: stessa rappresentazione (nessuna
+   * cascata per fascia, non passa dal Resolver), stessa scelta di NON
+   * riusare `Page.props` per la registrazione dei font - un font
+   * registrato è condiviso da tutto il documento, non da una singola
+   * pagina (fatto verificato sul sito di riferimento: 5 font dichiarati
+   * una sola volta, usati - o non usati, come "Oswald" - da elementi di
+   * tutto il documento, mai ri-dichiarati per pagina).
+   *
+   * Nucleo (Fase 16, Punto 2 - decisione esplicita: Opzione A): un'unica
+   * chiave, `fonts`, un array di `{family, weight, src}` annidato dentro
+   * questo bag - nessun nuovo campo tipizzato su `Document` (la forma
+   * `FontRegistration` vive in `renderer-react/src/fonts/fontRegistration.ts`
+   * - l'Engine tratta `props` come opaco, esattamente come per
+   * `DocumentNode.props`/`Page.props`).
+   */
+  readonly props: Readonly<Record<string, unknown>>;
 }

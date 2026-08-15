@@ -36,6 +36,7 @@ export function createDocument(options: CreateDocumentOptions = {}): Document {
     nodes: new Map([[nodeId, rootNode]]),
     pages: new Map([[pageId, page]]),
     pageOrder: [pageId],
+    props: {},
   };
 }
 

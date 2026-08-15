@@ -30,6 +30,11 @@ export interface ExportContext {
  * `href`/`fontSize` non sono mai letti per nome qui) - la convenzione dei
  * nomi SEO vive solo in `renderer-react` (`write/buildUpdatePagePropsCommand.ts`),
  * non duplicata nell'Engine.
+ *
+ * Fase 16 (Font custom): `documentProps` aggiunto per lo stesso motivo,
+ * stesso principio di passaggio opaco - rende `Document.props` (e la
+ * chiave `fonts` che vi abita, convenzione di `renderer-react`)
+ * osservabile end-to-end senza che l'Engine interpreti cosa sia un font.
  */
 export interface IR {
   readonly box: Box;
@@ -37,5 +42,6 @@ export interface IR {
     readonly pageId: PageId;
     readonly breakpoint: BreakpointName;
     readonly pageProps: Readonly<Record<string, unknown>>;
+    readonly documentProps: Readonly<Record<string, unknown>>;
   };
 }

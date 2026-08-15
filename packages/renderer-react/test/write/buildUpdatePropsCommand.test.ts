@@ -340,3 +340,27 @@ describe("buildUpdatePropsCommand — Fase 15 (Elemento immagine): 'objectFit' c
     });
   });
 });
+
+describe("buildUpdatePropsCommand — Fase 16 (Font custom): 'fontFamily'/'fontWeight' come STYLE_KEYS (Punto 3/4)", () => {
+  it("non lancia 'proprietà non riconosciuta' per fontFamily/fontWeight", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { fontFamily: "Poppins" })).not.toThrow();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { fontWeight: "600" })).not.toThrow();
+  });
+
+  it("congelano entrambe come qualunque altra chiave di STYLE_KEYS quando editate su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { fontFamily: "Montserrat", fontWeight: "400" } });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { fontFamily: "Poppins", fontWeight: "600" });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { fontFamily: "Poppins", fontWeight: "600" },
+          "tablet-verticale": { fontFamily: "Montserrat", fontWeight: "400" },
+        },
+      },
+    });
+  });
+});

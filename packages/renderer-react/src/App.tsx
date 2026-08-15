@@ -9,6 +9,9 @@ import { PageManager } from "./pages/PageManager.js";
 import { ElementPalette } from "./elements/ElementPalette.js";
 import { Preview } from "./preview/Preview.js";
 import { TIER_NAMES } from "./breakpoints.js";
+import { FontManager } from "./fonts/FontManager.js";
+import { useRegisteredFonts } from "./fonts/useRegisteredFonts.js";
+import { readRegisteredFonts } from "./fonts/fontRegistration.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
 function buildDemoDocument(): Document {
@@ -46,10 +49,16 @@ export function App(): JSX.Element {
   // la Preview sostituisce il Canvas quando attiva, non gira in parallelo.
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  // Fase 16: un solo punto di chiamata basta - `document.fonts` (il
+  // registro del browser) è globale alla pagina, Canvas e Preview ne
+  // beneficiano entrambi senza registrare nulla per conto proprio.
+  useRegisteredFonts(readRegisteredFonts(document));
+
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
       <div style={{ width: 260, borderRight: "1px solid #e5e7eb", overflow: "auto" }}>
         <PageManager store={store} activePageId={activePageId} onActivePageChange={setActivePageId} />
+        <FontManager store={store} />
       </div>
       <div style={{ flex: 1, overflow: "auto", padding: 16, background: "#f3f4f6" }}>
         <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

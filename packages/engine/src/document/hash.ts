@@ -44,6 +44,9 @@ export function serializeDocument(document: Document): string {
     // nella Map non è dato significativo), pageOrder va preservato così
     // com'è: qui l'ordine *è* il dato (Fase 5, Blocco A).
     pageOrder: [...document.pageOrder],
+    // Fase 16 (Font custom): stesso trattamento di page.props/node.props -
+    // ordinato per chiave per l'indipendenza dall'ordine di scrittura.
+    props: sortedEntries(document.props),
   });
 }
 

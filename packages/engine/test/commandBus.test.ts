@@ -81,6 +81,41 @@ describe("applyCommand — UPDATE_PROPS", () => {
   });
 });
 
+// Fase 16 (Font custom, Punto 1): mirror di UPDATE_PAGE_PROPS un livello più
+// in alto - shallow merge diretto su document.props, nessun pageId da
+// individuare (esiste un solo document.props per Document), quindi nessun
+// caso "rejects on non-existent" analogo a UPDATE_PROPS/UPDATE_PAGE_PROPS.
+describe("applyCommand — UPDATE_DOCUMENT_PROPS (Fase 16)", () => {
+  it("shallow-merges props into document.props", () => {
+    let doc = baseDocument();
+    doc = applyCommand(doc, { type: "UPDATE_DOCUMENT_PROPS", props: { fonts: [{ family: "Poppins", weight: "600", src: "x" }] } });
+    doc = applyCommand(doc, { type: "UPDATE_DOCUMENT_PROPS", props: { theme: "dark" } });
+
+    expect(doc.props).toEqual({ fonts: [{ family: "Poppins", weight: "600", src: "x" }], theme: "dark" });
+  });
+
+  it("a whole-array write replaces the previous 'fonts' value (shallow merge, not an array merge)", () => {
+    let doc = baseDocument();
+    doc = applyCommand(doc, { type: "UPDATE_DOCUMENT_PROPS", props: { fonts: [{ family: "A", weight: "400", src: "a" }] } });
+    doc = applyCommand(doc, {
+      type: "UPDATE_DOCUMENT_PROPS",
+      props: { fonts: [{ family: "A", weight: "400", src: "a" }, { family: "B", weight: "600", src: "b" }] },
+    });
+
+    expect(doc.props.fonts).toEqual([
+      { family: "A", weight: "400", src: "a" },
+      { family: "B", weight: "600", src: "b" },
+    ]);
+  });
+
+  it("does not mutate the input Document (pure function)", () => {
+    const doc = baseDocument();
+    applyCommand(doc, { type: "UPDATE_DOCUMENT_PROPS", props: { theme: "dark" } });
+
+    expect(doc.props).toEqual({});
+  });
+});
+
 describe("applyCommand — DELETE_NODE", () => {
   it("removes a node and unlinks it from its parent", () => {
     let doc = baseDocument();

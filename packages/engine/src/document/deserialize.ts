@@ -23,15 +23,22 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** `ownerLabel` mantiene i messaggi d'errore accurati - riusata sia per i nodi (Fase 1) sia per le pagine (Fase 14: `Page.props`, stessa forma). */
-function parsePropsEntries(value: unknown, ownerId: string, ownerLabel: "Node" | "Page" = "Node"): Record<string, unknown> {
+/** `ownerLabel` mantiene i messaggi d'errore accurati - riusata per i nodi (Fase 1), le pagine (Fase 14: `Page.props`) e il documento (Fase 16: `Document.props`), stessa forma. */
+function parsePropsEntries(
+  value: unknown,
+  ownerId: string,
+  ownerLabel: "Node" | "Page" | "Document" = "Node",
+): Record<string, unknown> {
+  // Fase 16: "Document" non ha un id (esiste un solo Document per file) -
+  // nessun `"${ownerId}"` da mostrare in quel caso.
+  const ownerDescriptor = ownerLabel === "Document" ? "Document" : `${ownerLabel} "${ownerId}"`;
   if (!Array.isArray(value)) {
-    fail(`${ownerLabel} "${ownerId}": "props" deve essere un array di coppie [chiave, valore].`);
+    fail(`${ownerDescriptor}: "props" deve essere un array di coppie [chiave, valore].`);
   }
   const entries: [string, unknown][] = [];
   for (const entry of value) {
     if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string") {
-      fail(`${ownerLabel} "${ownerId}": ogni voce di "props" deve essere una coppia [string, unknown].`);
+      fail(`${ownerDescriptor}: ogni voce di "props" deve essere una coppia [string, unknown].`);
     }
     entries.push([entry[0], entry[1]]);
   }
@@ -100,7 +107,7 @@ export function deserializeDocument(json: string): Document {
   }
 
   if (!isPlainObject(parsed)) fail("Il contenuto deserializzato deve essere un oggetto JSON.");
-  const { schemaVersion, rootPageId, pages, nodes, pageOrder } = parsed;
+  const { schemaVersion, rootPageId, pages, nodes, pageOrder, props } = parsed;
 
   if (typeof schemaVersion !== "number") fail('Campo "schemaVersion" mancante o non numerico.');
   if (schemaVersion !== CURRENT_SCHEMA_VERSION) {
@@ -128,11 +135,17 @@ export function deserializeDocument(json: string): Document {
     resolvedPageOrder = [...pageOrder];
   }
 
+  // Fase 16 (Font custom): "props" a livello documento è opzionale nel
+  // JSON esterno, stesso precedente di "pageOrder"/`Page.props` - un
+  // documento scritto prima di questa fase non lo ha, fallback a {}.
+  const documentProps = props === undefined ? {} : parsePropsEntries(props, "", "Document");
+
   return {
     schemaVersion,
     rootPageId,
     pages: new Map(pageEntries.map((p) => [p.id, p])),
     nodes: new Map(nodeEntries.map((n) => [n.id, n])),
     pageOrder: resolvedPageOrder,
+    props: documentProps,
   };
 }

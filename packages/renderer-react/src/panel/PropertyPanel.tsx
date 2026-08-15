@@ -31,6 +31,10 @@ import { isTextBearingType } from "../elements/textBearingTypes.js";
  * di `isTextBearingType`: `type` non varia mai per fascia). `src`/`alt`
  * sono CONTENT_KEYS (nessun badge, come `text`/`color`); `objectFit` è
  * STYLE_KEYS (badge ereditato/overridden-here, come `fontSize`).
+ *
+ * Fase 16 (Font custom) — `fontFamily`/`fontWeight` visibili sugli stessi
+ * tipi di `fontSize` (`isTextBearingType`), STYLE_KEYS (Punto 3/4), stesso
+ * badge di congelamento.
  */
 
 function NumberField({
@@ -225,6 +229,24 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={typeof resolved.fontSize === "string" ? resolved.fontSize : ""}
           badge={frozenFieldState(node, activeBreakpoint, "fontSize")}
           onCommit={(s) => commitStyle("fontSize", s)}
+        />
+      ) : null}
+      {isTextBearing ? (
+        <TextField
+          key={`${fieldKeyPrefix}:fontFamily`}
+          label="fontFamily"
+          value={typeof resolved.fontFamily === "string" ? resolved.fontFamily : ""}
+          badge={frozenFieldState(node, activeBreakpoint, "fontFamily")}
+          onCommit={(s) => commitStyle("fontFamily", s)}
+        />
+      ) : null}
+      {isTextBearing ? (
+        <TextField
+          key={`${fieldKeyPrefix}:fontWeight`}
+          label="fontWeight"
+          value={typeof resolved.fontWeight === "string" ? resolved.fontWeight : ""}
+          badge={frozenFieldState(node, activeBreakpoint, "fontWeight")}
+          onCommit={(s) => commitStyle("fontWeight", s)}
         />
       ) : null}
 

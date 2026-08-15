@@ -17,7 +17,8 @@ export type Command =
   | CreatePageCommand
   | DeletePageCommand
   | ReorderPagesCommand
-  | UpdatePagePropsCommand;
+  | UpdatePagePropsCommand
+  | UpdateDocumentPropsCommand;
 
 export interface CreateNodeCommand {
   readonly type: "CREATE_NODE";
@@ -106,6 +107,22 @@ export interface UpdatePagePropsCommand {
   readonly type: "UPDATE_PAGE_PROPS";
   readonly pageId: PageId;
   /** Shallow-merged nei props esistenti della pagina. */
+  readonly props: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * Fase 16 (Font custom, Punto 1 - decisione esplicita: Opzione B). Mirror
+ * di `UpdatePagePropsCommand` un livello più in alto (`document.props`,
+ * non `document.pages`): stessa natura (bag libero, nessuna cascata
+ * responsive, shallow merge diretto), corretto qui alla scala giusta - un
+ * font registrato è condiviso da tutto il documento, non da una pagina
+ * (fatto verificato sul sito di riferimento, vedi `document/types.ts`).
+ * Non prende un `pageId` (o equivalente): non c'è nulla da individuare,
+ * esiste un solo `document.props` per Document.
+ */
+export interface UpdateDocumentPropsCommand {
+  readonly type: "UPDATE_DOCUMENT_PROPS";
+  /** Shallow-merged nei props esistenti del documento. */
   readonly props: Readonly<Record<string, unknown>>;
 }
 
@@ -325,6 +342,10 @@ function applyUpdatePageProps(document: Document, command: UpdatePagePropsComman
   return { ...document, pages: nextPages };
 }
 
+function applyUpdateDocumentProps(document: Document, command: UpdateDocumentPropsCommand): Document {
+  return { ...document, props: { ...document.props, ...command.props } };
+}
+
 function applyReorderPages(document: Document, command: ReorderPagesCommand): Document {
   const currentIds = new Set(document.pages.keys());
   const newIds = new Set(command.pageOrder);
@@ -373,6 +394,9 @@ export function applyCommand(document: Document, command: Command): Document {
       break;
     case "UPDATE_PAGE_PROPS":
       next = applyUpdatePageProps(document, command);
+      break;
+    case "UPDATE_DOCUMENT_PROPS":
+      next = applyUpdateDocumentProps(document, command);
       break;
     default: {
       const exhaustive: never = command;

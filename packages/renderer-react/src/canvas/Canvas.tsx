@@ -214,6 +214,13 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // prop. Applicato incondizionatamente nello style: il browser lo
     // ignora sui tag che non sono "img", nessuna eccezione necessaria qui.
     const objectFit = typeof resolvedNode.resolvedProps.objectFit === "string" ? resolvedNode.resolvedProps.objectFit : "cover";
+    // Fase 16: stesso trattamento di `fontSize` - stringa opaca passata a
+    // `style.fontFamily`/`style.fontWeight`, nessun fallback fisso (a
+    // differenza di `fontSize`/`objectFit`, l'assenza del prop deve
+    // lasciare il browser libero di usare il proprio font di default, non
+    // un valore inventato).
+    const fontFamily = typeof resolvedNode.resolvedProps.fontFamily === "string" ? resolvedNode.resolvedProps.fontFamily : undefined;
+    const fontWeight = typeof resolvedNode.resolvedProps.fontWeight === "string" ? resolvedNode.resolvedProps.fontWeight : undefined;
 
     return (
       // Fase 15 (Punto 1, analisi - Opzione A): l'overlay di selezione
@@ -289,6 +296,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             cursor: caps.canMoveXY ? "move" : "default",
             userSelect: "none",
             fontSize,
+            fontFamily,
+            fontWeight,
             padding: 4,
             objectFit,
           }}

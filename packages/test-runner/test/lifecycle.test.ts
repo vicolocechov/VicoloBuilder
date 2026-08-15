@@ -34,6 +34,6 @@ describe("Test Runner — create -> modify -> undo -> redo -> export", () => {
     // 5. export
     const ir = exportIR(history.document, { breakpoint: "desktop", pageId: "page-home", viewportWidth: 1280 });
     expect(ir.box.nodeId).toBe("root");
-    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop", pageProps: {} });
+    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop", pageProps: {}, documentProps: {} });
   });
 });

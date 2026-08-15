@@ -45,6 +45,9 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     const src = typeof props.src === "string" ? props.src : undefined;
     const alt = typeof props.alt === "string" ? props.alt : "";
     const objectFit = typeof props.objectFit === "string" ? props.objectFit : "cover";
+    // Fase 16: stesso trattamento di Canvas.tsx.
+    const fontFamily = typeof props.fontFamily === "string" ? props.fontFamily : undefined;
+    const fontWeight = typeof props.fontWeight === "string" ? props.fontWeight : undefined;
     return (
       <Tag
         key={entry.box.nodeId}
@@ -64,6 +67,8 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
           boxSizing: "border-box",
           background: backgroundColor ?? "transparent",
           fontSize,
+          fontFamily,
+          fontWeight,
           padding: 4,
           objectFit,
         }}

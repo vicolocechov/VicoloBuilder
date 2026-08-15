@@ -28,9 +28,17 @@ import { BASE_TIER } from "../breakpoints.js";
  * `CONTENT_KEYS`: nessuna evidenza nel sito reale di un'immagine che
  * cambi sorgente per fascia responsive - stesso ragionamento già accettato
  * per `href` in Fase 9 (D-024), non una decisione aperta.
+ *
+ * Fase 16 (Font custom, Punto 3/4 - decisione esplicita): `fontFamily` e
+ * `fontWeight` entrano in `STYLE_KEYS`, STESSA classificazione già data a
+ * `fontSize` (D-025) - non per analogia decisa qui, ma perché il
+ * proprietario del prodotto l'ha esplicitamente confermata (a differenza
+ * di `href`/`src`/`alt`, la classificazione tipografica non era stata
+ * considerata "non ambigua" nell'analisi: `fontSize` stesso fu lasciato
+ * esplicitamente aperto in D-023).
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
-export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit"] as const;
+export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight"] as const;
 export const CONTENT_KEYS = ["text", "color", "src", "alt"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];

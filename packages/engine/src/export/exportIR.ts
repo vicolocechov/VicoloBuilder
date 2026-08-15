@@ -23,6 +23,9 @@ export function exportIR(document: Document, context: ExportContext): IR {
       // qui è garantita presente. Fallback a {} solo per non introdurre
       // un'asserzione non-null per un caso già escluso dalla riga precedente.
       pageProps: document.pages.get(context.pageId)?.props ?? {},
+      // Fase 16: sempre presente (Document.props non è opzionale sul tipo),
+      // nessun fallback necessario qui a differenza di pageProps sopra.
+      documentProps: document.props,
     },
   };
 }
