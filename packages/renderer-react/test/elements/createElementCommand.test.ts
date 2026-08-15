@@ -21,6 +21,7 @@ describe("elementIdBase", () => {
     expect(elementIdBase("h3")).toBe("h3");
     expect(elementIdBase("paragraph")).toBe("paragrafo");
     expect(elementIdBase("link")).toBe("link");
+    expect(elementIdBase("image")).toBe("immagine");
   });
 });
 
@@ -150,6 +151,35 @@ describe("buildCreateElementCommand", () => {
       expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
     },
   );
+
+  // Fase 15: 'image' porta x/y/width/height come gli altri elementi, più
+  // src (placeholder inline, Punto 2 - nessuna stringa vuota), alt
+  // (Punto 3, vuoto), objectFit (Punto 4, "cover").
+  it("costruisce un CREATE_NODE 'image' con un placeholder inline come 'src' (Punto 2 - non una stringa vuota) e 'alt'/'objectFit' di default", () => {
+    const command = buildCreateElementCommand("image", "immagine-1", "root");
+    expect(command.type).toBe("CREATE_NODE");
+    expect(command.nodeId).toBe("immagine-1");
+    expect(command.nodeType).toBe("image");
+    expect(command.parentId).toBe("root");
+    expect(command.props).toMatchObject({ x: 20, y: 20, width: 200, height: 120, alt: "", objectFit: "cover" });
+    expect(typeof command.props.src).toBe("string");
+    expect(command.props.src).not.toBe("");
+  });
+
+  it("un 'image' appena creata non manda in crash computeLayout sotto una radice 'libero' (stessa regressione già coperta per gli altri tipi)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("image", "immagine-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+  });
+
+  it("un 'image' appena creata non manda in crash computeLayout sotto una radice 'pila' (default)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, buildCreateElementCommand("image", "immagine-1", "root"));
+    const model = resolveDocument(doc, { breakpoint: "desktop" });
+    expect(() => computeLayout(model, { viewportWidth: 1280 })).not.toThrow();
+  });
 });
 
 describe("resolveNewElementParent", () => {

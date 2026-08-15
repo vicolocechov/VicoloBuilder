@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ElementType, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
 import type { NodeId, PageId } from "@vicolobuilder/engine";
@@ -204,84 +204,109 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     const fontSize = typeof resolvedNode.resolvedProps.fontSize === "string" ? resolvedNode.resolvedProps.fontSize : 12;
     // Fase 9, Punto 4: tag HTML reale in base a `type` (h1/h2/h3/p/a),
     // fallback a "div" per ogni altro tipo (comportamento invariato).
+    // Fase 15: "image" -> "img", primo tag void di questo elenco.
     const Tag = htmlTagFor(resolvedNode.type) as ElementType;
     const href = typeof resolvedNode.resolvedProps.href === "string" ? resolvedNode.resolvedProps.href : undefined;
+    const src = typeof resolvedNode.resolvedProps.src === "string" ? resolvedNode.resolvedProps.src : undefined;
+    const alt = typeof resolvedNode.resolvedProps.alt === "string" ? resolvedNode.resolvedProps.alt : "";
+    // Fase 15, Punto 4: stringa CSS opaca (es. "cover"/"contain"), stesso
+    // trattamento di `fontSize` - fallback "cover" se il nodo non ha il
+    // prop. Applicato incondizionatamente nello style: il browser lo
+    // ignora sui tag che non sono "img", nessuna eccezione necessaria qui.
+    const objectFit = typeof resolvedNode.resolvedProps.objectFit === "string" ? resolvedNode.resolvedProps.objectFit : "cover";
 
     return (
-      <Tag
-        key={entry.box.nodeId}
-        data-node-id={entry.box.nodeId}
-        href={Tag === "a" ? href : undefined}
-        onClick={(e: MouseEvent<HTMLElement>) => {
-          // Fase 9, Punto 5: un <a> nell'editor non deve mai navigare -
-          // selezionarlo/spostarlo deve restare dentro l'editor. Innocuo per
-          // ogni altro tag (nessun comportamento di default da prevenire).
-          e.preventDefault();
-          e.stopPropagation();
-          if (moveSourceId !== null) {
-            // Un secondo click sulla sorgente stessa annulla (oltre al
-            // pulsante "Annulla" della barra di stato) - scorciatoia, non
-            // l'unico modo di uscire dalla modalità.
-            if (moveSourceId === entry.box.nodeId) {
+      // Fase 15 (Punto 1, analisi - Opzione A): l'overlay di selezione
+      // ("Sposta dentro…" + maniglia di ridimensionamento) è un FRATELLO
+      // del tag renderizzato, non un figlio - un `Tag` può essere un void
+      // element ("img"), che in React non può avere children. Prima di
+      // questa fase l'overlay era annidato dentro `Tag` (che è esso
+      // stesso `position:absolute`, quindi il contenitore di
+      // posizionamento naturale per figli assoluti); come fratelli,
+      // l'overlay usa le stesse coordinate locali `x`/`y`/`width`/`height`
+      // già calcolate sopra, sommando manualmente l'offset che prima
+      // veniva dal posizionamento relativo al genitore.
+      <Fragment key={entry.box.nodeId}>
+        <Tag
+          data-node-id={entry.box.nodeId}
+          href={Tag === "a" ? href : undefined}
+          src={Tag === "img" ? src : undefined}
+          alt={Tag === "img" ? alt : undefined}
+          onClick={(e: MouseEvent<HTMLElement>) => {
+            // Fase 9, Punto 5: un <a> nell'editor non deve mai navigare -
+            // selezionarlo/spostarlo deve restare dentro l'editor. Innocuo per
+            // ogni altro tag (nessun comportamento di default da prevenire).
+            e.preventDefault();
+            e.stopPropagation();
+            if (moveSourceId !== null) {
+              // Un secondo click sulla sorgente stessa annulla (oltre al
+              // pulsante "Annulla" della barra di stato) - scorciatoia, non
+              // l'unico modo di uscire dalla modalità.
+              if (moveSourceId === entry.box.nodeId) {
+                setMoveSourceId(null);
+                return;
+              }
+              try {
+                store.execute({ type: "MOVE_NODE", nodeId: moveSourceId, newParentId: entry.box.nodeId });
+                setMoveError(null);
+              } catch (err) {
+                // Fase 8 (analisi MOVE_NODE, Punto 2): un tentativo non valido
+                // (es. il bersaglio è un discendente della sorgente) è
+                // respinto da CommandError - qui va solo mostrato, non
+                // rilanciato (a differenza del resto del Canvas, che oggi non
+                // intercetta mai gli errori di store.execute - qui serve,
+                // perché il bersaglio è scelto dall'utente via click e un
+                // errore è un esito plausibile, non un bug).
+                setMoveError(err instanceof Error ? err.message : String(err));
+              }
               setMoveSourceId(null);
               return;
             }
-            try {
-              store.execute({ type: "MOVE_NODE", nodeId: moveSourceId, newParentId: entry.box.nodeId });
-              setMoveError(null);
-            } catch (err) {
-              // Fase 8 (analisi MOVE_NODE, Punto 2): un tentativo non valido
-              // (es. il bersaglio è un discendente della sorgente) è
-              // respinto da CommandError - qui va solo mostrato, non
-              // rilanciato (a differenza del resto del Canvas, che oggi non
-              // intercetta mai gli errori di store.execute - qui serve,
-              // perché il bersaglio è scelto dall'utente via click e un
-              // errore è un esito plausibile, non un bug).
-              setMoveError(err instanceof Error ? err.message : String(err));
-            }
-            setMoveSourceId(null);
-            return;
-          }
-          store.select(entry.box.nodeId);
-        }}
-        onPointerDown={(e: ReactPointerEvent<HTMLElement>) => {
-          if (!caps.canMoveXY) return;
-          e.stopPropagation();
-          const startLocalX = asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0;
-          const startLocalY = asFiniteNumber(resolvedNode.resolvedProps.y) ?? 0;
-          setMoveDrag({
-            nodeId: entry.box.nodeId,
-            startClientX: e.clientX,
-            startClientY: e.clientY,
-            startLocalX,
-            startLocalY,
-          });
-        }}
-        style={{
-          position: "absolute",
-          left: x,
-          top: y,
-          width,
-          height,
-          boxSizing: "border-box",
-          border: isSelected ? "2px solid #2563eb" : "1px solid rgba(0,0,0,0.15)",
-          background: backgroundColor ?? "transparent",
-          cursor: caps.canMoveXY ? "move" : "default",
-          userSelect: "none",
-          fontSize,
-          padding: 4,
-        }}
-      >
-        {text}
+            store.select(entry.box.nodeId);
+          }}
+          onPointerDown={(e: ReactPointerEvent<HTMLElement>) => {
+            if (!caps.canMoveXY) return;
+            e.stopPropagation();
+            const startLocalX = asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0;
+            const startLocalY = asFiniteNumber(resolvedNode.resolvedProps.y) ?? 0;
+            setMoveDrag({
+              nodeId: entry.box.nodeId,
+              startClientX: e.clientX,
+              startClientY: e.clientY,
+              startLocalX,
+              startLocalY,
+            });
+          }}
+          style={{
+            position: "absolute",
+            left: x,
+            top: y,
+            width,
+            height,
+            boxSizing: "border-box",
+            border: isSelected ? "2px solid #2563eb" : "1px solid rgba(0,0,0,0.15)",
+            background: backgroundColor ?? "transparent",
+            cursor: caps.canMoveXY ? "move" : "default",
+            userSelect: "none",
+            fontSize,
+            padding: 4,
+            objectFit,
+          }}
+        >
+          {Tag === "img" ? null : text}
+        </Tag>
         {isSelected && moveSourceId === null && entry.parentBox !== null ? (
           // `entry.parentBox !== null` esclude la radice della pagina: non
           // spostabile (Engine: MOVE_NODE rifiuta un nodo con parentId
           // null), meglio non offrire l'azione che farla fallire.
           <button
+            key={`${entry.box.nodeId}:move-into`}
             onClick={(e) => {
-              // Vedi il commento sull'onClick del box: se il box è un <a>
-              // (Fase 9), un click su questo pulsante annidato non deve
-              // far scattare la navigazione nativa dell'anchor antenato.
+              // A differenza di prima (bottone annidato dentro `Tag`), qui
+              // non serve più prevenire la navigazione nativa di un `Tag`
+              // antenato (Fase 9, Punto 5) - il bottone non è più
+              // discendente di `Tag`. `stopPropagation` resta necessario:
+              // il contenitore del Canvas (sotto) deseleziona al click.
               e.preventDefault();
               e.stopPropagation();
               setMoveSourceId(entry.box.nodeId);
@@ -289,8 +314,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             }}
             style={{
               position: "absolute",
-              top: -22,
-              left: 0,
+              left: x,
+              top: y - 22,
               fontSize: 10,
               lineHeight: 1,
               padding: "2px 4px",
@@ -301,6 +326,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         ) : null}
         {isSelected && (caps.canResizeWidth || caps.canResizeHeight) ? (
           <div
+            key={`${entry.box.nodeId}:resize-handle`}
             onPointerDown={(e) => {
               e.stopPropagation();
               setResizeDrag({
@@ -313,10 +339,21 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                 resizeHeight: caps.canResizeHeight,
               });
             }}
+            // Fase 15 (Punto 1): prima della ristrutturazione a fratelli, un
+            // click su questa maniglia (mousedown+mouseup senza spostamento,
+            // o l'evento "click" sintetico dopo un trascinamento) risaliva
+            // comunque attraverso `Tag` - che lo assorbiva riselezionando
+            // innocuamente lo stesso nodo (`onClick` di `Tag`, sopra). Come
+            // fratello, `Tag` non è più un antenato: senza questo
+            // `stopPropagation` il click risalirebbe fino al contenitore del
+            // Canvas e deselezionerebbe il nodo subito dopo ogni
+            // ridimensionamento (bug trovato verificando in browser durante
+            // Fase 15, non dai test unitari - nessuno copre `Canvas.tsx`).
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: "absolute",
-              right: -4,
-              bottom: -4,
+              left: x + width - 4,
+              top: y + height - 4,
               width: 8,
               height: 8,
               background: "#2563eb",
@@ -324,7 +361,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             }}
           />
         ) : null}
-      </Tag>
+      </Fragment>
     );
   }
 

@@ -303,3 +303,40 @@ describe("buildUpdatePropsCommand — 'fontSize' accettato come STYLE_KEYS (clas
     });
   });
 });
+
+describe("buildUpdatePropsCommand — Fase 15 (Elemento immagine): 'src'/'alt' come CONTENT_KEYS", () => {
+  it("scrive 'src' sui props base anche quando la vista attiva è Mobile verticale (nessuna evidenza di sorgente diversa per fascia)", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { src: "https://example.com/foto.jpg" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { src: "https://example.com/foto.jpg" } });
+  });
+
+  it("scrive 'alt' sui props base allo stesso modo di 'src'", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { alt: "Descrizione" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { alt: "Descrizione" } });
+  });
+});
+
+describe("buildUpdatePropsCommand — Fase 15 (Elemento immagine): 'objectFit' come STYLE_KEYS", () => {
+  it("non lancia 'proprietà non riconosciuta' per objectFit", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { objectFit: "cover" })).not.toThrow();
+  });
+
+  it("congela come qualunque altra chiave di STYLE_KEYS quando editato su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { objectFit: "contain" } });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { objectFit: "cover" });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { objectFit: "cover" },
+          "tablet-verticale": { objectFit: "contain" },
+        },
+      },
+    });
+  });
+});

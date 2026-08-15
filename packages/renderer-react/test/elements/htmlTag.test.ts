@@ -10,6 +10,10 @@ describe("htmlTagFor", () => {
     expect(htmlTagFor("link")).toBe("a");
   });
 
+  it("mappa 'image' (Fase 15) a 'img'", () => {
+    expect(htmlTagFor("image")).toBe("img");
+  });
+
   it("ricade su 'div' per ogni altro type, compresi quelli già esistenti prima di Fase 9 (comportamento invariato)", () => {
     expect(htmlTagFor("box")).toBe("div");
     expect(htmlTagFor("text")).toBe("div");

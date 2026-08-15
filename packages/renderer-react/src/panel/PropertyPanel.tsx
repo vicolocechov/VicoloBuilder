@@ -25,6 +25,12 @@ import { isTextBearingType } from "../elements/textBearingTypes.js";
  * DIRETTO, non un valore risolto - `type` non ha mai un override per
  * fascia (nessun comando lo modifica dopo `CREATE_NODE`), quindi non c'è
  * nulla da risolvere.
+ *
+ * Fase 15 (Elemento immagine) — `src`/`alt`/`objectFit` seguono lo stesso
+ * pattern di condizione diretta su `node.type === "image"` (stessa natura
+ * di `isTextBearingType`: `type` non varia mai per fascia). `src`/`alt`
+ * sono CONTENT_KEYS (nessun badge, come `text`/`color`); `objectFit` è
+ * STYLE_KEYS (badge ereditato/overridden-here, come `fontSize`).
  */
 
 function NumberField({
@@ -155,6 +161,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
   // rispettato, non solo il valore base.
   const isGrid = resolved.layoutMode === "griglia";
   const isTextBearing = isTextBearingType(node.type);
+  const isImage = node.type === "image";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
@@ -218,6 +225,32 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={typeof resolved.fontSize === "string" ? resolved.fontSize : ""}
           badge={frozenFieldState(node, activeBreakpoint, "fontSize")}
           onCommit={(s) => commitStyle("fontSize", s)}
+        />
+      ) : null}
+
+      {isImage ? (
+        <TextField
+          key={`${fieldKeyPrefix}:src`}
+          label="src"
+          value={typeof resolved.src === "string" ? resolved.src : ""}
+          onCommit={(s) => commitContent("src", s)}
+        />
+      ) : null}
+      {isImage ? (
+        <TextField
+          key={`${fieldKeyPrefix}:alt`}
+          label="alt"
+          value={typeof resolved.alt === "string" ? resolved.alt : ""}
+          onCommit={(s) => commitContent("alt", s)}
+        />
+      ) : null}
+      {isImage ? (
+        <TextField
+          key={`${fieldKeyPrefix}:objectFit`}
+          label="objectFit"
+          value={typeof resolved.objectFit === "string" ? resolved.objectFit : ""}
+          badge={frozenFieldState(node, activeBreakpoint, "objectFit")}
+          onCommit={(s) => commitStyle("objectFit", s)}
         />
       ) : null}
 

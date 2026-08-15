@@ -37,8 +37,14 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     const fontSize = typeof props.fontSize === "string" ? props.fontSize : 12;
     // Fase 9, Punto 4: tag HTML reale in base a `type` (h1/h2/h3/p/a),
     // fallback a "div" per ogni altro tipo (comportamento invariato).
+    // Fase 15: "image" -> "img" (nessun overlay di selezione qui, la
+    // Preview è di sola lettura - il problema del void element che ha
+    // richiesto la ristrutturazione di Canvas.tsx non si pone).
     const Tag = htmlTagFor(node?.type ?? "") as ElementType;
     const href = typeof props.href === "string" ? props.href : undefined;
+    const src = typeof props.src === "string" ? props.src : undefined;
+    const alt = typeof props.alt === "string" ? props.alt : "";
+    const objectFit = typeof props.objectFit === "string" ? props.objectFit : "cover";
     return (
       <Tag
         key={entry.box.nodeId}
@@ -46,6 +52,8 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
         // Punto 6) - un link non deve navigare via da qui più di quanto non
         // debba farlo nel Canvas di editing.
         href={Tag === "a" ? href : undefined}
+        src={Tag === "img" ? src : undefined}
+        alt={Tag === "img" ? alt : undefined}
         onClick={Tag === "a" ? (e: MouseEvent<HTMLElement>) => e.preventDefault() : undefined}
         style={{
           position: "absolute",
@@ -57,9 +65,10 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
           background: backgroundColor ?? "transparent",
           fontSize,
           padding: 4,
+          objectFit,
         }}
       >
-        {text}
+        {Tag === "img" ? null : text}
       </Tag>
     );
   });

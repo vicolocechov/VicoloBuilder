@@ -19,10 +19,19 @@ import { BASE_TIER } from "../breakpoints.js";
  * Tre elenchi CHIUSI: nessun'altra chiave entra senza approvazione esplicita
  * (vedi `buildUpdatePropsCommand`, che lancia su qualunque chiave fuori da
  * questi tre elenchi).
+ *
+ * Fase 15 (Elemento immagine): `objectFit` entra in `STYLE_KEYS` (Punto 4,
+ * decisione esplicita del proprietario del prodotto - stesso trattamento
+ * di congelamento di `columns`/`gap`/`fontSize`, nessuna evidenza reale di
+ * un valore diverso per fascia ma stessa natura "specifico-per-tipo,
+ * variabile" delle altre voci di questa categoria). `src`/`alt` entrano in
+ * `CONTENT_KEYS`: nessuna evidenza nel sito reale di un'immagine che
+ * cambi sorgente per fascia responsive - stesso ragionamento già accettato
+ * per `href` in Fase 9 (D-024), non una decisione aperta.
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
-export const STYLE_KEYS = ["columns", "gap", "fontSize"] as const;
-export const CONTENT_KEYS = ["text", "color"] as const;
+export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit"] as const;
+export const CONTENT_KEYS = ["text", "color", "src", "alt"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];
 export type StyleKey = (typeof STYLE_KEYS)[number];

@@ -46,8 +46,39 @@ import type { BreakpointName, CreateNodeCommand, Document, NodeId } from "@vicol
  * precedente nel codice/roadmap lo determinava), è stato segnalato e
  * deciso esplicitamente dal proprietario del prodotto prima di scrivere
  * questo file: stringa vuota `""`.
+ *
+ * Fase 15 — aggiunto "image" (`props.src`/`alt`/`objectFit`). A differenza
+ * di "link" (`href=""` accettabile: un link vuoto resta comunque testo
+ * visibile e selezionabile), un'immagine con `src=""` nascerebbe rotta -
+ * per questo `src` di default è un placeholder reale (SVG inline, nessuna
+ * chiamata di rete), non una stringa vuota (Punto 2 dell'analisi, decisione
+ * esplicita del proprietario del prodotto). `alt` di default vuoto (Punto
+ * 3, editabile) - a differenza di `href`, incluso subito nel nucleo
+ * (evidenza diretta nel sito reale: ogni `<img>` ha sempre un `alt`, mai
+ * assente). `objectFit` di default `"cover"` (Punto 4, terza categoria
+ * `STYLE_KEYS`, stesso pattern di `columns`/`gap`/`fontSize`).
  */
-export type ElementType = "text" | "container" | "scene" | "griglia" | "h1" | "h2" | "h3" | "paragraph" | "link";
+export type ElementType =
+  | "text"
+  | "container"
+  | "scene"
+  | "griglia"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "paragraph"
+  | "link"
+  | "image";
+
+/**
+ * Placeholder inline (nessuna chiamata di rete, coerente con l'assenza di
+ * un asset manager in questo nucleo): un rettangolo grigio chiaro con
+ * un'icona "immagine" stilizzata (montagna + sole), stesso linguaggio
+ * visivo comune ai placeholder di editor visuali. Non vincolante nella
+ * forma esatta - dimostra il meccanismo, non un design definitivo.
+ */
+const PLACEHOLDER_IMAGE_SRC =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120' viewBox='0 0 200 120'%3E%3Crect width='200' height='120' fill='%23e5e7eb'/%3E%3Cpath d='M20 95 L70 50 L105 80 L145 35 L185 95 Z' fill='%23cbd5e1'/%3E%3Ccircle cx='60' cy='32' r='13' fill='%23cbd5e1'/%3E%3C/svg%3E";
 
 /**
  * Valori di default approvati esplicitamente (versione uniforme, non
@@ -111,6 +142,11 @@ const ELEMENT_DEFAULTS: Record<ElementType, { readonly nodeType: string; readonl
     nodeType: "link",
     idBase: "link",
     props: { x: 20, y: 20, width: 160, height: 40, text: "Testo", href: "", fontSize: "clamp(16px, 2vw, 24px)" },
+  },
+  image: {
+    nodeType: "image",
+    idBase: "immagine",
+    props: { x: 20, y: 20, width: 200, height: 120, src: PLACEHOLDER_IMAGE_SRC, alt: "", objectFit: "cover" },
   },
 };
 

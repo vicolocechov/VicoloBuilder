@@ -39,6 +39,7 @@ export function ElementPalette({ store, activePageId }: { readonly store: Reacti
       <button onClick={() => handleAdd("h3")}>+ H3</button>
       <button onClick={() => handleAdd("paragraph")}>+ Paragrafo</button>
       <button onClick={() => handleAdd("link")}>+ Link</button>
+      <button onClick={() => handleAdd("image")}>+ Immagine</button>
     </div>
   );
 }
