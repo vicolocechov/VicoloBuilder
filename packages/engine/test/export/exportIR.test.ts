@@ -29,7 +29,7 @@ describe("exportIR — nessuna logica duplicata rispetto a resolveDocument+compu
 
   it("ir.meta riflette esattamente pageId e breakpoint passati nel context", () => {
     const ir = exportIR(buildSampleDocument(), CONTEXT);
-    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop" });
+    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop", pageProps: {} });
   });
 });
 

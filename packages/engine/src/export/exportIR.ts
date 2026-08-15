@@ -19,6 +19,10 @@ export function exportIR(document: Document, context: ExportContext): IR {
     meta: {
       pageId: context.pageId,
       breakpoint: context.breakpoint,
+      // `computeLayout` sopra ha già lanciato se la pagina non esistesse -
+      // qui è garantita presente. Fallback a {} solo per non introdurre
+      // un'asserzione non-null per un caso già escluso dalla riga precedente.
+      pageProps: document.pages.get(context.pageId)?.props ?? {},
     },
   };
 }

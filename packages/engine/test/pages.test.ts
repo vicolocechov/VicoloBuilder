@@ -19,7 +19,7 @@ describe("CREATE_PAGE", () => {
     });
 
     const page = doc.pages.get("page-about");
-    expect(page).toEqual({ id: "page-about", name: "Chi siamo", rootNodeId: "root-about" });
+    expect(page).toEqual({ id: "page-about", name: "Chi siamo", rootNodeId: "root-about", props: {} });
     expect(doc.nodes.get("root-about")).toEqual({
       id: "root-about",
       type: "page-root",

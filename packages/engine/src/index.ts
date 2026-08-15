@@ -24,6 +24,7 @@ export type {
   CreatePageCommand,
   DeletePageCommand,
   ReorderPagesCommand,
+  UpdatePagePropsCommand,
 } from "./runtime/commands.js";
 
 export { History } from "./runtime/history.js";

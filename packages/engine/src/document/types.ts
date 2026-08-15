@@ -30,6 +30,20 @@ export interface Page {
   readonly id: PageId;
   readonly name: string;
   readonly rootNodeId: NodeId;
+  /**
+   * Fase 14 (SEO per pagina) — bag libero, mirror di `DocumentNode.props`:
+   * stesso meccanismo di estensione incrementale già usato 10 volte per i
+   * nodi (mai un cambio di tipo), qui applicato per la prima volta a `Page`.
+   * A differenza di `DocumentNode.props`, NON passa mai dal Resolver -
+   * nessuna cascata per fascia (un titolo SEO non varia guardando la stessa
+   * pagina a una larghezza diversa) - solo la rappresentazione (bag libero)
+   * è condivisa con i nodi, non il comportamento di risoluzione. Nucleo
+   * (Fase 14): solo la convenzione `title`/`description`/`canonical`
+   * (`write/buildUpdatePagePropsCommand.ts`, renderer-react) - nessun
+   * campo `og:*`, né per-pagina né per-documento, non richiesto dai dati
+   * reali per questo nucleo.
+   */
+  readonly props: Readonly<Record<string, unknown>>;
 }
 
 /**

@@ -17,14 +17,25 @@ export interface ExportContext {
 /**
  * IR (Intermediate Representation, RFC-005): "Box Tree + Meta". Il Box Tree
  * è esattamente il tipo Box già definito/testato in Fase 2, invariato. Meta
- * è minimale (D-012): solo i due dati senza i quali l'IR non sarebbe
- * distinguibile da un altro (quale pagina, quale breakpoint) - nessun campo
- * giustificato solo da un uso futuro ipotetico.
+ * è minimale (D-012): solo i dati senza i quali l'IR non sarebbe
+ * distinguibile da un altro - nessun campo giustificato solo da un uso
+ * futuro ipotetico.
+ *
+ * Fase 14 (SEO per pagina, Punto 7 dell'analisi, approvato): `pageProps`
+ * aggiunto per rendere `Page.props` osservabile end-to-end (`builder
+ * export`) senza un Exporter HTML reale (fuori scope). Passato COSÌ COM'È,
+ * senza interpretare `title`/`description`/`canonical` per nome: l'Engine
+ * non ha mai interpretato il significato di una chiave di prop (stesso
+ * principio già rispettato per `DocumentNode.props` - `text`/`color`/
+ * `href`/`fontSize` non sono mai letti per nome qui) - la convenzione dei
+ * nomi SEO vive solo in `renderer-react` (`write/buildUpdatePagePropsCommand.ts`),
+ * non duplicata nell'Engine.
  */
 export interface IR {
   readonly box: Box;
   readonly meta: {
     readonly pageId: PageId;
     readonly breakpoint: BreakpointName;
+    readonly pageProps: Readonly<Record<string, unknown>>;
   };
 }

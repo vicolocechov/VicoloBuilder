@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useDocument } from "../history/useHistoryStore.js";
 import { slugify, uniqueId } from "./pageIds.js";
 import { movePageOrder } from "./movePageOrder.js";
+import { buildUpdatePagePropsCommand, type PageSeoKey } from "../write/buildUpdatePagePropsCommand.js";
 
 /**
  * Fase 5, Blocco E: livello sottile sopra CREATE_PAGE/DELETE_PAGE/REORDER_PAGES
@@ -16,7 +17,50 @@ import { movePageOrder } from "./movePageOrder.js";
  * conservativa per rispettare "livello sottile, non reinterpretare quanto
  * già stabilito": estendere ancora History non era parte del vincolo dato,
  * quindi non l'ho fatto senza chiederlo. Segnalata, non decisa da sola.
+ *
+ * Fase 14 (SEO per pagina, Punto 6 dell'analisi - decisione esplicita del
+ * proprietario del prodotto): editing di title/description/canonical qui,
+ * non nel PropertyPanel - un titolo SEO appartiene alla pagina nel suo
+ * insieme, non a un nodo selezionato, e non varia per fascia (a differenza
+ * dei campi del PropertyPanel non ha bisogno di `activeBreakpoint` né di
+ * badge ereditato/overridden).
  */
+
+function SeoTextField({
+  label,
+  value,
+  onCommit,
+}: {
+  readonly label: string;
+  readonly value: string;
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  const [text, setText] = useState(value);
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setText(value);
+  }, [value]);
+
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>{label}</span>
+      <input
+        type="text"
+        value={text}
+        onFocus={() => {
+          focused.current = true;
+        }}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          focused.current = false;
+          onCommit(text);
+        }}
+      />
+    </label>
+  );
+}
+
 export function PageManager({
   store,
   activePageId,
@@ -74,6 +118,17 @@ export function PageManager({
     }
   }
 
+  function commitSeo(key: PageSeoKey, value: string): void {
+    setError(null);
+    try {
+      store.execute(buildUpdatePagePropsCommand(activePageId, { [key]: value }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  const activePage = document.pages.get(activePageId);
+
   return (
     <div style={{ padding: 8, borderBottom: "1px solid #e5e7eb", fontSize: 12 }}>
       <div style={{ fontWeight: "bold", marginBottom: 6 }}>Pagine</div>
@@ -122,6 +177,29 @@ export function PageManager({
         />
         <button onClick={handleCreate}>+ Pagina</button>
       </div>
+      {activePage ? (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ fontWeight: "bold" }}>SEO — {activePage.name}</div>
+          <SeoTextField
+            key={`${activePageId}:title`}
+            label="title"
+            value={typeof activePage.props.title === "string" ? activePage.props.title : ""}
+            onCommit={(s) => commitSeo("title", s)}
+          />
+          <SeoTextField
+            key={`${activePageId}:description`}
+            label="description"
+            value={typeof activePage.props.description === "string" ? activePage.props.description : ""}
+            onCommit={(s) => commitSeo("description", s)}
+          />
+          <SeoTextField
+            key={`${activePageId}:canonical`}
+            label="canonical"
+            value={typeof activePage.props.canonical === "string" ? activePage.props.canonical : ""}
+            onCommit={(s) => commitSeo("canonical", s)}
+          />
+        </div>
+      ) : null}
       {error ? <div style={{ color: "#b91c1c", marginTop: 4 }}>{error}</div> : null}
     </div>
   );

@@ -17,7 +17,7 @@ function serializeNode(node: DocumentNode): unknown {
 }
 
 function serializePage(page: Page): unknown {
-  return { id: page.id, name: page.name, rootNodeId: page.rootNodeId };
+  return { id: page.id, name: page.name, rootNodeId: page.rootNodeId, props: sortedEntries(page.props) };
 }
 
 /**

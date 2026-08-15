@@ -27,6 +27,7 @@ export function createDocument(options: CreateDocumentOptions = {}): Document {
     id: pageId,
     name: options.rootPageName ?? "Home",
     rootNodeId: nodeId,
+    props: {},
   };
 
   return {

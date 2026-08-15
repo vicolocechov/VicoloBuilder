@@ -21,7 +21,7 @@ describe("barrel pubblico (src/index.ts) — exportIR + deserializeDocument", ()
     const ir = exportIR(restored, { breakpoint: "desktop", pageId: "page-home", viewportWidth: 1280 });
 
     expect(ir.box.nodeId).toBe("root");
-    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop" });
+    expect(ir.meta).toEqual({ pageId: "page-home", breakpoint: "desktop", pageProps: {} });
   });
 
   it("DocumentParseError è la classe effettivamente lanciata dal barrel su JSON non valido", () => {

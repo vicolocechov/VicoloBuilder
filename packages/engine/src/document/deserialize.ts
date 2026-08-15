@@ -23,14 +23,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parsePropsEntries(value: unknown, nodeId: string): Record<string, unknown> {
+/** `ownerLabel` mantiene i messaggi d'errore accurati - riusata sia per i nodi (Fase 1) sia per le pagine (Fase 14: `Page.props`, stessa forma). */
+function parsePropsEntries(value: unknown, ownerId: string, ownerLabel: "Node" | "Page" = "Node"): Record<string, unknown> {
   if (!Array.isArray(value)) {
-    fail(`Node "${nodeId}": "props" deve essere un array di coppie [chiave, valore].`);
+    fail(`${ownerLabel} "${ownerId}": "props" deve essere un array di coppie [chiave, valore].`);
   }
   const entries: [string, unknown][] = [];
   for (const entry of value) {
     if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string") {
-      fail(`Node "${nodeId}": ogni voce di "props" deve essere una coppia [string, unknown].`);
+      fail(`${ownerLabel} "${ownerId}": ogni voce di "props" deve essere una coppia [string, unknown].`);
     }
     entries.push([entry[0], entry[1]]);
   }
@@ -61,13 +62,19 @@ function parseNode(value: unknown): DocumentNode {
 
 function parsePage(value: unknown): Page {
   if (!isPlainObject(value)) fail('Ogni elemento di "pages" deve essere un oggetto.');
-  const { id, name, rootNodeId } = value;
+  const { id, name, rootNodeId, props } = value;
 
   if (typeof id !== "string") fail('Page: campo "id" mancante o non stringa.');
   if (typeof name !== "string") fail(`Page "${id}": campo "name" mancante o non stringa.`);
   if (typeof rootNodeId !== "string") fail(`Page "${id}": campo "rootNodeId" mancante o non stringa.`);
 
-  return { id, name, rootNodeId };
+  // Fase 14 (SEO per pagina): "props" è opzionale nel JSON esterno - stesso
+  // precedente di "pageOrder" (Fase 5, Blocco A): un documento scritto
+  // prima di questa fase non lo ha, fallback a {} senza bump di
+  // schemaVersion (puramente additivo, non una rottura di compatibilità).
+  const pageProps = props === undefined ? {} : parsePropsEntries(props, id, "Page");
+
+  return { id, name, rootNodeId, props: pageProps };
 }
 
 /**

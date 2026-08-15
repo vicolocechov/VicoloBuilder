@@ -16,7 +16,8 @@ export type Command =
   | MoveNodeCommand
   | CreatePageCommand
   | DeletePageCommand
-  | ReorderPagesCommand;
+  | ReorderPagesCommand
+  | UpdatePagePropsCommand;
 
 export interface CreateNodeCommand {
   readonly type: "CREATE_NODE";
@@ -89,6 +90,23 @@ export interface DeletePageCommand {
 export interface ReorderPagesCommand {
   readonly type: "REORDER_PAGES";
   readonly pageOrder: readonly PageId[];
+}
+
+/**
+ * Fase 14 (SEO per pagina, decisione esplicita del proprietario del
+ * prodotto: bag libero, Punto 1 dell'analisi). Mirror di `UpdatePropsCommand`
+ * ma mirato a `document.pages`, non `document.nodes` - nessun comando
+ * esistente poteva scrivere lì (`UPDATE_PROPS` non raggiunge le pagine).
+ * A differenza di `UPDATE_PROPS`, NON passa mai dal congelamento
+ * responsive Desktop-first (`buildUpdatePropsCommand`, renderer-react):
+ * `Page.props` non ha alcuna cascata per fascia (Punto 3 dell'analisi) -
+ * qui è solo uno shallow merge diretto, senza intermediari.
+ */
+export interface UpdatePagePropsCommand {
+  readonly type: "UPDATE_PAGE_PROPS";
+  readonly pageId: PageId;
+  /** Shallow-merged nei props esistenti della pagina. */
+  readonly props: Readonly<Record<string, unknown>>;
 }
 
 export class CommandError extends Error {
@@ -252,7 +270,7 @@ function applyCreatePage(document: Document, command: CreatePageCommand): Docume
     childrenIds: [],
     props: {},
   };
-  const page: Page = { id: command.pageId, name: command.name, rootNodeId: command.rootNodeId };
+  const page: Page = { id: command.pageId, name: command.name, rootNodeId: command.rootNodeId, props: {} };
 
   const nextNodes = new Map(document.nodes);
   nextNodes.set(rootNode.id, rootNode);
@@ -292,6 +310,19 @@ function applyDeletePage(document: Document, command: DeletePageCommand): Docume
     pages: nextPages,
     pageOrder: document.pageOrder.filter((id) => id !== command.pageId),
   };
+}
+
+function applyUpdatePageProps(document: Document, command: UpdatePagePropsCommand): Document {
+  const page = document.pages.get(command.pageId);
+  if (!page) {
+    throw new CommandError(command, `Page id "${command.pageId}" does not exist.`);
+  }
+  const nextPage: Page = { ...page, props: { ...page.props, ...command.props } };
+
+  const nextPages = new Map(document.pages);
+  nextPages.set(nextPage.id, nextPage);
+
+  return { ...document, pages: nextPages };
 }
 
 function applyReorderPages(document: Document, command: ReorderPagesCommand): Document {
@@ -339,6 +370,9 @@ export function applyCommand(document: Document, command: Command): Document {
       break;
     case "REORDER_PAGES":
       next = applyReorderPages(document, command);
+      break;
+    case "UPDATE_PAGE_PROPS":
+      next = applyUpdatePageProps(document, command);
       break;
     default: {
       const exhaustive: never = command;
