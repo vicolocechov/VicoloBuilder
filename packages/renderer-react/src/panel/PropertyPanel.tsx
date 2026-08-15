@@ -5,6 +5,7 @@ import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHi
 import { buildUpdatePropsCommand, type ContentKey, type GeometryKey, type StyleKey } from "../write/buildUpdatePropsCommand.js";
 import { frozenFieldState } from "./frozenFieldState.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
+import { isTextBearingType } from "../elements/textBearingTypes.js";
 
 /**
  * Fase 5, Blocco D (Decisione D7): ambito minimo — solo i campi già
@@ -17,6 +18,13 @@ import { asFiniteNumber } from "../asFiniteNumber.js";
  * del proprietario del prodotto: questo diventa il pattern standard per
  * campi specifici-per-tipo, non un'eccezione una tantum - es. `href` di
  * Fase 9 lo seguirà quando arriverà in questo pannello).
+ *
+ * Fase S2 — `fontSize` segue lo stesso pattern: visibile solo per i tipi
+ * che portano testo (`isTextBearingType`, `elements/textBearingTypes.ts`).
+ * A differenza di `columns`/`gap`, la condizione guarda `node.type`
+ * DIRETTO, non un valore risolto - `type` non ha mai un override per
+ * fascia (nessun comando lo modifica dopo `CREATE_NODE`), quindi non c'è
+ * nulla da risolvere.
  */
 
 function NumberField({
@@ -68,10 +76,12 @@ function NumberField({
 function TextField({
   label,
   value,
+  badge,
   onCommit,
 }: {
   readonly label: string;
   readonly value: string;
+  readonly badge?: string;
   readonly onCommit: (value: string) => void;
 }): JSX.Element {
   const [text, setText] = useState(value);
@@ -83,7 +93,9 @@ function TextField({
 
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
-      <span>{label}</span>
+      <span>
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
       <input
         type="text"
         value={text}
@@ -142,6 +154,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
   // createElementCommand.ts): un override responsive di layoutMode va
   // rispettato, non solo il valore base.
   const isGrid = resolved.layoutMode === "griglia";
+  const isTextBearing = isTextBearingType(node.type);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
@@ -195,6 +208,16 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={asFiniteNumber(resolved.gap)}
           badge={frozenFieldState(node, activeBreakpoint, "gap")}
           onCommit={(n) => commitStyle("gap", n)}
+        />
+      ) : null}
+
+      {isTextBearing ? (
+        <TextField
+          key={`${fieldKeyPrefix}:fontSize`}
+          label="fontSize"
+          value={typeof resolved.fontSize === "string" ? resolved.fontSize : ""}
+          badge={frozenFieldState(node, activeBreakpoint, "fontSize")}
+          onCommit={(s) => commitStyle("fontSize", s)}
         />
       ) : null}
 

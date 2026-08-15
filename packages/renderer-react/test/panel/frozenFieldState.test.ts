@@ -32,4 +32,15 @@ describe("frozenFieldState", () => {
     expect(frozenFieldState(n, "mobile-verticale", "columns")).toBe("overridden-here");
     expect(frozenFieldState(n, "tablet-verticale", "columns")).toBe("inherited");
   });
+
+  // Fase S2: stessa genericità, ora esercitata su 'fontSize' (l'altra chiave
+  // di STYLE_KEYS, D-023/D-025).
+  it("funziona identicamente per 'fontSize' (STYLE_KEYS)", () => {
+    const n = node({
+      fontSize: "clamp(16px, 2vw, 24px)",
+      responsive: { "mobile-verticale": { fontSize: "clamp(12px, 4vw, 16px)" } },
+    });
+    expect(frozenFieldState(n, "mobile-verticale", "fontSize")).toBe("overridden-here");
+    expect(frozenFieldState(n, "tablet-verticale", "fontSize")).toBe("inherited");
+  });
 });

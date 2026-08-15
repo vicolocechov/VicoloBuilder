@@ -359,3 +359,19 @@ Le voci D-001/D-002/D-003/D-004 sono un backfill delle decisioni prese durante l
 
 **Rivalutazione**: S2 (tipografia per fascia, `fontSize`) può ora procedere senza ulteriori decisioni di classificazione — la stessa categoria `STYLE_KEYS` la copre già. Se emergerà un bisogno concreto di applicare lo stesso valore a più fasce in un solo gesto (segnalato, non richiesto) — da valutare allora, non prima. Il pattern di visibilità condizionale del `PropertyPanel` è ora lo standard per `href` (Fase 9) e per qualunque futuro campo specifico-per-tipo.
 
+---
+
+## D-026 — Tipografia per fascia (S2): campo `fontSize` nel `PropertyPanel`, visibile solo sui tipi che portano testo
+
+**Stato**: nuovo campo `fontSize` (`TextField`, stringa grezza — mirror di `color`, nessun editor strutturato a 3 campi) nel `PropertyPanel`, visibile solo quando `isTextBearingType(node.type)` è vero (nuovo modulo puro `elements/textBearingTypes.ts`, elenco `["text","h1","h2","h3","paragraph","link"]` — gli stessi e soli tipi che hanno `fontSize` nei propri default, `elements/createElementCommand.ts`). A differenza della condizione per `columns`/`gap` (S1, `resolvedProps.layoutMode`, un valore CHE PUÒ avere un override per fascia), la condizione qui controlla `node.type` diretto — `type` non ha mai un override responsive, nessun comando lo modifica dopo `CREATE_NODE` (verificato), quindi non c'è nulla da risolvere.
+
+`TextField` (componente condiviso con `text`/`color`) esteso con un `badge` opzionale (mirror di `NumberField`, che già lo aveva) — usato per `fontSize` (mostra ereditato/overridden-here via `frozenFieldState`, D-025), non usato per `text`/`color` (CONTENT_KEYS, nessun concetto di "per fascia" per loro, D-018).
+
+**Motivazione — nessuna nuova decisione architetturale**: la classificazione (`STYLE_KEYS`) e il pattern di visibilità condizionale erano già stati decisi esplicitamente in S1/D-025, prima che questa fase iniziasse. `[Fatto verificato: test/write/buildUpdatePropsCommand.test.ts, blocco "'fontSize' accettato come STYLE_KEYS", scritto in S1]` il comportamento di congelamento per `fontSize` era già testato e verde PRIMA di iniziare questa fase — S2 non ha toccato l'Engine, il Resolver, né `buildUpdatePropsCommand.ts`: è stata quasi interamente un'aggiunta di UI (un campo, una condizione, un piccolo modulo puro).
+
+**Motivazione — stringa grezza, non un editor strutturato**: stessa scelta già fatta in D-023 per lo stesso motivo (nessuna specifica di prodotto per un assemblatore min/preferred/max, nessuna evidenza che serva ora) — costruirlo qui avrebbe ripetuto una decisione già presa senza un fatto nuovo che la giustifichi.
+
+**Evidenza disponibile**: `test/elements/textBearingTypes.test.ts` (2 test — i 6 tipi che portano testo, esclusione di tutti gli altri incluso quelli preesistenti). `test/panel/frozenFieldState.test.ts` (+1: stesso comportamento generico già dimostrato per `columns`, ora su `fontSize`). Verificato in un browser reale: un nodo non testuale (`"box"`) non mostra `fontSize`; un `"text"` e un `"h1"` (Fase 9) lo mostrano entrambi, col default `clamp(16px, 2vw, 24px)`; modificare `fontSize` su `mobile-verticale` produce badge "overridden-here" lì E su `tablet-verticale` (congelato al valore risolto pre-modifica) mentre `laptop-compatto` resta "inherited" e invariato — stessa identica verifica già fatta per `columns` in S1. Zero errori console. Suite complete del monorepo verdi (Engine 191, CLI 20, Test Runner 3, renderer-react 107).
+
+**Rivalutazione**: se in futuro servirà un editor strutturato (min/preferred/max) per `fontSize` — stessa nota di rivalutazione già in D-023, non anticipata qui. Se emergerà un altro campo specifico-per-tipo (es. `href`, Fase 9) — segue lo stesso pattern ormai consolidato (S1 → S2 → prossimo): un piccolo modulo puro `type → bool`/condizione sui `resolvedProps`, un campo condizionale nel pannello.
+
