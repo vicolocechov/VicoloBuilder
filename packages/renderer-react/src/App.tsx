@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
-import type { Document, PageId } from "@vicolobuilder/engine";
+import type { Document, NodeId, PageId } from "@vicolobuilder/engine";
 import { ReactiveHistory } from "./history/ReactiveHistory.js";
-import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument } from "./history/useHistoryStore.js";
+import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument, useSelection } from "./history/useHistoryStore.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
 import { PageManager } from "./pages/PageManager.js";
@@ -34,12 +34,43 @@ function buildDemoDocument(): Document {
   return doc;
 }
 
+/**
+ * B3 (cancellazione elementi da UI) — stesso principio già usato in
+ * `Canvas.tsx` per nascondere "Sposta dentro…" sulla radice pagina
+ * (`entry.parentBox !== null`), qui riscritto alla granularità disponibile
+ * in `App.tsx` (nessun `FlatBoxEntry` qui): controlla su TUTTE le pagine,
+ * non solo quella attiva, stesso giro già fatto da `applyDeleteNode`
+ * (`packages/engine/src/runtime/commands.ts`) - copre anche il caso limite
+ * di una selezione rimasta da una pagina diversa da quella attiva.
+ */
+function isPageRoot(document: Document, nodeId: NodeId): boolean {
+  for (const page of document.pages.values()) {
+    if (page.rootNodeId === nodeId) return true;
+  }
+  return false;
+}
+
+/**
+ * B3 — la scorciatoia da tastiera non deve attivarsi mentre l'autore sta
+ * scrivendo in un campo del `PropertyPanel`/`PageManager`/`FontManager`
+ * (decisione esplicita del proprietario del prodotto): controlla
+ * l'elemento a fuoco nel DOM, non un flag di stato dedicato - non serve,
+ * il fuoco della tastiera è già l'informazione che serve.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 export function App(): JSX.Element {
   const store = useMemo(() => new ReactiveHistory(buildDemoDocument()), []);
   const document = useDocument(store);
   const activeBreakpoint = useActiveBreakpoint(store);
   const canUndo = useCanUndo(store);
   const canRedo = useCanRedo(store);
+  const selection = useSelection(store);
 
   // Fase 5, Blocco E: quale pagina sta guardando/modificando il Canvas -
   // stato locale di App, non di History (vedi commento in PageManager.tsx).
@@ -53,6 +84,46 @@ export function App(): JSX.Element {
   // registro del browser) è globale alla pagina, Canvas e Preview ne
   // beneficiano entrambi senza registrare nulla per conto proprio.
   useRegisteredFonts(readRegisteredFonts(document));
+
+  // B3 (cancellazione elementi da UI, punto di ingresso B - toolbar
+  // globale, stesso pattern di Undo/Redo - analisi approvata): nessuna
+  // conferma (coerente con l'unico precedente diretto, `DELETE_PAGE` in
+  // `PageManager.tsx`), radice pagina esclusa (`isPageRoot`), selezione
+  // deselezionata esplicitamente dopo il comando (non lasciata "pendente" -
+  // quel messaggio resta per i casi inattesi, es. Undo di una CREATE_NODE,
+  // non per un delete voluto).
+  const canDeleteSelection = selection !== null && !isPageRoot(document, selection);
+
+  function handleDeleteSelected(): void {
+    if (!canDeleteSelection || selection === null) return;
+    store.execute({ type: "DELETE_NODE", nodeId: selection });
+    store.deselect();
+  }
+
+  // B3 (scorciatoia da tastiera, complementare non sostitutiva - analisi
+  // approvata): "Delete" principale, "Backspace" secondario. Non si attiva
+  // quando il fuoco è su un campo editabile (`isEditableTarget`) - senza
+  // questo controllo, Backspace cancellerebbe l'elemento selezionato mentre
+  // si sta scrivendo in un campo del pannello, non un carattere. Disattiva
+  // anche mentre la Preview è aperta: `Preview.tsx` ha già un proprio
+  // `onKeyDown` scoped (frecce/Esc per la navigazione) - un listener
+  // globale attivo in parallelo lì rischierebbe una cancellazione
+  // accidentale durante la sola navigazione, senza alcun indizio visivo
+  // (la Preview non mostra selezione) che un nodo resti comunque
+  // cancellabile.
+  useEffect(() => {
+    if (previewOpen || !canDeleteSelection || selection === null) return;
+    function onKeyDown(e: KeyboardEvent): void {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (isEditableTarget(e.target)) return;
+      if (selection === null) return;
+      e.preventDefault();
+      store.execute({ type: "DELETE_NODE", nodeId: selection });
+      store.deselect();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewOpen, canDeleteSelection, selection, store]);
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
@@ -76,6 +147,9 @@ export function App(): JSX.Element {
           </button>
           <button onClick={() => store.redo()} disabled={!canRedo}>
             Redo
+          </button>
+          <button onClick={handleDeleteSelected} disabled={!canDeleteSelection} title="Canc / Backspace">
+            Elimina
           </button>
           <button onClick={() => setPreviewOpen(true)} disabled={previewOpen}>
             Anteprima
