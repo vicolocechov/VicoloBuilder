@@ -1,4 +1,4 @@
-import type { PageId } from "../document/types.js";
+import type { NodeId, PageId } from "../document/types.js";
 import type { BreakpointName } from "../resolver/types.js";
 import type { Box } from "../layout/types.js";
 
@@ -35,9 +35,28 @@ export interface ExportContext {
  * stesso principio di passaggio opaco - rende `Document.props` (e la
  * chiave `fonts` che vi abita, convenzione di `renderer-react`)
  * osservabile end-to-end senza che l'Engine interpreti cosa sia un font.
+ *
+ * Batch 1 dell'Exporter (analisi "come estendere l'IR", Opzione B
+ * approvata): `nodes` aggiunto, SIBLING di `box`/`meta` - non dentro
+ * `meta` (che resta minimale per definizione, D-012; un dizionario di
+ * stile per nodo è contenuto core, della stessa natura di `box`, non un
+ * dato "senza il quale l'IR non sarebbe distinguibile"). `box` resta
+ * ESATTAMENTE quello che `computeLayout` produce oggi, invariato -
+ * nessuna modifica al contratto geometrico (RFC-004: "Layout produce Box
+ * Tree... mai CSS diretto", mai violato). `nodes` è un dizionario piatto
+ * `nodeId -> resolvedProps` (MAI un `DocumentNode` sorgente: solo i
+ * valori già risolti dal Resolver, esattamente come already accade in
+ * `ResolvedNode.resolvedProps`) - limitato ai soli nodi della pagina
+ * esportata (stesso perimetro di `box`, mai l'intero `ResolvedModel`
+ * multi-pagina), ordinato per `nodeId` per lo stesso motivo di
+ * `serializeNode`/`sortedEntries` in `document/hash.ts`: l'ordine di
+ * inserimento in una `Map` non è un dato significativo, va reso
+ * indipendente esplicitamente per il determinismo byte-per-byte
+ * dell'output serializzato.
  */
 export interface IR {
   readonly box: Box;
+  readonly nodes: Readonly<Record<NodeId, Readonly<Record<string, unknown>>>>;
   readonly meta: {
     readonly pageId: PageId;
     readonly breakpoint: BreakpointName;
