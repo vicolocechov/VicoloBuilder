@@ -6,7 +6,8 @@
     "packages/engine",
     "packages/cli",
     "packages/test-runner",
-    "packages/renderer-react"
+    "packages/renderer-react",
+    "packages/exporter"
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",

@@ -559,3 +559,19 @@ Nucleo (Punto 2, decisione esplicita: Opzione A): un'unica chiave nel bag, `font
 
 **Rivalutazione**: nessuna prevista per questo batch — chiude esattamente il perimetro dato. Il fix del determinismo di `resolvedProps` (`sortedProps`) è locale a `exportIR.ts`; se in futuro `resolvedProps` dovesse essere serializzato altrove con lo stesso bisogno di determinismo, valutare se estrarre `sortedProps` in un'utility condivisa invece di duplicarla.
 
+---
+
+## D-037 — Exporter Batch 2: nuovo pacchetto `@vicolobuilder/exporter`, utility di escaping (testo HTML, attributo HTML, testo CSS)
+
+**Stato**: nuovo pacchetto `packages/exporter` (decisione infrastrutturale #2, già presa prima dell'apertura dei batch: `packages/cli` resta un sottile orchestratore, la logica di traduzione vive isolata qui), aggiunto ai workspace della root. Nessuna dipendenza da `@vicolobuilder/engine` in questo batch - le tre funzioni sono pure stringa→stringa, non toccano Document/IR - la dipendenza verrà aggiunta solo quando un batch successivo ne avrà davvero bisogno, non anticipata.
+
+Tre funzioni pure in `src/escape.ts` (analisi Exporter, §3.7 - "tre discipline diverse, non intercambiabili"): `escapeHtmlText` (testo tra tag: `&` prima di `<`/`>`, ordine significativo per evitare un doppio escaping), `escapeHtmlAttribute` (valore dentro un attributo tra apici: aggiunge `"`/`'` alla stessa disciplina), `escapeCssText` (valore dentro una dichiarazione o una stringa CSS: `\` PRIMA di ogni altro carattere, poi `"`/`'`/`{`/`}`/`;`/a-capo con la sintassi di escape nativa di CSS - Syntax Level 3, `\` seguito da un carattere qualunque diverso da cifra esadecimale/newline rappresenta quel carattere letteralmente, valida sia in stringhe sia in valori "nudi"). Nessuna delle tre RIMUOVE mai un carattere: lo rende letteralmente innocuo nel proprio contesto, restando osservabile nell'output (coerente con "degradazione, non blocco silenzioso" già scelto per B1/B3).
+
+**Bug di test trovato e corretto durante l'implementazione, non del codice**: le prime versioni di tre test per `escapeCssText` asserivano `not.toMatch(/[{}]/)` (assenza totale del carattere), un'aspettativa sbagliata - l'escape CSS con backslash lascia il carattere PRESENTE, lo rende solo sintatticamente inerte (`\{` non è più un delimitatore di blocco, ma resta un `{` nel testo). Le asserzioni `.toBe(...)` con l'output atteso esatto, già presenti in ogni test, erano corrette fin dall'inizio - rimosse solo le tre asserzioni ridondanti e concettualmente sbagliate, nessuna modifica a `escape.ts`.
+
+**Evidenza disponibile**: `test/escape.test.ts` (19 test) - casi avversari deliberati per ciascuna funzione (tentativo di iniettare `<script>`, rottura di un attributo con `"`/`'`, rottura di una regola CSS con `{`/`}`/`;`, rottura di una stringa CSS con `"`, backslash che non produce un doppio escaping, a-capo letterale), più un test dell'invariante generale (nessun carattere CSS-significativo sopravvive senza un backslash di escape valido immediatamente prima). Build pulita su tutti e 5 i pacchetti (Engine, CLI, Test Runner, renderer-react, Exporter). Suite complete invariate e verdi altrove: Engine 204, CLI 20, Test Runner 3, renderer-react 167 - nessuna modifica a nessuno dei quattro pacchetti esistenti.
+
+**Segnalato, non affrontato (fuori perimetro)**: `npm install` ha segnalato una vulnerabilità pre-esistente e non correlata (`nanoid`, dipendenza transitiva di `vitest`, già presente in tutto il monorepo prima di questo batch, non introdotta da `@vicolobuilder/exporter`) - non toccata.
+
+**Rivalutazione**: nessuna prevista per questo batch. Se un batch successivo scoprirà un quarto contesto di inserimento (es. un attributo `style=""` che combina HTML-attributo E CSS-testo nello stesso valore) - da trattare come composizione esplicita delle funzioni esistenti, non una quarta funzione nuova, salvo che l'analisi di quel batch dimostri il contrario.
+
