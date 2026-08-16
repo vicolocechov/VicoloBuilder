@@ -221,6 +221,17 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // un valore inventato).
     const fontFamily = typeof resolvedNode.resolvedProps.fontFamily === "string" ? resolvedNode.resolvedProps.fontFamily : undefined;
     const fontWeight = typeof resolvedNode.resolvedProps.fontWeight === "string" ? resolvedNode.resolvedProps.fontWeight : undefined;
+    // B2 (identificatore stabile per ancore interne, Opzione C): un vero
+    // attributo HTML `id=`, separato da `data-node-id` (che resta lo
+    // sganciamento interno usato dal drag/dall'overlay/da `useHoverStyles`
+    // - non toccato). Applicato su QUALUNQUE tag (nessuna condizione di
+    // tipo, coerente con l'ambito deciso in B2), solo quando l'autore ha
+    // scelto un valore non vuoto - un `id=""` sarebbe un attributo HTML
+    // presente ma privo di senso, peggio che ometterlo del tutto.
+    const anchorId =
+      typeof resolvedNode.resolvedProps.anchorId === "string" && resolvedNode.resolvedProps.anchorId !== ""
+        ? resolvedNode.resolvedProps.anchorId
+        : undefined;
 
     return (
       // Fase 15 (Punto 1, analisi - Opzione A): l'overlay di selezione
@@ -236,6 +247,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       <Fragment key={entry.box.nodeId}>
         <Tag
           data-node-id={entry.box.nodeId}
+          id={anchorId}
           href={Tag === "a" ? href : undefined}
           src={Tag === "img" ? src : undefined}
           alt={Tag === "img" ? alt : undefined}

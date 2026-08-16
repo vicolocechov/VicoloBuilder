@@ -411,3 +411,29 @@ describe("buildUpdatePropsCommand — B1 (href modificabile): 'href' come CONTEN
     expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { href: "" } });
   });
 });
+
+describe("buildUpdatePropsCommand — B2 (identificatore stabile per ancore interne): 'anchorId' come CONTENT_KEYS", () => {
+  it("non lancia 'proprietà non riconosciuta' per anchorId, su un nodo di tipo 'card' (nessuna restrizione di tipo nel Command Bus - l'ambito 'tutti i tipi' è deciso qui, non nel PropertyPanel)", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { anchorId: "chi-siamo" })).not.toThrow();
+  });
+
+  it("scrive 'anchorId' sui props base anche quando la vista attiva è Mobile verticale (nessuna evidenza di un'ancora diversa per fascia)", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { anchorId: "corsi-adulti" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { anchorId: "corsi-adulti" } });
+  });
+
+  it("nessuna validazione di unicità (stesso trattamento di href/D-032): accetta un valore già usato da un altro nodo", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { anchorId: "sezione" } });
+    // "root" è il secondo nodo sempre presente in baseDoc() (radice pagina).
+    expect(() => buildUpdatePropsCommand(doc, "root", "desktop", { anchorId: "sezione" })).not.toThrow();
+  });
+
+  it("stringa vuota accettata (nessuna ancora assegnata, comportamento di default)", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "desktop", { anchorId: "" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { anchorId: "" } });
+  });
+});

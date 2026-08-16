@@ -59,6 +59,14 @@ import type { HoverKey } from "../interactions/hoverStyle.js";
  * tipo). Nessuna validazione di schema (Opzione A dell'analisi, approvata)
  * - vedi DECISIONS.md D-032 per l'obbligo, vincolante ma rimandato
  * all'Exporter, di sanificare `href` in output.
+ *
+ * B2 (identificatore stabile per ancore interne, Opzione C approvata) —
+ * `anchorId` in CONTENT_KEYS, campo "ancora" SEMPRE visibile (nessuna
+ * condizione di tipo, a differenza di ogni altro campo condizionale di
+ * questo pannello): i bersagli reali di un'ancora nel sito di riferimento
+ * non condividono un ruolo strutturale comune, mai un "link" - nessuna
+ * restrizione di tipo pulita è supportata dai dati. Nessuna validazione
+ * di unicità (stesso trattamento di `href`) - vedi DECISIONS.md D-033.
  */
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -210,6 +218,13 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         <strong>{node.id}</strong> <span style={{ opacity: 0.6 }}>({node.type})</span>
       </div>
       <div style={{ fontSize: 12, opacity: 0.7 }}>Vista: {activeBreakpoint}</div>
+
+      <TextField
+        key={`${fieldKeyPrefix}:anchorId`}
+        label="ancora"
+        value={typeof resolved.anchorId === "string" ? resolved.anchorId : ""}
+        onCommit={(s) => commitContent("anchorId", s)}
+      />
 
       <NumberField
         key={`${fieldKeyPrefix}:x`}

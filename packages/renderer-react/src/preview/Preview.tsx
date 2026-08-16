@@ -55,6 +55,16 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     // (conflitto con il trascinamento dal vivo e con l'overlay di
     // selezione, entrambi esclusivi del Canvas).
     const transition = typeof props.transition === "string" ? props.transition : undefined;
+    // B2 (identificatore stabile per ancore interne): stesso trattamento di
+    // Canvas.tsx - un vero attributo HTML `id=`, separato da
+    // `data-node-id`, solo quando l'autore ha scelto un valore non vuoto.
+    // Nessuna logica di navigazione/scroll-to-anchor aggiunta qui (fuori
+    // scope di B2, deciso esplicitamente) - `onClick` continua a chiamare
+    // `e.preventDefault()` su ogni "a" come da Fase 9/D-024, quindi un
+    // click su un link con ancora interna non fa scorrere la pagina: è un
+    // comportamento preesistente e deliberato (Preview è sola lettura),
+    // non toccato da questa fase.
+    const anchorId = typeof props.anchorId === "string" && props.anchorId !== "" ? props.anchorId : undefined;
     return (
       <Tag
         key={entry.box.nodeId}
@@ -62,6 +72,7 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
         // (Fase 5/9/15) - qui mancava, serve come selettore per le regole
         // `:hover` iniettate da `useHoverStyles`.
         data-node-id={entry.box.nodeId}
+        id={anchorId}
         // Fase 9, Punto 5: la Preview è una vista di sola lettura (Fase 7,
         // Punto 6) - un link non deve navigare via da qui più di quanto non
         // debba farlo nel Canvas di editing.

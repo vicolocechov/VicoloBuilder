@@ -56,10 +56,24 @@ import { BASE_TIER } from "../breakpoints.js";
  * sicura di `href` in output (schemi ammessi, blocco di `javascript:` e
  * simili) è un criterio di chiusura VINCOLANTE dell'Exporter, non di
  * questo punto - vedi DECISIONS.md D-032.
+ *
+ * B2 (identificatore stabile per ancore interne, Opzione C approvata):
+ * `anchorId` entra in `CONTENT_KEYS` - un prop LIBERO scelto dall'autore,
+ * separato e mai sincronizzato con `NodeId` (che resta un campo
+ * strutturale del Document Model, mai toccato da `UPDATE_PROPS` né da
+ * alcun comando). Nessuna cascata per fascia (stesso ragionamento di
+ * `href`: nessuna evidenza reale di un'ancora diversa per fascia).
+ * Nessuna validazione di unicità qui (stesso trattamento di `href`,
+ * D-032) - la garanzia di `id=` HTML univoci nell'output è un criterio
+ * di chiusura VINCOLANTE dell'Exporter - vedi DECISIONS.md D-033.
+ * Disponibile su TUTTI i tipi di nodo (a differenza di `href`/hover,
+ * ristretti a "link"): i 13 bersagli reali di ancora nel sito di
+ * riferimento non condividono un ruolo strutturale comune, mai un
+ * "link" - nessuna restrizione di tipo pulita emerge dai dati.
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
 export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight", "transition"] as const;
-export const CONTENT_KEYS = ["text", "color", "src", "alt", "href"] as const;
+export const CONTENT_KEYS = ["text", "color", "src", "alt", "href", "anchorId"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];
 export type StyleKey = (typeof STYLE_KEYS)[number];
