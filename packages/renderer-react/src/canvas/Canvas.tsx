@@ -239,6 +239,18 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           href={Tag === "a" ? href : undefined}
           src={Tag === "img" ? src : undefined}
           alt={Tag === "img" ? alt : undefined}
+          // Fix dedicato (fuori da Fase 17, segnalato in D-030): `<a>` e
+          // `<img>` sono nativamente trascinabili nel browser
+          // (`element.draggable === true` di default) - un gesto di
+          // trascinamento con puntatore su uno di questi tag innesca il
+          // drag-and-drop nativo HTML5 (`dragstart`), che intercetta parte
+          // della sequenza di eventi prima che il nostro `onPointerDown`/
+          // `pointermove` la riceva per intero, troncando lo spostamento
+          // (trovato verificando in browser un delta di 300px ridotto a
+          // 38px). Applicato incondizionatamente: innocuo sui tag già non
+          // trascinabili di default (div/h1/h2/h3/p), nessuna eccezione
+          // per tipo necessaria.
+          draggable={false}
           onClick={(e: MouseEvent<HTMLElement>) => {
             // Fase 9, Punto 5: un <a> nell'editor non deve mai navigare -
             // selezionarlo/spostarlo deve restare dentro l'editor. Innocuo per
