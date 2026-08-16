@@ -36,9 +36,18 @@ import { BASE_TIER } from "../breakpoints.js";
  * di `href`/`src`/`alt`, la classificazione tipografica non era stata
  * considerata "non ambigua" nell'analisi: `fontSize` stesso fu lasciato
  * esplicitamente aperto in D-023).
+ *
+ * Fase 17 (Transizioni CSS di base, Punto 2 - decisione esplicita):
+ * `transition` (la proprietà di TIMING - durata/easing) entra in
+ * `STYLE_KEYS`, mirror esatto di `fontSize`: stringa CSS opaca, stesso
+ * congelamento per fascia. A differenza di `props.hover` (Punto 2, un
+ * bag separato NON integrato con `props.responsive` - vedi
+ * `interactions/hoverStyle.ts`), `transition` è un valore scalare sui
+ * props BASE del nodo, mirror esatto del sito reale (`transition` è
+ * sempre dichiarata sulla regola base, mai dentro `:hover`).
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
-export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight"] as const;
+export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight", "transition"] as const;
 export const CONTENT_KEYS = ["text", "color", "src", "alt"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];

@@ -364,3 +364,26 @@ describe("buildUpdatePropsCommand — Fase 16 (Font custom): 'fontFamily'/'fontW
     });
   });
 });
+
+describe("buildUpdatePropsCommand — Fase 17 (Transizioni CSS di base): 'transition' come STYLE_KEYS (Punto 2)", () => {
+  it("non lancia 'proprietà non riconosciuta' per transition", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { transition: "color .3s ease" })).not.toThrow();
+  });
+
+  it("congela come qualunque altra chiave di STYLE_KEYS quando editata su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { transition: "color .2s" } });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { transition: "color .5s ease-out" });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { transition: "color .5s ease-out" },
+          "tablet-verticale": { transition: "color .2s" },
+        },
+      },
+    });
+  });
+});

@@ -3,9 +3,11 @@ import { getNode, resolveNode } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { buildUpdatePropsCommand, type ContentKey, type GeometryKey, type StyleKey } from "../write/buildUpdatePropsCommand.js";
+import { buildUpdateHoverPropsCommand } from "../write/buildUpdateHoverPropsCommand.js";
 import { frozenFieldState } from "./frozenFieldState.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { isTextBearingType } from "../elements/textBearingTypes.js";
+import type { HoverKey } from "../interactions/hoverStyle.js";
 
 /**
  * Fase 5, Blocco D (Decisione D7): ambito minimo — solo i campi già
@@ -32,10 +34,28 @@ import { isTextBearingType } from "../elements/textBearingTypes.js";
  * sono CONTENT_KEYS (nessun badge, come `text`/`color`); `objectFit` è
  * STYLE_KEYS (badge ereditato/overridden-here, come `fontSize`).
  *
+ * Fase 17 (Transizioni CSS di base) — `transition` (STYLE_KEYS) e i quattro
+ * campi di `props.hover` (`color`/`background`/`transform`/`borderColor`,
+ * nessun badge: `props.hover` è un bag separato, mai congelato per
+ * fascia, Punto 2 dell'analisi) visibili SOLO su `node.type === "link"`
+ * (decisione esplicita del proprietario del prodotto, valutata a
+ * confronto con "nessuna restrizione"/"anche i contenitori": nel sito di
+ * riferimento OGNI target di una regola `:hover` è un `<a>` diretto - 30
+ * casi su 31 - o il suo contenitore immediato che incapsula un `<a>` - 1
+ * caso, `.porta` - mai un testo/immagine/contenitore generico senza
+ * link. Restringere a "link" copre il caso univoco (pulsanti/CTA);
+ * l'effetto di sollevamento del contenitore-carta resta fuori dal nucleo,
+ * segnalato, rimandato a un eventuale futuro tipo "card" - stessa logica
+ * di rimando già usata per `og:*`, D-027).
+ *
  * Fase 16 (Font custom) — `fontFamily`/`fontWeight` visibili sugli stessi
  * tipi di `fontSize` (`isTextBearingType`), STYLE_KEYS (Punto 3/4), stesso
  * badge di congelamento.
  */
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 function NumberField({
   label,
@@ -158,6 +178,10 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
     store.execute(buildUpdatePropsCommand(document, node!.id, activeBreakpoint, { [key]: value }));
   }
 
+  function commitHover(key: HoverKey, value: string): void {
+    store.execute(buildUpdateHoverPropsCommand(document, node!.id, { [key]: value }));
+  }
+
   // Fase S1: visibile solo per un nodo la cui modalità RISOLTA (alla fascia
   // attiva, non solo il prop base) è "griglia" - stesso trattamento già
   // usato per il collocamento di un nuovo elemento (isLiberoContainer,
@@ -166,6 +190,11 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
   const isGrid = resolved.layoutMode === "griglia";
   const isTextBearing = isTextBearingType(node.type);
   const isImage = node.type === "image";
+  // Fase 17: ristretto a "link" (decisione esplicita, vedi commento sopra
+  // sul PropertyPanel) - a differenza di isGrid, non serve un valore
+  // RISOLTO: `type` non ha mai un override per fascia.
+  const isInteractive = node.type === "link";
+  const hover = isPlainObject(resolved.hover) ? resolved.hover : {};
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
@@ -273,6 +302,48 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={typeof resolved.objectFit === "string" ? resolved.objectFit : ""}
           badge={frozenFieldState(node, activeBreakpoint, "objectFit")}
           onCommit={(s) => commitStyle("objectFit", s)}
+        />
+      ) : null}
+
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:transition`}
+          label="transition"
+          value={typeof resolved.transition === "string" ? resolved.transition : ""}
+          badge={frozenFieldState(node, activeBreakpoint, "transition")}
+          onCommit={(s) => commitStyle("transition", s)}
+        />
+      ) : null}
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:hover:color`}
+          label="hover: color"
+          value={typeof hover.color === "string" ? hover.color : ""}
+          onCommit={(s) => commitHover("color", s)}
+        />
+      ) : null}
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:hover:background`}
+          label="hover: background"
+          value={typeof hover.background === "string" ? hover.background : ""}
+          onCommit={(s) => commitHover("background", s)}
+        />
+      ) : null}
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:hover:transform`}
+          label="hover: transform"
+          value={typeof hover.transform === "string" ? hover.transform : ""}
+          onCommit={(s) => commitHover("transform", s)}
+        />
+      ) : null}
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:hover:borderColor`}
+          label="hover: borderColor"
+          value={typeof hover.borderColor === "string" ? hover.borderColor : ""}
+          onCommit={(s) => commitHover("borderColor", s)}
         />
       ) : null}
 

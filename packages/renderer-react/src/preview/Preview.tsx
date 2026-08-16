@@ -9,6 +9,8 @@ import { PREVIEW_SIZE } from "../previewSize.js";
 import { htmlTagFor } from "../elements/htmlTag.js";
 import { sceneNodeIds } from "./scenes.js";
 import { initialPosition, navigatePage, navigateScene, type PreviewPosition } from "./navigation.js";
+import { readHoverStyles } from "../interactions/hoverStyle.js";
+import { useHoverStyles } from "../interactions/useHoverStyles.js";
 
 /**
  * Fase 7, Punto 4: transizione con `transition` CSS nativa, non il motore
@@ -48,9 +50,18 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     // Fase 16: stesso trattamento di Canvas.tsx.
     const fontFamily = typeof props.fontFamily === "string" ? props.fontFamily : undefined;
     const fontWeight = typeof props.fontWeight === "string" ? props.fontWeight : undefined;
+    // Fase 17 (Punto 2/3): `transition` applicato SOLO qui, mai in
+    // Canvas.tsx - vedi `interactions/useHoverStyles.ts` per il motivo
+    // (conflitto con il trascinamento dal vivo e con l'overlay di
+    // selezione, entrambi esclusivi del Canvas).
+    const transition = typeof props.transition === "string" ? props.transition : undefined;
     return (
       <Tag
         key={entry.box.nodeId}
+        // Fase 17: stesso attributo già presente su ogni Tag di Canvas.tsx
+        // (Fase 5/9/15) - qui mancava, serve come selettore per le regole
+        // `:hover` iniettate da `useHoverStyles`.
+        data-node-id={entry.box.nodeId}
         // Fase 9, Punto 5: la Preview è una vista di sola lettura (Fase 7,
         // Punto 6) - un link non deve navigare via da qui più di quanto non
         // debba farlo nel Canvas di editing.
@@ -71,6 +82,7 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
           fontWeight,
           padding: 4,
           objectFit,
+          transition,
         }}
       >
         {Tag === "img" ? null : text}
@@ -91,6 +103,13 @@ export function Preview({
   const document = useDocument(store);
   const activeBreakpoint = useActiveBreakpoint(store);
   const previewSize = PREVIEW_SIZE[activeBreakpoint] ?? { width: 1600, height: 900 };
+
+  // Fase 17 (Punto 1/3): un solo punto di chiamata, montato/smontato con la
+  // Preview stessa - `useHoverStyles` aggiunge/rimuove il proprio <style>
+  // via cleanup dell'effect, coerente col ciclo di vita di questo
+  // componente (Canvas non chiama mai questo hook).
+  const hoverStyles = useMemo(() => readHoverStyles(document), [document]);
+  useHoverStyles(hoverStyles);
 
   const [position, setPosition] = useState<PreviewPosition>(() => initialPosition(initialPageId));
   const [fadeOpacity, setFadeOpacity] = useState(1);
