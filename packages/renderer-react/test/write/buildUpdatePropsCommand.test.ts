@@ -387,3 +387,27 @@ describe("buildUpdatePropsCommand — Fase 17 (Transizioni CSS di base): 'transi
     });
   });
 });
+
+describe("buildUpdatePropsCommand — B1 (href modificabile): 'href' come CONTENT_KEYS", () => {
+  it("non lancia 'proprietà non riconosciuta' per href", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { href: "https://example.com" })).not.toThrow();
+  });
+
+  it("scrive 'href' sui props base anche quando la vista attiva è Mobile verticale (nessuna evidenza di destinazione diversa per fascia)", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { href: "#chi-siamo" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { href: "#chi-siamo" } });
+  });
+
+  it("nessuna validazione di schema (Opzione A, approvata): accetta qualunque stringa, incluso uno schema eseguibile", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { href: "javascript:alert(1)" })).not.toThrow();
+  });
+
+  it("stringa vuota accettata (link senza destinazione, comportamento invariato dalla creazione)", () => {
+    const doc = baseDoc();
+    const command = buildUpdatePropsCommand(doc, "card", "desktop", { href: "" });
+    expect(command).toEqual({ type: "UPDATE_PROPS", nodeId: "card", props: { href: "" } });
+  });
+});

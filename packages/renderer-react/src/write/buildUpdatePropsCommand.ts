@@ -45,10 +45,21 @@ import { BASE_TIER } from "../breakpoints.js";
  * `interactions/hoverStyle.ts`), `transition` è un valore scalare sui
  * props BASE del nodo, mirror esatto del sito reale (`transition` è
  * sempre dichiarata sulla regola base, mai dentro `:hover`).
+ *
+ * B1 (href modificabile, analisi pre-Exporter): `href` entra in
+ * `CONTENT_KEYS` - classificazione già decisa in D-024 (Fase 9), non
+ * riaperta qui ("passo a basso rischio quando servirà l'editing da UI,
+ * non una domanda aperta"): nessuna evidenza reale di un `href` diverso
+ * per fascia responsive. Nessuna validazione di schema qui (Opzione A
+ * dell'analisi B1, approvata) - coerente col principio, mai violato in
+ * questo file, che il Command Bus valida CHIAVI, non VALORI. La gestione
+ * sicura di `href` in output (schemi ammessi, blocco di `javascript:` e
+ * simili) è un criterio di chiusura VINCOLANTE dell'Exporter, non di
+ * questo punto - vedi DECISIONS.md D-032.
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
 export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight", "transition"] as const;
-export const CONTENT_KEYS = ["text", "color", "src", "alt"] as const;
+export const CONTENT_KEYS = ["text", "color", "src", "alt", "href"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];
 export type StyleKey = (typeof STYLE_KEYS)[number];

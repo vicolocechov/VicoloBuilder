@@ -51,6 +51,14 @@ import type { HoverKey } from "../interactions/hoverStyle.js";
  * Fase 16 (Font custom) — `fontFamily`/`fontWeight` visibili sugli stessi
  * tipi di `fontSize` (`isTextBearingType`), STYLE_KEYS (Punto 3/4), stesso
  * badge di congelamento.
+ *
+ * B1 (href modificabile, analisi pre-Exporter) — `href` in CONTENT_KEYS
+ * (nessun badge, come `text`/`color`/`src`/`alt`), visibile solo su
+ * `node.type === "link"` (stesso ambito già stabilito per hover/transition
+ * in Fase 17, qui ancora meno ambiguo: `href` non ha senso su alcun altro
+ * tipo). Nessuna validazione di schema (Opzione A dell'analisi, approvata)
+ * - vedi DECISIONS.md D-032 per l'obbligo, vincolante ma rimandato
+ * all'Exporter, di sanificare `href` in output.
  */
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -305,6 +313,14 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         />
       ) : null}
 
+      {isInteractive ? (
+        <TextField
+          key={`${fieldKeyPrefix}:href`}
+          label="href"
+          value={typeof resolved.href === "string" ? resolved.href : ""}
+          onCommit={(s) => commitContent("href", s)}
+        />
+      ) : null}
       {isInteractive ? (
         <TextField
           key={`${fieldKeyPrefix}:transition`}
