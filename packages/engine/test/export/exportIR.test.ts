@@ -102,3 +102,47 @@ describe("exportIR — pageId (già oggi obbligo strutturale di computeLayout, n
     expect(irSecond.meta.pageId).toBe("page-second");
   });
 });
+
+describe("exportIR — B4 (SEO og:*/lang): 'og:url' deriva sempre da 'canonical', mai un campo separato", () => {
+  it("canonical scritto su Page.props arriva in ir.meta.pageProps così com'è", () => {
+    let doc = buildSampleDocument();
+    doc = applyCommand(doc, { type: "UPDATE_PAGE_PROPS", pageId: "page-home", props: { canonical: "https://www.vicolocechov.it/" } });
+
+    const ir = exportIR(doc, CONTEXT);
+
+    expect(ir.meta.pageProps.canonical).toBe("https://www.vicolocechov.it/");
+  });
+
+  it("nessuna chiave 'ogUrl'/'og:url' compare MAI in ir.meta.pageProps, nemmeno dopo aver scritto ogni altro campo SEO per-pagina - la prova diretta che og:url non è un dato persistito, solo derivabile da 'canonical' in output (compito di un futuro Exporter, non di questo Document)", () => {
+    let doc = buildSampleDocument();
+    doc = applyCommand(doc, {
+      type: "UPDATE_PAGE_PROPS",
+      pageId: "page-home",
+      props: {
+        title: "Vicolo Cechov",
+        description: "Scuola di teatro",
+        canonical: "https://www.vicolocechov.it/",
+        ogTitle: "Vicolo Cechov | Scuola di teatro",
+        ogDescription: "Corsi e laboratori di teatro",
+      },
+    });
+
+    const ir = exportIR(doc, CONTEXT);
+
+    expect(ir.meta.pageProps).not.toHaveProperty("ogUrl");
+    expect(ir.meta.pageProps).not.toHaveProperty("og:url");
+  });
+
+  it("nessuna chiave 'ogUrl'/'og:url' compare MAI in ir.meta.documentProps, nemmeno dopo aver scritto ogni campo SEO a livello documento (lang/og:site_name/og:type/og:locale)", () => {
+    let doc = buildSampleDocument();
+    doc = applyCommand(doc, {
+      type: "UPDATE_DOCUMENT_PROPS",
+      props: { lang: "it", ogSiteName: "Vicolo Cechov", ogType: "website", ogLocale: "it_IT" },
+    });
+
+    const ir = exportIR(doc, CONTEXT);
+
+    expect(ir.meta.documentProps).not.toHaveProperty("ogUrl");
+    expect(ir.meta.documentProps).not.toHaveProperty("og:url");
+  });
+});

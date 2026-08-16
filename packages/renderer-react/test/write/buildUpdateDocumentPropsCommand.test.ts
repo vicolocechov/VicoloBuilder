@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
-import { buildRegisterFontCommand, buildUnregisterFontCommand } from "../../src/write/buildUpdateDocumentPropsCommand.js";
+import {
+  buildRegisterFontCommand,
+  buildUnregisterFontCommand,
+  buildUpdateDocumentSeoCommand,
+} from "../../src/write/buildUpdateDocumentPropsCommand.js";
 
 function baseDoc() {
   return createDocument({ rootPageId: "page-home", rootNodeId: "root" });
@@ -57,5 +61,50 @@ describe("buildUnregisterFontCommand", () => {
     const doc = baseDoc();
     const command = buildUnregisterFontCommand(doc, "Inesistente", "400");
     expect(command).toEqual({ type: "UPDATE_DOCUMENT_PROPS", props: { fonts: [] } });
+  });
+});
+
+describe("buildUpdateDocumentSeoCommand — B4 (SEO og:*/lang): chiavi non riconosciute", () => {
+  it("lancia su una chiave fuori dall'elenco chiuso", () => {
+    expect(() => buildUpdateDocumentSeoCommand({ ogImage: "x" } as never)).toThrow();
+  });
+
+  it("il messaggio d'errore elenca le quattro chiavi ammesse", () => {
+    expect(() => buildUpdateDocumentSeoCommand({ ogImage: "x" } as never)).toThrow(/lang.*ogSiteName.*ogType.*ogLocale/i);
+  });
+
+  it("lancia se changedProps è vuoto", () => {
+    expect(() => buildUpdateDocumentSeoCommand({})).toThrow();
+  });
+
+  it("B4: nessun campo 'ogUrl' - deriva sempre da 'canonical' (in Page.props), mai un campo scrivibile qui (verifica esplicita, non solo un'assenza silenziosa)", () => {
+    expect(() => buildUpdateDocumentSeoCommand({ ogUrl: "https://example.com/" } as never)).toThrow(/non riconosciuta/i);
+  });
+});
+
+describe("buildUpdateDocumentSeoCommand — scrittura", () => {
+  it("costruisce UPDATE_DOCUMENT_PROPS con una sola chiave", () => {
+    const command = buildUpdateDocumentSeoCommand({ lang: "it" });
+    expect(command).toEqual({ type: "UPDATE_DOCUMENT_PROPS", props: { lang: "it" } });
+  });
+
+  it("costruisce UPDATE_DOCUMENT_PROPS con più chiavi nello stesso gesto", () => {
+    const command = buildUpdateDocumentSeoCommand({
+      lang: "it",
+      ogSiteName: "Vicolo Cechov",
+      ogType: "website",
+      ogLocale: "it_IT",
+    });
+    expect(command).toEqual({
+      type: "UPDATE_DOCUMENT_PROPS",
+      props: { lang: "it", ogSiteName: "Vicolo Cechov", ogType: "website", ogLocale: "it_IT" },
+    });
+  });
+
+  it("non prende 'document' in input (a differenza di buildRegisterFontCommand): scrittura diretta, nessuna lettura dello stato esistente necessaria", () => {
+    // Chiamabile senza un Document, a differenza delle funzioni per i font -
+    // prova diretta che questo è un mirror di buildUpdatePagePropsCommand
+    // (shallow merge), non della semantica ad array di 'fonts'.
+    expect(buildUpdateDocumentSeoCommand.length).toBe(1);
   });
 });

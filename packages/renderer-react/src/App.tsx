@@ -12,6 +12,7 @@ import { TIER_NAMES } from "./breakpoints.js";
 import { FontManager } from "./fonts/FontManager.js";
 import { useRegisteredFonts } from "./fonts/useRegisteredFonts.js";
 import { readRegisteredFonts } from "./fonts/fontRegistration.js";
+import { SiteSeoManager } from "./seo/SiteSeoManager.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
 function buildDemoDocument(): Document {
@@ -130,6 +131,7 @@ export function App(): JSX.Element {
       <div style={{ width: 260, borderRight: "1px solid #e5e7eb", overflow: "auto" }}>
         <PageManager store={store} activePageId={activePageId} onActivePageChange={setActivePageId} />
         <FontManager store={store} />
+        <SiteSeoManager store={store} />
       </div>
       <div style={{ flex: 1, overflow: "auto", padding: 16, background: "#f3f4f6" }}>
         <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

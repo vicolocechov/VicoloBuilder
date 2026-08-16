@@ -24,6 +24,14 @@ import { buildUpdatePagePropsCommand, type PageSeoKey } from "../write/buildUpda
  * insieme, non a un nodo selezionato, e non varia per fascia (a differenza
  * dei campi del PropertyPanel non ha bisogno di `activeBreakpoint` né di
  * badge ereditato/overridden).
+ *
+ * B4 (SEO og:* e lang) — `ogTitle`/`ogDescription` accanto a
+ * `title`/`description`/`canonical`, stesso trattamento (per-pagina,
+ * l'Open Graph li definisce per-URL). Nessun campo `og:url`: deriva
+ * sempre da `canonical`, mai un dato scritto qui - vedi
+ * `write/buildUpdatePagePropsCommand.ts`. `lang`/`og:site_name`/
+ * `og:type`/`og:locale` (un solo sito, mai per pagina) vivono invece in
+ * `Document.props`, editabili in `seo/SiteSeoManager.tsx`, non qui.
  */
 
 function SeoTextField({
@@ -197,6 +205,18 @@ export function PageManager({
             label="canonical"
             value={typeof activePage.props.canonical === "string" ? activePage.props.canonical : ""}
             onCommit={(s) => commitSeo("canonical", s)}
+          />
+          <SeoTextField
+            key={`${activePageId}:ogTitle`}
+            label="og:title"
+            value={typeof activePage.props.ogTitle === "string" ? activePage.props.ogTitle : ""}
+            onCommit={(s) => commitSeo("ogTitle", s)}
+          />
+          <SeoTextField
+            key={`${activePageId}:ogDescription`}
+            label="og:description"
+            value={typeof activePage.props.ogDescription === "string" ? activePage.props.ogDescription : ""}
+            onCommit={(s) => commitSeo("ogDescription", s)}
           />
         </div>
       ) : null}

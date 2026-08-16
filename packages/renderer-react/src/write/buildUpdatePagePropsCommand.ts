@@ -11,8 +11,21 @@ import type { PageId, UpdatePagePropsCommand } from "@vicolobuilder/engine";
  * fascia (Punto 3 dell'analisi, approvato): `Page.props` non passa mai dal
  * Resolver, quindi questo builder non prende né `document` né
  * `activeBreakpoint` — scrive sempre e solo sui props base della pagina.
+ *
+ * B4 (SEO og:* e lang, Opzione B approvata) — `ogTitle`/`ogDescription`
+ * entrano qui, non in `Document.props`: l'Open Graph li definisce per-URL
+ * (ogni pagina condivisa sui social ha bisogno del proprio testo), stesso
+ * livello di `title`/`description`. `og:url` NON è un campo - deriva
+ * SEMPRE da `canonical` (già presente) nel punto in cui un futuro Exporter
+ * lo genererà: nessun campo `ogUrl` è mai stato aggiunto a `PAGE_SEO_KEYS`,
+ * verificato esplicitamente da un test dedicato
+ * (`test/write/buildUpdatePagePropsCommand.test.ts`) - non lasciato
+ * all'assenza silenziosa. Motivazione: un `og:url` scritto a mano
+ * duplicherebbe un dato già presente (`canonical`) senza alcun controllo
+ * che li tenga sincronizzati - primo caso nel prodotto di due campi che
+ * dovrebbero sempre coincidere, evitato scrivendone uno solo.
  */
-export const PAGE_SEO_KEYS = ["title", "description", "canonical"] as const;
+export const PAGE_SEO_KEYS = ["title", "description", "canonical", "ogTitle", "ogDescription"] as const;
 export type PageSeoKey = (typeof PAGE_SEO_KEYS)[number];
 
 const PAGE_SEO_KEY_SET: ReadonlySet<string> = new Set(PAGE_SEO_KEYS);
