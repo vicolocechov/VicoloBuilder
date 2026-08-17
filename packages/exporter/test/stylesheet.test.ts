@@ -84,7 +84,7 @@ describe("renderGeometryStylesheet — regole di geometria per nodo", () => {
     const css = renderGeometryStylesheet(doc, PAGE_ID);
     expect(css).toContain('[data-node-id="root"]{position:absolute;');
     expect(css).toContain('[data-node-id="a"]{position:absolute;left:0px;top:0px;width:');
-    expect(css).toContain(";height:30px;}");
+    expect(css).toContain(";height:30px;font-size:12px;object-fit:cover;}");
   });
 
   it("struttura piatta: ogni nodo è un selettore proprio, un figlio non è annidato dentro la regola del genitore", () => {
@@ -171,7 +171,7 @@ describe("renderGeometryStylesheet — le 5 coppie di overlap reale (D-044)", ()
     doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "text", parentId: "root", props: { x: 0, y: 0, width: 50, height: 50 } });
 
     const css = renderGeometryStylesheet(doc, PAGE_ID);
-    const nRule = '[data-node-id="n"]{position:absolute;left:0px;top:0px;width:50px;height:50px;}';
+    const nRule = '[data-node-id="n"]{position:absolute;left:0px;top:0px;width:50px;height:50px;font-size:12px;object-fit:cover;}';
 
     for (const bp of ["tablet-orizzontale", "laptop-compatto", "desktop-compatto", "desktop", "mobile-orizzontale"]) {
       const blockStart = css.indexOf(`@media ${expectedMediaCondition(bp)}{`);
@@ -206,5 +206,117 @@ describe("renderGeometryStylesheet — le 5 coppie di overlap reale (D-044)", ()
 
     const mobileOrizzontaleRule = css.indexOf('[data-node-id="n"]{position:absolute;left:1px;', mobileOrizzontaleStart);
     expect(mobileOrizzontaleRule).toBeGreaterThan(mobileOrizzontaleStart);
+  });
+});
+
+/**
+ * Batch 5: proprietà STYLE_KEYS di tipografia/immagine/transizione -
+ * fontSize/fontFamily/fontWeight/objectFit/transition. Stessi default già
+ * verificati in Canvas.tsx/Preview.tsx (non inventati qui).
+ */
+describe("renderGeometryStylesheet — Batch 5: fontSize/objectFit (con fallback fisso)", () => {
+  it("fontSize: fallback '12px' se assente (stesso default di Canvas.tsx/Preview.tsx, mai un numero nudo)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root" });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("font-size:12px;");
+  });
+
+  it("fontSize: valore esplicito passato così com'è (stringa CSS opaca, es. clamp())", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "h1", parentId: "root", props: { fontSize: "clamp(16px, 2vw, 24px)" } });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("font-size:clamp(16px, 2vw, 24px);");
+  });
+
+  it("objectFit: fallback 'cover' se assente, applicato incondizionatamente anche su un nodo non-immagine", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "text", parentId: "root" });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("object-fit:cover;");
+  });
+
+  it("objectFit: valore esplicito passato così com'è", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "image", parentId: "root", props: { objectFit: "contain" } });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("object-fit:contain;");
+  });
+});
+
+describe("renderGeometryStylesheet — Batch 5: fontFamily/fontWeight/transition (nessun default inventato)", () => {
+  it("fontFamily/fontWeight/transition assenti: nessuna dichiarazione CSS emessa per loro (il browser resta libero di usare il proprio default)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root" });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).not.toContain("font-family:");
+    expect(css).not.toContain("font-weight:");
+    expect(css).not.toContain("transition:");
+  });
+
+  it("fontFamily/fontWeight/transition presenti: passati così come sono, stringhe CSS opache", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, {
+      type: "CREATE_NODE",
+      nodeId: "n",
+      nodeType: "box",
+      parentId: "root",
+      props: { fontFamily: "'Georgia', serif", fontWeight: "700", transition: "all 0.3s ease" },
+    });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    // "'Georgia', serif" contiene apici singoli - escapati da escapeCssText
+    // (Batch 2) come ogni altro valore STYLE_KEYS, stessa disciplina del
+    // test di escaping avversario sotto - non un valore letterale.
+    expect(css).toContain(`font-family:${escapeCssText("'Georgia', serif")};`);
+    expect(css).toContain("font-weight:700;");
+    expect(css).toContain("transition:all 0.3s ease;");
+  });
+});
+
+describe("renderGeometryStylesheet — Batch 5: escaping avversario delle proprietà STYLE_KEYS", () => {
+  it("un valore che tenta di chiudere la regola e iniettarne una nuova viene neutralizzato da escapeCssText, mai presente in chiaro", () => {
+    const malicious = 'Arial";}[data-node-id="x"]{display:none;}[y="';
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root", props: { fontFamily: malicious } });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).not.toContain(`font-family:${malicious}`);
+    expect(css).toContain(`font-family:${escapeCssText(malicious)}`);
+  });
+});
+
+describe("renderGeometryStylesheet — Batch 5: STYLE_KEYS responsive (congelamento per fascia, D-018)", () => {
+  it("un override di fontSize su una fascia si applica solo lì e sulle fasce che la includono nella propria cascata (stesso comportamento già garantito dal Resolver per la geometria)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "h1", parentId: "root", props: { fontSize: "16px" } });
+    doc = applyCommand(doc, {
+      type: "UPDATE_PROPS",
+      nodeId: "n",
+      props: { responsive: { "mobile-verticale": { fontSize: "14px" } } },
+    });
+
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    const mobileVerticaleStart = css.indexOf(`@media ${expectedMediaCondition("mobile-verticale")}{`);
+    const desktopStart = css.indexOf(`@media ${expectedMediaCondition("desktop")}{`);
+
+    expect(css.indexOf('[data-node-id="n"]', mobileVerticaleStart)).toBeGreaterThan(-1);
+    const mobileVerticaleRule = css.slice(mobileVerticaleStart, css.indexOf("}}", mobileVerticaleStart) + 2);
+    expect(mobileVerticaleRule).toContain("font-size:14px;");
+
+    const desktopRule = css.slice(desktopStart);
+    expect(desktopRule).toContain("font-size:16px;");
+  });
+});
+
+describe("renderGeometryStylesheet — Batch 5: determinismo con STYLE_KEYS presenti", () => {
+  it("due chiamate consecutive con fontSize/fontFamily/fontWeight/objectFit/transition impostati producono la stessa stringa byte-per-byte", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, {
+      type: "CREATE_NODE",
+      nodeId: "n",
+      nodeType: "h1",
+      parentId: "root",
+      props: { fontSize: "clamp(16px, 2vw, 24px)", fontFamily: "Georgia, serif", fontWeight: "700", objectFit: "contain", transition: "all 0.3s ease" },
+    });
+    expect(renderGeometryStylesheet(doc, PAGE_ID)).toBe(renderGeometryStylesheet(doc, PAGE_ID));
   });
 });
