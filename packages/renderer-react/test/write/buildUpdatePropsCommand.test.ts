@@ -411,6 +411,40 @@ describe("buildUpdatePropsCommand — Blocco 2 (audit Builder UI/UX): 'textAlign
   });
 });
 
+describe("buildUpdatePropsCommand — Blocco 4 (audit Builder UI/UX): bordo/border-radius/opacity/padding come STYLE_KEYS", () => {
+  it.each([
+    ["borderWidth", 2],
+    ["borderColor", "#ff0000"],
+    ["borderStyle", "dashed"],
+    ["borderRadius", 8],
+    ["opacity", 0.5],
+    ["padding", 12],
+  ] as const)("non lancia 'proprietà non riconosciuta' per %s", (key, value) => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { [key]: value })).not.toThrow();
+  });
+
+  it("congelano come qualunque altra chiave di STYLE_KEYS quando editate su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, {
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: { borderWidth: 1, borderColor: "#000000", borderStyle: "solid", borderRadius: 0, opacity: 1, padding: 4 },
+    });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { borderWidth: 3, borderRadius: 12 });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { borderWidth: 3, borderRadius: 12 },
+          "tablet-verticale": { borderWidth: 1, borderRadius: 0 },
+        },
+      },
+    });
+  });
+});
+
 describe("buildUpdatePropsCommand — B1 (href modificabile): 'href' come CONTENT_KEYS", () => {
   it("non lancia 'proprietà non riconosciuta' per href", () => {
     const doc = baseDoc();

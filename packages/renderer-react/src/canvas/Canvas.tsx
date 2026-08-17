@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import type { ElementType, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type {
+  ElementType,
+  FocusEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 import { collectSubtreeIds, computeLayout, resolveDocument } from "@vicolobuilder/engine";
 import type { NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
@@ -8,6 +14,7 @@ import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxe
 import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { computeDropTarget, type DropTarget } from "./dropTarget.js";
 import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
+import { computeResizedGeometry, resizeHandles, type ResizeEdges, type ResizeStart } from "./resizeGeometry.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
@@ -36,10 +43,11 @@ interface ResizeDrag {
   readonly nodeId: NodeId;
   readonly startClientX: number;
   readonly startClientY: number;
-  readonly startWidth: number;
-  readonly startHeight: number;
-  readonly resizeWidth: boolean;
-  readonly resizeHeight: boolean;
+  // Blocco 4 (maniglie su più lati/angoli): geometria LOCALE (le props
+  // x/y/width/height del nodo, non le coordinate assolute del Box) - serve
+  // al comando finale (`buildUpdatePropsCommand` scrive props locali).
+  readonly startLocal: ResizeStart;
+  readonly edges: ResizeEdges;
 }
 
 export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: PageId }): JSX.Element {
@@ -69,6 +77,34 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [cursorClient, setCursorClient] = useState<{ x: number; y: number } | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const canvasRootRef = useRef<HTMLDivElement | null>(null);
+
+  // Blocco 4 ("rifinitura visiva", editing testo diretto): quale nodo è
+  // attualmente in modifica diretta (doppio click), al più uno per volta -
+  // stessa natura locale/transitoria di `moveDrag`/`resizeDrag`/
+  // `structuralDrag`. `cancelEditRef` distingue "Escape" (annulla, non
+  // scrive nulla) da un blur normale (committa) senza dover tenere due
+  // stati separati solo per quel flag booleano di un singolo gesto.
+  const [editingId, setEditingId] = useState<NodeId | null>(null);
+  const cancelEditRef = useRef(false);
+
+  // Porta il fuoco/il cursore di testo sul nodo appena entrato in modifica -
+  // necessario perché `contentEditable` diventa vero solo al PROSSIMO
+  // render (lo stesso click che ha innescato il doppio click non basta a
+  // renderlo già editabile e focalizzato nello stesso gesto). Cursore alla
+  // fine del testo (non selezione totale): un editing rapido, non una
+  // sostituzione integrale per forza.
+  useEffect(() => {
+    if (!editingId) return;
+    const el = canvasRootRef.current?.querySelector<HTMLElement>(`[data-node-id="${editingId}"]`);
+    if (!el) return;
+    el.focus();
+    const range = window.document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [editingId]);
 
   // Blocco 1 (audit Builder UI/UX): il bordo 1px onnipresente su ogni
   // elemento non selezionato rendeva ogni tipo (testo, immagine, link...)
@@ -165,12 +201,22 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     function onUp(e: PointerEvent): void {
       const dx = e.clientX - resizeDrag!.startClientX;
       const dy = e.clientY - resizeDrag!.startClientY;
+      const { edges, startLocal } = resizeDrag!;
+      // Ogni asse è verificato contro la soglia INDIPENDENTEMENTE (come
+      // prima di questo blocco): un ridimensionamento verticale sotto
+      // soglia non deve impedire un cambiamento orizzontale sopra soglia,
+      // e viceversa - passare 0 sull'asse "spento" a `computeResizedGeometry`
+      // isola i due calcoli senza duplicarne la logica.
       const changed: Record<string, unknown> = {};
-      if (resizeDrag!.resizeWidth && Math.abs(dx) >= DRAG_THRESHOLD_PX) {
-        changed.width = Math.max(1, resizeDrag!.startWidth + dx);
+      if ((edges.east || edges.west) && Math.abs(dx) >= DRAG_THRESHOLD_PX) {
+        const horizontal = computeResizedGeometry(startLocal, edges, dx, 0);
+        changed.width = horizontal.width;
+        if (horizontal.x !== undefined) changed.x = horizontal.x;
       }
-      if (resizeDrag!.resizeHeight && Math.abs(dy) >= DRAG_THRESHOLD_PX) {
-        changed.height = Math.max(1, resizeDrag!.startHeight + dy);
+      if ((edges.north || edges.south) && Math.abs(dy) >= DRAG_THRESHOLD_PX) {
+        const vertical = computeResizedGeometry(startLocal, edges, 0, dy);
+        changed.height = vertical.height;
+        if (vertical.y !== undefined) changed.y = vertical.y;
       }
       if (Object.keys(changed).length > 0) {
         const command = buildUpdatePropsCommand(
@@ -266,8 +312,16 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       y += moveDelta.dy;
     }
     if (resizeDrag && resizeDrag.nodeId === entry.box.nodeId) {
-      if (resizeDrag.resizeWidth) width = Math.max(1, resizeDrag.startWidth + resizeDelta.dx);
-      if (resizeDrag.resizeHeight) height = Math.max(1, resizeDrag.startHeight + resizeDelta.dy);
+      // Anteprima dal vivo in coordinate ASSOLUTE: `entry.box` qui è
+      // ancora la geometria di PARTENZA (il Document non cambia finché il
+      // comando non viene eseguito al rilascio) - stessa funzione pura del
+      // comando finale, coordinate diverse (assolute invece che locali),
+      // la formula è identica (una traslazione è lineare).
+      const resized = computeResizedGeometry(entry.box, resizeDrag.edges, resizeDelta.dx, resizeDelta.dy);
+      if (resized.width !== undefined) width = resized.width;
+      if (resized.height !== undefined) height = resized.height;
+      if (resized.x !== undefined) x = resized.x;
+      if (resized.y !== undefined) y = resized.y;
     }
 
     const backgroundColor = typeof resolvedNode.resolvedProps.color === "string" ? resolvedNode.resolvedProps.color : undefined;
@@ -322,15 +376,44 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     const isContainerLike = isContainerLikeType(resolvedNode.type);
     const isHovered = hoveredId === entry.box.nodeId;
 
+    // Blocco 4 (audit Builder UI/UX, "rifinitura visiva"): bordo scelto
+    // dall'autore (tre proprietà, non una stringa CSS opaca - coerente con
+    // la direzione presa nel Blocco 2). A riposo (non selezionato, non in
+    // hover) il bordo dell'autore, se impostato, PREVALE sul bordo di
+    // editing del Blocco 1 (tratteggio del contenitore vuoto/nessun bordo
+    // sul testo) - selezione e hover restano invece SEMPRE gli stessi
+    // dell'editor, indipendentemente dal bordo dell'autore: sono affordance
+    // dell'editor, non contenuto, e devono restare riconoscibili allo
+    // stesso modo su ogni elemento.
+    const authorBorderWidth = asFiniteNumber(resolvedNode.resolvedProps.borderWidth);
+    const authorBorderColor =
+      typeof resolvedNode.resolvedProps.borderColor === "string" ? resolvedNode.resolvedProps.borderColor : undefined;
+    const authorBorderStyle =
+      typeof resolvedNode.resolvedProps.borderStyle === "string" ? resolvedNode.resolvedProps.borderStyle : undefined;
+    const hasAuthorBorder = authorBorderWidth !== undefined && authorBorderWidth > 0;
+
     let border: string;
     if (isSelected) {
       border = "2px solid #2563eb";
+    } else if (isHovered) {
+      border = isContainerLike ? "1px dashed rgba(37,99,235,0.7)" : "1px solid rgba(37,99,235,0.4)";
+    } else if (hasAuthorBorder) {
+      border = `${authorBorderWidth}px ${authorBorderStyle ?? "solid"} ${authorBorderColor ?? "#000000"}`;
     } else if (isContainerLike) {
-      border = isHovered ? "1px dashed rgba(37,99,235,0.7)" : "1px dashed rgba(0,0,0,0.2)";
+      border = "1px dashed rgba(0,0,0,0.2)";
     } else {
-      border = isHovered ? "1px solid rgba(37,99,235,0.4)" : "none";
+      border = "none";
     }
     const background = backgroundColor ?? (isContainerLike ? "rgba(37,99,235,0.03)" : "transparent");
+    // Proprietà visive pure (Blocco 4): non toccano geometria/posizione,
+    // solo pittura dentro il box già calcolato dall'Engine - stesso
+    // principio già rispettato dal bordo di editing sopra.
+    const borderRadius = asFiniteNumber(resolvedNode.resolvedProps.borderRadius) ?? 0;
+    const opacity = asFiniteNumber(resolvedNode.resolvedProps.opacity) ?? 1;
+    // Sostituisce il valore fisso 4px preesistente (Fase 5/9/15): stesso
+    // fallback quando l'autore non ha ancora impostato nulla, nessun
+    // cambio visivo per i documenti già esistenti.
+    const padding = asFiniteNumber(resolvedNode.resolvedProps.padding) ?? 4;
 
     return (
       // Fase 15 (Punto 1, analisi - Opzione A): l'overlay di selezione
@@ -370,9 +453,57 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             e.stopPropagation();
             store.select(entry.box.nodeId);
           }}
+          onDoubleClick={(e: MouseEvent<HTMLElement>) => {
+            // Blocco 4: editing testo diretto - solo sui tipi che portano
+            // testo (stessa condizione già usata per fontSize/fontFamily/
+            // textAlign nel PropertyPanel). Un contenitore/un'immagine non
+            // hanno un "testo proprio" da modificare qui.
+            if (!isTextBearing) return;
+            e.preventDefault();
+            e.stopPropagation();
+            setEditingId(entry.box.nodeId);
+          }}
+          contentEditable={editingId === entry.box.nodeId}
+          suppressContentEditableWarning={editingId === entry.box.nodeId}
+          onBlur={(e: FocusEvent<HTMLElement>) => {
+            if (editingId !== entry.box.nodeId) return;
+            const cancelled = cancelEditRef.current;
+            cancelEditRef.current = false;
+            setEditingId(null);
+            if (cancelled) return;
+            const newText = e.currentTarget.textContent ?? "";
+            if (newText === text) return;
+            store.execute(
+              buildUpdatePropsCommand(store.getDocument(), entry.box.nodeId, store.getActiveBreakpoint(), { text: newText }),
+            );
+          }}
+          onKeyDown={(e: ReactKeyboardEvent<HTMLElement>) => {
+            if (editingId !== entry.box.nodeId) return;
+            // Non deve MAI raggiungere la scorciatoia globale
+            // Canc/Backspace di App.tsx (cancella l'elemento selezionato) -
+            // `isEditableTarget` lì controlla già `target.isContentEditable`
+            // (garanzia B3, verificata esplicitamente in questo blocco, non
+            // solo assunta), quindi un carattere cancellato qui non
+            // propaga oltre come cancellazione dell'elemento. "Invio"
+            // committa (senza inserire un a-capo, i nodi di testo di
+            // questo nucleo sono monolinea); "Esc" annulla, ripristinando
+            // il testo originale.
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEditRef.current = true;
+              e.currentTarget.blur();
+            }
+          }}
           onMouseEnter={() => setHoveredId(entry.box.nodeId)}
           onMouseLeave={() => setHoveredId((current) => (current === entry.box.nodeId ? null : current))}
           onPointerDown={(e: ReactPointerEvent<HTMLElement>) => {
+            // In modifica: il testo gestisce da sé il posizionamento del
+            // cursore/la selezione nativa - un trascinamento avviato qui
+            // sposterebbe l'elemento invece di posizionare il cursore.
+            if (editingId === entry.box.nodeId) return;
             if (!caps.canMoveXY) return;
             e.stopPropagation();
             const startLocalX = asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0;
@@ -400,8 +531,10 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             fontFamily,
             fontWeight,
             textAlign,
-            padding: 4,
+            padding,
             objectFit,
+            borderRadius,
+            opacity,
           }}
         >
           {Tag === "img" ? null : text}
@@ -445,43 +578,63 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             ⠿
           </div>
         ) : null}
-        {isSelected && (caps.canResizeWidth || caps.canResizeHeight) ? (
-          <div
-            key={`${entry.box.nodeId}:resize-handle`}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setResizeDrag({
-                nodeId: entry.box.nodeId,
-                startClientX: e.clientX,
-                startClientY: e.clientY,
-                startWidth: asFiniteNumber(resolvedNode.resolvedProps.width) ?? entry.box.width,
-                startHeight: asFiniteNumber(resolvedNode.resolvedProps.height) ?? entry.box.height,
-                resizeWidth: caps.canResizeWidth,
-                resizeHeight: caps.canResizeHeight,
-              });
-            }}
-            // Fase 15 (Punto 1): prima della ristrutturazione a fratelli, un
-            // click su questa maniglia (mousedown+mouseup senza spostamento,
-            // o l'evento "click" sintetico dopo un trascinamento) risaliva
-            // comunque attraverso `Tag` - che lo assorbiva riselezionando
-            // innocuamente lo stesso nodo (`onClick` di `Tag`, sopra). Come
-            // fratello, `Tag` non è più un antenato: senza questo
-            // `stopPropagation` il click risalirebbe fino al contenitore del
-            // Canvas e deselezionerebbe il nodo subito dopo ogni
-            // ridimensionamento (bug trovato verificando in browser durante
-            // Fase 15, non dai test unitari - nessuno copre `Canvas.tsx`).
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "absolute",
-              left: x + width - 4,
-              top: y + height - 4,
-              width: 8,
-              height: 8,
-              background: "#2563eb",
-              cursor: "nwse-resize",
-            }}
-          />
-        ) : null}
+        {isSelected
+          ? resizeHandles(caps)
+              .filter((h) => h.visible)
+              .map((h) => {
+                // Blocco 4 (maniglie su più lati/angoli): posizione dello
+                // "spigolo" di riferimento della maniglia in base alle
+                // direzioni attive - stessa logica ripetuta 3 volte
+                // (orizzontale/verticale/entrambe) invece di una formula
+                // unica: più leggibile per 8 casi concreti che per
+                // un'astrazione generica su 2 assi.
+                const left = h.edges.west ? x : h.edges.east ? x + width : x + width / 2;
+                const top = h.edges.north ? y : h.edges.south ? y + height : y + height / 2;
+                return (
+                  <div
+                    key={`${entry.box.nodeId}:resize-handle:${h.key}`}
+                    data-resize-handle={`${entry.box.nodeId}:${h.key}`}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setResizeDrag({
+                        nodeId: entry.box.nodeId,
+                        startClientX: e.clientX,
+                        startClientY: e.clientY,
+                        startLocal: {
+                          x: asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0,
+                          y: asFiniteNumber(resolvedNode.resolvedProps.y) ?? 0,
+                          width: asFiniteNumber(resolvedNode.resolvedProps.width) ?? entry.box.width,
+                          height: asFiniteNumber(resolvedNode.resolvedProps.height) ?? entry.box.height,
+                        },
+                        edges: h.edges,
+                      });
+                    }}
+                    // Fase 15 (Punto 1): prima della ristrutturazione a fratelli, un
+                    // click su questa maniglia (mousedown+mouseup senza spostamento,
+                    // o l'evento "click" sintetico dopo un trascinamento) risaliva
+                    // comunque attraverso `Tag` - che lo assorbiva riselezionando
+                    // innocuamente lo stesso nodo (`onClick` di `Tag`, sopra). Come
+                    // fratello, `Tag` non è più un antenato: senza questo
+                    // `stopPropagation` il click risalirebbe fino al contenitore del
+                    // Canvas e deselezionerebbe il nodo subito dopo ogni
+                    // ridimensionamento (bug trovato verificando in browser durante
+                    // Fase 15, non dai test unitari - nessuno copre `Canvas.tsx`).
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      position: "absolute",
+                      left: left - 4,
+                      top: top - 4,
+                      width: 8,
+                      height: 8,
+                      background: "#2563eb",
+                      border: "1px solid #fff",
+                      boxSizing: "border-box",
+                      cursor: h.cursor,
+                    }}
+                  />
+                );
+              })
+          : null}
       </Fragment>
     );
   }
@@ -501,7 +654,21 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       ) : null}
       <div
         ref={canvasRootRef}
-        onClick={() => store.deselect()}
+        onClick={() => {
+          // Blocco 4 (editing testo diretto): durante l'editing, un gesto
+          // di selezione del testo (click+trascinamento per selezionare
+          // parole) che esce anche di poco dai bordi del piccolo elemento
+          // in modifica finisce sullo sfondo del Canvas - senza questa
+          // guardia, il "click" sintetico che ne risulta deselezionava il
+          // nodo mentre l'autore stava ancora scrivendoci dentro (bug
+          // trovato verificando in browser reale un trascinamento di
+          // selezione testo che usciva dai bordi, non dai test unitari).
+          // L'editing stesso non dipende da `selection` (dipende da
+          // `editingId`, stato separato) - bloccare qui il deselect basta,
+          // nessun'altra conseguenza.
+          if (editingId !== null) return;
+          store.deselect();
+        }}
         style={{
           position: "relative",
           width: viewportWidth,

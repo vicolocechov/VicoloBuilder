@@ -82,6 +82,20 @@ import { BASE_TIER } from "../breakpoints.js";
  * chiusa con D-050 per le scene. L'Exporter (pacchetto chiuso, D-050) NON è
  * toccato: fuori dal perimetro di questa fase (Builder UI/UX), non
  * dell'Exporter v1.
+ *
+ * Blocco 4 (audit Builder UI/UX, "rifinitura visiva") — `borderWidth`/
+ * `borderColor`/`borderStyle`/`borderRadius`/`opacity`/`padding` entrano in
+ * `STYLE_KEYS`, stessa classificazione/congelamento di `textAlign`/
+ * `fontFamily` (nessuna evidenza che debbano comportarsi diversamente per
+ * fascia responsive - stesso ragionamento già accettato per ogni voce
+ * precedente di questa categoria). Bordo scomposto in tre proprietà
+ * (larghezza/colore/stile) invece di un'unica stringa CSS opaca come
+ * `transition`: coerente con la direzione presa nel Blocco 2 (controlli
+ * REALI, non stringhe CSS travestite da campo di testo - `borderColor`
+ * riusa lo stesso `ColorField` già introdotto lì). `margin` deliberatamente
+ * ESCLUSO da questo elenco - segnalato al proprietario del prodotto come
+ * potenzialmente ambiguo nel modello di posizionamento attuale, non ancora
+ * deciso (vedi DECISIONS.md, turno di apertura del Blocco 4).
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
 export const STYLE_KEYS = [
@@ -93,6 +107,12 @@ export const STYLE_KEYS = [
   "fontWeight",
   "transition",
   "textAlign",
+  "borderWidth",
+  "borderColor",
+  "borderStyle",
+  "borderRadius",
+  "opacity",
+  "padding",
 ] as const;
 export const CONTENT_KEYS = ["text", "color", "src", "alt", "href", "anchorId"] as const;
 

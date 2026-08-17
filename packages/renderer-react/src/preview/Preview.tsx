@@ -51,6 +51,21 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     const fontWeight = typeof props.fontWeight === "string" ? props.fontWeight : undefined;
     // Blocco 2: stesso trattamento di Canvas.tsx.
     const textAlign = typeof props.textAlign === "string" ? props.textAlign : undefined;
+    // Blocco 4: bordo/border-radius/opacity/padding dell'autore - qui,
+    // a differenza di Canvas.tsx, nessun bordo di editing da riconciliare
+    // (la Preview non ha selezione/hover): solo il valore scelto
+    // dall'autore, o l'assenza di bordo (nessun fallback "none" esplicito
+    // necessario - un `border` assente nello style non ne disegna alcuno).
+    const authorBorderWidth = typeof props.borderWidth === "number" && Number.isFinite(props.borderWidth) ? props.borderWidth : undefined;
+    const authorBorderColor = typeof props.borderColor === "string" ? props.borderColor : undefined;
+    const authorBorderStyle = typeof props.borderStyle === "string" ? props.borderStyle : undefined;
+    const border =
+      authorBorderWidth !== undefined && authorBorderWidth > 0
+        ? `${authorBorderWidth}px ${authorBorderStyle ?? "solid"} ${authorBorderColor ?? "#000000"}`
+        : undefined;
+    const borderRadius = typeof props.borderRadius === "number" && Number.isFinite(props.borderRadius) ? props.borderRadius : 0;
+    const opacity = typeof props.opacity === "number" && Number.isFinite(props.opacity) ? props.opacity : 1;
+    const padding = typeof props.padding === "number" && Number.isFinite(props.padding) ? props.padding : 4;
     // Fase 17 (Punto 2/3): `transition` applicato SOLO qui, mai in
     // Canvas.tsx - vedi `interactions/useHoverStyles.ts` per il motivo
     // (conflitto con il trascinamento dal vivo e con l'overlay di
@@ -89,11 +104,14 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
           height: entry.box.height,
           boxSizing: "border-box",
           background: backgroundColor ?? "transparent",
+          border,
+          borderRadius,
+          opacity,
           fontSize,
           fontFamily,
           fontWeight,
           textAlign,
-          padding: 4,
+          padding,
           objectFit,
           transition,
         }}

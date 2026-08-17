@@ -385,6 +385,94 @@ function TextAlignField({
   );
 }
 
+// Blocco 4 ("rifinitura visiva"): stesso insieme chiuso e noto di
+// `LayoutModeField` - un <select>, non un TextField libero (i valori CSS
+// validi per `border-style` sono un insieme fisso, un refuso qui
+// produrrebbe un bordo silenziosamente invisibile, non un errore).
+const BORDER_STYLES = ["solid", "dashed", "dotted"] as const;
+
+function BorderStyleField({
+  value,
+  badge,
+  onCommit,
+}: {
+  readonly value: string;
+  readonly badge?: string;
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        borderStyle {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <select value={value} onChange={(e) => onCommit(e.target.value)}>
+        {BORDER_STYLES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/**
+ * Blocco 4: uno slider reale (0-100%), non un campo numerico libero -
+ * `opacity` è per natura un intervallo chiuso [0,1], un cursore lo rende
+ * visivamente ovvio senza dover ricordare l'intervallo valido. Commit solo
+ * al rilascio (`onPointerUp`/`onBlur`), non ad ogni variazione durante il
+ * trascinamento del cursore: altrimenti ogni micro-spostamento
+ * scriverebbe una voce di undo, come già evitato per gli altri campi con
+ * la soglia di trascinamento del Canvas.
+ */
+function OpacityField({
+  value,
+  badge,
+  onCommit,
+}: {
+  readonly value: number;
+  readonly badge?: string;
+  readonly onCommit: (value: number) => void;
+}): JSX.Element {
+  const [local, setLocal] = useState(value);
+  const dragging = useRef(false);
+
+  useEffect(() => {
+    if (!dragging.current) setLocal(value);
+  }, [value]);
+
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        opacity {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={local}
+          onChange={(e) => setLocal(Number(e.target.value))}
+          onPointerDown={() => {
+            dragging.current = true;
+          }}
+          onPointerUp={() => {
+            dragging.current = false;
+            onCommit(local);
+          }}
+          onBlur={() => {
+            dragging.current = false;
+            onCommit(local);
+          }}
+          style={{ flex: 1 }}
+        />
+        <span style={{ width: 32, textAlign: "right" }}>{Math.round(local * 100)}%</span>
+      </div>
+    </label>
+  );
+}
+
 export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Element {
   const document = useDocument(store);
   const selection = useSelection(store);
@@ -625,6 +713,52 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           onCommit={(s) => commitHover("borderColor", s)}
         />
       ) : null}
+
+      {/* Blocco 4 ("rifinitura visiva"): bordo/border-radius/opacity/padding
+          - sempre visibili, nessuna condizione di tipo (a differenza dei
+          campi tipografici/immagine/link sopra): sono proprietà visive
+          pure che hanno senso su qualunque elemento, stesso trattamento di
+          x/y/width/height. */}
+      <NumberField
+        key={`${fieldKeyPrefix}:borderWidth`}
+        label="borderWidth"
+        value={asFiniteNumber(resolved.borderWidth)}
+        badge={frozenFieldState(node, activeBreakpoint, "borderWidth")}
+        onCommit={(n) => commitStyle("borderWidth", n)}
+      />
+      <ColorField
+        key={`${fieldKeyPrefix}:borderColor`}
+        label="borderColor"
+        value={typeof resolved.borderColor === "string" ? resolved.borderColor : ""}
+        badge={frozenFieldState(node, activeBreakpoint, "borderColor")}
+        onCommit={(s) => commitStyle("borderColor", s)}
+      />
+      <BorderStyleField
+        key={`${fieldKeyPrefix}:borderStyle`}
+        value={typeof resolved.borderStyle === "string" ? resolved.borderStyle : "solid"}
+        badge={frozenFieldState(node, activeBreakpoint, "borderStyle")}
+        onCommit={(s) => commitStyle("borderStyle", s)}
+      />
+      <NumberField
+        key={`${fieldKeyPrefix}:borderRadius`}
+        label="borderRadius"
+        value={asFiniteNumber(resolved.borderRadius)}
+        badge={frozenFieldState(node, activeBreakpoint, "borderRadius")}
+        onCommit={(n) => commitStyle("borderRadius", n)}
+      />
+      <OpacityField
+        key={`${fieldKeyPrefix}:opacity`}
+        value={asFiniteNumber(resolved.opacity) ?? 1}
+        badge={frozenFieldState(node, activeBreakpoint, "opacity")}
+        onCommit={(n) => commitStyle("opacity", n)}
+      />
+      <NumberField
+        key={`${fieldKeyPrefix}:padding`}
+        label="padding"
+        value={asFiniteNumber(resolved.padding)}
+        badge={frozenFieldState(node, activeBreakpoint, "padding")}
+        onCommit={(n) => commitStyle("padding", n)}
+      />
 
       <TextField
         key={`${fieldKeyPrefix}:text`}
