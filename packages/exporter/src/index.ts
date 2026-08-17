@@ -4,3 +4,4 @@
  * importa solo da qui, mai dai percorsi interni.
  */
 export { escapeHtmlText, escapeHtmlAttribute, escapeCssText } from "./escape.js";
+export { renderMarkup, DuplicateAnchorIdError } from "./markup.js";
