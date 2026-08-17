@@ -9,3 +9,4 @@ export { renderGeometryStylesheet } from "./stylesheet.js";
 export { renderFontFaces } from "./fonts.js";
 export { renderHoverRules } from "./hover.js";
 export { renderHead, resolveHtmlLang } from "./head.js";
+export { exportSite } from "./site.js";

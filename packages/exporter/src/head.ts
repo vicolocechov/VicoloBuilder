@@ -40,7 +40,16 @@ function metaTag(property: string, value: unknown): string {
   return typeof value === "string" && value !== "" ? `<meta property="${property}" content="${escapeHtmlAttribute(value)}">` : "";
 }
 
-export function renderHead(document: Document, pageId: PageId): string {
+/**
+ * Contenuto SEO grezzo, senza il wrapper `<head>...</head>` - fattorizzato
+ * dal Batch 9 (`site.ts`) per essere incorporato accanto a `<meta
+ * charset>`/`<meta name="viewport">`/il foglio di stile assemblato,
+ * SENZA manipolare stringhe già chiuse (niente slice/replace fragile su
+ * `renderHead`). `renderHead` sotto resta il punto di ingresso pubblico
+ * invariato del Batch 8 - stesso identico output, stesso identico
+ * comportamento, nessuna modifica al contratto già testato.
+ */
+function renderSeoTags(document: Document, pageId: PageId): string {
   const pageProps = getPage(document, pageId)?.props ?? {};
   const documentProps = document.props;
 
@@ -71,8 +80,14 @@ export function renderHead(document: Document, pageId: PageId): string {
   tags.push(metaTag("og:type", documentProps.ogType));
   tags.push(metaTag("og:locale", documentProps.ogLocale));
 
-  return `<head>${tags.filter((tag) => tag !== "").join("")}</head>`;
+  return tags.filter((tag) => tag !== "").join("");
 }
+
+export function renderHead(document: Document, pageId: PageId): string {
+  return `<head>${renderSeoTags(document, pageId)}</head>`;
+}
+
+export { renderSeoTags };
 
 /**
  * `lang` (`DOCUMENT_SEO_KEYS`, D-035) è un attributo di `<html>`, non un

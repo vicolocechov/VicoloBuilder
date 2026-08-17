@@ -16,7 +16,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@vicolobuilder/engine": "^0.1.0"
+    "@vicolobuilder/engine": "^0.1.0",
+    "@vicolobuilder/exporter": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

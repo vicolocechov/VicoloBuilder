@@ -4,8 +4,9 @@ import { resolve } from "node:path";
 import { DocumentParseError, DocumentInvariantError } from "@vicolobuilder/engine";
 import { runCreate } from "../core/createCommand.js";
 import { runExport } from "../core/exportCommand.js";
+import { runPublish } from "../core/publishCommand.js";
 
-const USAGE = "uso: builder create <file> | builder export <file>";
+const USAGE = "uso: builder create <file> | builder export <file> | builder publish <file>";
 
 function fail(message: string): never {
   console.error(`builder: ${message}`);
@@ -17,7 +18,7 @@ const [command, target] = process.argv.slice(2);
 if (!command) {
   fail(`comando mancante (${USAGE})`);
 }
-if (command !== "create" && command !== "export") {
+if (command !== "create" && command !== "export" && command !== "publish") {
   fail(`comando sconosciuto: "${command}" (${USAGE})`);
 }
 if (!target) {
@@ -42,8 +43,11 @@ if (command === "create") {
     fail(`impossibile leggere "${target}": ${reason}`);
   }
 
+  const run = command === "publish" ? runPublish : runExport;
+  const verb = command === "publish" ? "pubblicare" : "esportare";
+
   try {
-    process.stdout.write(runExport(rawJson) + "\n");
+    process.stdout.write(run(rawJson) + "\n");
   } catch (error) {
     if (error instanceof DocumentParseError) {
       fail(`"${target}" non contiene un Document valido: ${error.message}`);
@@ -59,6 +63,6 @@ if (command === "create") {
       fail(`"${target}" non può essere elaborato: struttura troppo profonda per questo processo.`);
     }
     const reason = error instanceof Error ? error.message : String(error);
-    fail(`impossibile esportare "${target}": ${reason}`);
+    fail(`impossibile ${verb} "${target}": ${reason}`);
   }
 }
