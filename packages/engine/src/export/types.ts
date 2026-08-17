@@ -53,10 +53,23 @@ export interface ExportContext {
  * inserimento in una `Map` non è un dato significativo, va reso
  * indipendente esplicitamente per il determinismo byte-per-byte
  * dell'output serializzato.
+ *
+ * Batch 3 dell'Exporter (D-039): `types` aggiunto - trovato mancante
+ * SOLO iniziando a scrivere il generatore di markup del Batch 3, non
+ * previsto dall'analisi originaria "come estendere l'IR" (Batch 1),
+ * concentrata solo su stile/contenuto (`resolvedProps`) e non
+ * sull'identità del nodo. `htmlTagFor` (scelta del tag HTML) richiede
+ * `DocumentNode.type`, che né `box` (pura geometria) né `nodes` (solo
+ * `resolvedProps`, per vincolo esplicito di D-036) espongono. Stessa
+ * disciplina di `nodes`: dizionario piatto `nodeId -> type` (una stringa,
+ * MAI l'intero `DocumentNode`/`ResolvedNode` sorgente), limitato ai nodi
+ * della pagina esportata, ordinato per `nodeId`. Sibling di `box`/`nodes`/
+ * `meta`, stesso motivo di collocazione già dato per `nodes`.
  */
 export interface IR {
   readonly box: Box;
   readonly nodes: Readonly<Record<NodeId, Readonly<Record<string, unknown>>>>;
+  readonly types: Readonly<Record<NodeId, string>>;
   readonly meta: {
     readonly pageId: PageId;
     readonly breakpoint: BreakpointName;

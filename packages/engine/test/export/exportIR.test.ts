@@ -190,6 +190,70 @@ describe("exportIR — Batch 1 Exporter: 'IR.nodes' (nodeId -> resolvedProps)", 
   });
 });
 
+describe("exportIR — Batch 3 Exporter: 'IR.types' (nodeId -> type, D-039)", () => {
+  it("IR.types contiene esattamente il 'type' di ciascun nodo, una stringa, non un DocumentNode/ResolvedNode sorgente", () => {
+    let doc = buildSampleDocument();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "titolo", nodeType: "h1", parentId: "root" });
+
+    const ir = exportIR(doc, CONTEXT);
+
+    expect(ir.types.hero).toBe("box");
+    expect(ir.types.heading).toBe("text");
+    expect(ir.types.titolo).toBe("h1");
+    expect(typeof ir.types.hero).toBe("string");
+  });
+
+  it("un nodo esiste in IR.types anche se non ha alcun prop (root, mai props impostati) - IR.types non dipende da IR.nodes", () => {
+    const ir = exportIR(buildSampleDocument(), CONTEXT);
+    expect(ir.types).toHaveProperty("root");
+    expect(ir.nodes.root).toEqual({});
+  });
+
+  it("IR.box resta ESATTAMENTE quello prodotto da computeLayout(resolveDocument(...)) anche con IR.types presente - nessuna modifica al contratto geometrico", () => {
+    const doc = buildSampleDocument();
+    const ir = exportIR(doc, CONTEXT);
+
+    const model = resolveDocument(doc, { breakpoint: CONTEXT.breakpoint });
+    const expectedBox = computeLayout(model, { pageId: CONTEXT.pageId, viewportWidth: CONTEXT.viewportWidth });
+
+    expect(ir.box).toEqual(expectedBox);
+  });
+
+  it("IR.types è limitato ai nodi della pagina esportata - nessun nodo di un'altra pagina", () => {
+    let doc = buildSampleDocument();
+    const root2 = { id: "root2", type: "page-root", parentId: null, childrenIds: ["other"], props: {} };
+    const other = { id: "other", type: "link", parentId: "root2", childrenIds: [], props: {} };
+    doc = {
+      ...doc,
+      nodes: new Map(doc.nodes).set("root2", root2).set("other", other),
+      pages: new Map(doc.pages).set("page-second", { id: "page-second", name: "Second", rootNodeId: "root2", props: {} }),
+    };
+
+    const irFirst = exportIR(doc, { ...CONTEXT, pageId: "page-home" });
+    const irSecond = exportIR(doc, { ...CONTEXT, pageId: "page-second" });
+
+    expect(irFirst.types).not.toHaveProperty("root2");
+    expect(irFirst.types).not.toHaveProperty("other");
+    expect(irSecond.types).not.toHaveProperty("hero");
+    expect(irSecond.types).not.toHaveProperty("heading");
+    expect(irSecond.types.other).toBe("link");
+  });
+
+  it("le chiavi di IR.types (i nodeId) sono in ordine deterministico (alfabetico), indipendente dall'ordine di creazione dei nodi", () => {
+    let docA = createDocument({ rootPageId: "page-home", rootNodeId: "root" });
+    docA = applyCommand(docA, { type: "CREATE_NODE", nodeId: "zeta", nodeType: "box", parentId: "root" });
+    docA = applyCommand(docA, { type: "CREATE_NODE", nodeId: "alfa", nodeType: "box", parentId: "root" });
+
+    const ir = exportIR(docA, CONTEXT);
+    expect(Object.keys(ir.types)).toEqual(["alfa", "root", "zeta"]);
+  });
+
+  it("due chiamate consecutive su Document identici producono IR.types byte-per-byte identico", () => {
+    const doc = buildSampleDocument();
+    expect(JSON.stringify(exportIR(doc, CONTEXT).types)).toBe(JSON.stringify(exportIR(doc, CONTEXT).types));
+  });
+});
+
 describe("exportIR — B4 (SEO og:*/lang): 'og:url' deriva sempre da 'canonical', mai un campo separato", () => {
   it("canonical scritto su Page.props arriva in ir.meta.pageProps così com'è", () => {
     let doc = buildSampleDocument();

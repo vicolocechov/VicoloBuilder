@@ -589,3 +589,17 @@ Tre funzioni pure in `src/escape.ts` (analisi Exporter, §3.7 - "tre discipline 
 
 **Rivalutazione**: nessuna prevista - la collocazione risolve il bisogno attuale, non introduce un'astrazione oltre a quanto richiesto.
 
+---
+
+## D-039 — Exporter Batch 3: `IR.types` — estensione dell'IR resasi necessaria scrivendo il generatore di markup
+
+**Stato**: `IR` esteso con un nuovo campo `types: Readonly<Record<NodeId, string>>` (`packages/engine/src/export/types.ts`), sibling di `box`/`nodes`/`meta`. `exportIR.ts` lo popola con lo stesso perimetro/ordinamento già usato per `nodes` (funzione `collectPageNodeIds` estratta e condivisa tra le due, nessuna duplicazione della visita dell'albero) - un dizionario piatto `nodeId -> type` (SOLO la stringa `resolvedNode.type`, mai l'intero `DocumentNode`/`ResolvedNode`), limitato ai nodi della pagina esportata, ordinato per `nodeId`. `IR.box`, `Box`, `computeLayout`, il Layout Engine restano interamente invariati. **`IR.nodes` non è stato toccato nella sua semantica** - resta esclusivamente `resolvedProps`, come stabilito in D-036.
+
+**Perché questa estensione era necessaria, e perché non prevista nell'analisi originaria dell'IR (D-036)**: iniziando a scrivere il generatore di markup del Batch 3, `htmlTagFor` (la scelta del tag HTML da `DocumentNode.type`) si è rivelato irrealizzabile con l'IR nella forma chiusa dal Batch 1 - né `Box` (pura geometria) né `IR.nodes` (solo `resolvedProps`, per vincolo esplicito) espongono l'identità/il tipo del nodo. L'analisi "come estendere l'IR" (che ha prodotto D-036) si era concentrata esclusivamente su stile/contenuto (`resolvedProps`), senza considerare che l'identità strutturale del nodo (`type`) sarebbe stata ugualmente necessaria per generare HTML reale - un'omissione dell'analisi originaria, non un cambiamento di requisiti. Segnalato esplicitamente prima di procedere (non risolto aggirando il vincolo "nessun nuovo percorso parallelo Resolver -> Exporter" con una chiamata diretta a `resolveDocument()` dentro l'Exporter, che sarebbe stata la scorciatoia più immediata ma vietata) - la sola alternativa reale era estendere ancora l'IR, coerente con "l'IR resta l'unico oggetto di scambio verificabile del sistema" (motivazione esplicita data per l'Opzione B, D-036).
+
+**Impatto sui consumer esistenti**: zero modifiche, stesso esito di D-036 - `ir.meta` invariato, i confronti stretti su `ir.meta` in `publicApi.test.ts`/`test-runner/lifecycle.test.ts` restano validi senza toccarli.
+
+**Evidenza disponibile**: `test/export/exportIR.test.ts` (+6, nuovo describe dedicato: `types` come stringa non come `DocumentNode` sorgente, un nodo senza props esiste comunque in `types` - indipendenza da `IR.nodes`, `IR.box` invariato anche con `types` presente, scoping alla sola pagina esportata su un documento multi-pagina, ordine deterministico dei `nodeId`, determinismo byte-per-byte) - 210 test verdi nell'Engine (era 204). Build pulita su tutti e 6 i pacchetti, nessuna modifica a CLI/Test Runner/renderer-react/render-conventions/Exporter richiesta. Verificato end-to-end con la CLI reale (`builder export`): l'IR prodotto ha `box`/`nodes`/`types`/`meta` come chiavi di primo livello, `types` contiene esattamente il `type` di ciascun nodo.
+
+**Rivalutazione**: nessuna prevista - chiude esattamente il bisogno trovato scrivendo il Batch 3. Se un futuro batch scoprirà un ALTRO campo strutturale mancante (es. `parentId` per una qualche esigenza non ancora vista) - stessa disciplina: segnalare prima di implementare, non assumere che l'IR sia già completo.
+

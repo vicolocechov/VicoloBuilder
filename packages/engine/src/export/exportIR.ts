@@ -20,6 +20,20 @@ function collectBoxNodeIds(box: Box, out: NodeId[]): void {
 }
 
 /**
+ * Batch 3 dell'Exporter: estratta da dentro `collectResolvedProps` (che la
+ * duplicava inline) perché ora SERVE anche a `collectTypes` sotto - stesso
+ * perimetro (nodi della pagina esportata) e stesso ordinamento
+ * deterministico per entrambi i campi dell'IR, un solo posto che li decide.
+ * Nessun cambiamento di comportamento per `collectResolvedProps`/`IR.nodes`.
+ */
+function collectPageNodeIds(box: Box): readonly NodeId[] {
+  const nodeIds: NodeId[] = [];
+  collectBoxNodeIds(box, nodeIds);
+  nodeIds.sort();
+  return nodeIds;
+}
+
+/**
  * Document -> ResolvedModel -> IR (RFC-005). Pura: compone resolveDocument
  * e computeLayout, entrambe già pure e già validate internamente
  * (assertValidResolvedModel/assertValidBox) prima di restituire - nessun
@@ -64,18 +78,39 @@ function sortedProps(props: Readonly<Record<string, unknown>>): Readonly<Record<
 }
 
 function collectResolvedProps(model: ResolvedModel, box: Box): Readonly<Record<NodeId, Readonly<Record<string, unknown>>>> {
-  const nodeIds: NodeId[] = [];
-  collectBoxNodeIds(box, nodeIds);
-  nodeIds.sort();
-
   const nodes: Record<NodeId, Readonly<Record<string, unknown>>> = {};
-  for (const nodeId of nodeIds) {
+  for (const nodeId of collectPageNodeIds(box)) {
     const resolvedNode = model.nodes.get(nodeId);
     if (resolvedNode) {
       nodes[nodeId] = sortedProps(resolvedNode.resolvedProps);
     }
   }
   return nodes;
+}
+
+/**
+ * Batch 3 dell'Exporter (analisi "IR.types", D-039): trovato mancante
+ * verificando cosa serve davvero per generare markup HTML - `htmlTagFor`
+ * richiede `DocumentNode.type`, ma né `Box` (pura geometria) né `IR.nodes`
+ * (solo `resolvedProps`, per vincolo esplicito del Batch 1) lo espongono.
+ * Stessa disciplina di `IR.nodes`: dizionario piatto `nodeId -> type`,
+ * limitato ai nodi della pagina esportata, ordinato per `nodeId`, MAI un
+ * `DocumentNode` sorgente intero (solo la stringa `type`, non `id`/
+ * `parentId`/`childrenIds`). `resolvedNode.type` non cambia mai per fascia
+ * (nessun comando lo modifica dopo `CREATE_NODE` - stesso fatto già
+ * sfruttato altrove, es. `isTextBearingType` in renderer-react), quindi
+ * nessun rischio di incoerenza tra `IR.types` e `IR.nodes` per lo stesso
+ * `nodeId` alle diverse fasce.
+ */
+function collectTypes(model: ResolvedModel, box: Box): Readonly<Record<NodeId, string>> {
+  const types: Record<NodeId, string> = {};
+  for (const nodeId of collectPageNodeIds(box)) {
+    const resolvedNode = model.nodes.get(nodeId);
+    if (resolvedNode) {
+      types[nodeId] = resolvedNode.type;
+    }
+  }
+  return types;
 }
 
 export function exportIR(document: Document, context: ExportContext): IR {
@@ -85,6 +120,7 @@ export function exportIR(document: Document, context: ExportContext): IR {
   return {
     box,
     nodes: collectResolvedProps(model, box),
+    types: collectTypes(model, box),
     meta: {
       pageId: context.pageId,
       breakpoint: context.breakpoint,
