@@ -13,3 +13,15 @@ const TEXT_BEARING_TYPES: ReadonlySet<string> = new Set(["text", "h1", "h2", "h3
 export function isTextBearingType(nodeType: string): boolean {
   return TEXT_BEARING_TYPES.has(nodeType);
 }
+
+/**
+ * Blocco 1/3 (audit Builder UI/UX): complementare a `isTextBearingType` per
+ * due usi con la stessa nozione - "sembra un contenitore" (Canvas.tsx, resa
+ * distinta per tipo) e "può ricevere figli via drag-and-drop" (Blocco 3,
+ * `dropTarget.ts`). "image" è l'unico altro tipo NON container-like fuori
+ * dai text-bearing (nessun'altra eccezione nell'insieme chiuso
+ * `ElementType` di `createElementCommand.ts`).
+ */
+export function isContainerLikeType(nodeType: string): boolean {
+  return !isTextBearingType(nodeType) && nodeType !== "image";
+}

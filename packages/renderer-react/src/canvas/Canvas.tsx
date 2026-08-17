@@ -1,15 +1,17 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { ElementType, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { computeLayout, resolveDocument } from "@vicolobuilder/engine";
+import { collectSubtreeIds, computeLayout, resolveDocument } from "@vicolobuilder/engine";
 import type { NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxes.js";
 import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
+import { computeDropTarget, type DropTarget } from "./dropTarget.js";
+import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
-import { isTextBearingType } from "../elements/textBearingTypes.js";
+import { isContainerLikeType, isTextBearingType } from "../elements/textBearingTypes.js";
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per
@@ -51,14 +53,22 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [resizeDrag, setResizeDrag] = useState<ResizeDrag | null>(null);
   const [resizeDelta, setResizeDelta] = useState({ dx: 0, dy: 0 });
 
-  // Fase 8 (analisi MOVE_NODE, Punto 6 - Opzione B, azione esplicita
-  // minima): "Sposta dentro" è un'azione a due click, non un
-  // drag-and-drop - seleziona la sorgente, poi clicca il contenitore di
-  // destinazione. Stato locale del Canvas, come gli altri gesti di
-  // editing (moveDrag/resizeDrag): non è stato di sessione al livello di
-  // selection/activeBreakpoint, è transitorio a un singolo gesto utente.
-  const [moveSourceId, setMoveSourceId] = useState<NodeId | null>(null);
+  // Blocco 3 (drag-and-drop reale per riparent/riordino, sostituisce il
+  // vecchio "Sposta dentro..." a due click, Fase 8): `structuralDrag` è il
+  // gesto (avviato dalla maniglia dedicata sull'elemento selezionato),
+  // `dropTarget` il bersaglio corrente ricalcolato ad ogni pointermove
+  // (mai letto dentro l'effect che lo aggiorna - stessa cautela già
+  // presente in `moveDrag`/`resizeDrag`: si ricalcola da zero anche al
+  // pointerup, non si legge lo stato React per evitare una chiusura
+  // stantia), `cursorClient` la posizione del puntatore in coordinate di
+  // VIEWPORT (non locali al Canvas) per la piccola etichetta "ghost" che
+  // segue il cursore durante il trascinamento. `moveError` riusato dal
+  // vecchio flusso: stessa natura, "un tentativo di spostamento è fallito".
+  const [structuralDrag, setStructuralDrag] = useState<{ nodeId: NodeId } | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [cursorClient, setCursorClient] = useState<{ x: number; y: number } | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
+  const canvasRootRef = useRef<HTMLDivElement | null>(null);
 
   // Blocco 1 (audit Builder UI/UX): il bordo 1px onnipresente su ogni
   // elemento non selezionato rendeva ogni tipo (testo, immagine, link...)
@@ -182,6 +192,63 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     };
   }, [resizeDrag, store]);
 
+  // Blocco 3: il gesto di drag-and-drop strutturale. `entries`/`document`/
+  // `model` sono stabili per tutta la durata del gesto (il Document non
+  // cambia finché non si esegue il comando al pointerup, stesso principio
+  // già sfruttato dall'effect di moveDrag) - calcolare qui una volta sola
+  // l'insieme escluso (il nodo trascinato + i suoi discendenti, mai un
+  // bersaglio valido: eviterebbe un ciclo) è corretto anche se l'effect non
+  // viene ricreato ad ogni pointermove.
+  useEffect(() => {
+    if (!structuralDrag) return;
+    const excluded = new Set(collectSubtreeIds(document, structuralDrag.nodeId));
+    function canReceiveChildren(nodeId: NodeId): boolean {
+      const resolvedNode = model.nodes.get(nodeId);
+      return resolvedNode ? isContainerLikeType(resolvedNode.type) : false;
+    }
+    function localPoint(e: PointerEvent): { x: number; y: number } | null {
+      const rect = canvasRootRef.current?.getBoundingClientRect();
+      if (!rect) return null;
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    function onMove(e: PointerEvent): void {
+      setCursorClient({ x: e.clientX, y: e.clientY });
+      const local = localPoint(e);
+      setDropTarget(local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y) : null);
+    }
+    function onUp(e: PointerEvent): void {
+      // Non si legge lo stato `dropTarget` (potenzialmente stantio in
+      // questa chiusura, mai aggiornato dall'ultimo pointermove nella
+      // stessa closure dell'effect): si ricalcola da zero sull'evento di
+      // rilascio, stesso principio già usato da onUp di moveDrag/resizeDrag
+      // (che ricalcolano dx/dy invece di leggere lo stato React).
+      const local = localPoint(e);
+      const target = local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y) : null;
+      if (target) {
+        try {
+          store.execute(buildStructuralMoveCommand(document, structuralDrag!.nodeId, target));
+          setMoveError(null);
+        } catch (err) {
+          // Un bersaglio geometricamente valido può comunque essere
+          // rifiutato dall'Engine (es. MULTIPLE_PARENTS impossibile per
+          // costruzione qui, ma un ciclo residuo o un altro invariante) -
+          // stesso trattamento del vecchio "Sposta dentro...": mostrato,
+          // non rilanciato.
+          setMoveError(err instanceof Error ? err.message : String(err));
+        }
+      }
+      setStructuralDrag(null);
+      setDropTarget(null);
+      setCursorClient(null);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [structuralDrag, store, entries, document, model]);
+
   function renderBox(entry: FlatBoxEntry): JSX.Element {
     const resolvedNode = model.nodes.get(entry.box.nodeId);
     if (!resolvedNode) throw new Error(`Canvas: nodo risolto non trovato: ${entry.box.nodeId}`);
@@ -252,8 +319,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // pagina) resta invece percepibile anche vuoto e senza sfondo esplicito
     // scelto dall'autore, altrimenti sarebbe invisibile nel Canvas.
     const isTextBearing = isTextBearingType(resolvedNode.type);
-    const isImage = Tag === "img";
-    const isContainerLike = !isTextBearing && !isImage;
+    const isContainerLike = isContainerLikeType(resolvedNode.type);
     const isHovered = hoveredId === entry.box.nodeId;
 
     let border: string;
@@ -302,30 +368,6 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             // ogni altro tag (nessun comportamento di default da prevenire).
             e.preventDefault();
             e.stopPropagation();
-            if (moveSourceId !== null) {
-              // Un secondo click sulla sorgente stessa annulla (oltre al
-              // pulsante "Annulla" della barra di stato) - scorciatoia, non
-              // l'unico modo di uscire dalla modalità.
-              if (moveSourceId === entry.box.nodeId) {
-                setMoveSourceId(null);
-                return;
-              }
-              try {
-                store.execute({ type: "MOVE_NODE", nodeId: moveSourceId, newParentId: entry.box.nodeId });
-                setMoveError(null);
-              } catch (err) {
-                // Fase 8 (analisi MOVE_NODE, Punto 2): un tentativo non valido
-                // (es. il bersaglio è un discendente della sorgente) è
-                // respinto da CommandError - qui va solo mostrato, non
-                // rilanciato (a differenza del resto del Canvas, che oggi non
-                // intercetta mai gli errori di store.execute - qui serve,
-                // perché il bersaglio è scelto dall'utente via click e un
-                // errore è un esito plausibile, non un bug).
-                setMoveError(err instanceof Error ? err.message : String(err));
-              }
-              setMoveSourceId(null);
-              return;
-            }
             store.select(entry.box.nodeId);
           }}
           onMouseEnter={() => setHoveredId(entry.box.nodeId)}
@@ -364,34 +406,44 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         >
           {Tag === "img" ? null : text}
         </Tag>
-        {isSelected && moveSourceId === null && entry.parentBox !== null ? (
-          // `entry.parentBox !== null` esclude la radice della pagina: non
-          // spostabile (Engine: MOVE_NODE rifiuta un nodo con parentId
-          // null), meglio non offrire l'azione che farla fallire.
-          <button
-            key={`${entry.box.nodeId}:move-into`}
-            onClick={(e) => {
-              // A differenza di prima (bottone annidato dentro `Tag`), qui
-              // non serve più prevenire la navigazione nativa di un `Tag`
-              // antenato (Fase 9, Punto 5) - il bottone non è più
-              // discendente di `Tag`. `stopPropagation` resta necessario:
-              // il contenitore del Canvas (sotto) deseleziona al click.
-              e.preventDefault();
+        {isSelected && structuralDrag === null && entry.parentBox !== null ? (
+          // Blocco 3: sostituisce il vecchio bottone "Sposta dentro..." a
+          // due click con una vera maniglia di trascinamento - stessa
+          // condizione di visibilità di prima (`entry.parentBox !== null`
+          // esclude la radice della pagina: MOVE_NODE rifiuta un nodo con
+          // parentId null, meglio non offrire un'azione che fallirebbe
+          // sempre). Nessuna soglia di trascinamento (come la maniglia di
+          // ridimensionamento sotto): è un controllo dedicato, non l'intero
+          // elemento - non c'è un "click semplice" da distinguere qui.
+          <div
+            key={`${entry.box.nodeId}:drag-handle`}
+            data-drag-handle={entry.box.nodeId}
+            title="Trascina per spostare (riparent/riordino)"
+            onPointerDown={(e) => {
               e.stopPropagation();
-              setMoveSourceId(entry.box.nodeId);
+              setStructuralDrag({ nodeId: entry.box.nodeId });
               setMoveError(null);
             }}
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: "absolute",
               left: x,
-              top: y - 22,
+              top: y - 20,
+              width: 18,
+              height: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#2563eb",
+              color: "#fff",
               fontSize: 10,
               lineHeight: 1,
-              padding: "2px 4px",
+              cursor: "grab",
+              userSelect: "none",
             }}
           >
-            Sposta dentro…
-          </button>
+            ⠿
+          </div>
         ) : null}
         {isSelected && (caps.canResizeWidth || caps.canResizeHeight) ? (
           <div
@@ -434,17 +486,13 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     );
   }
 
+  // Blocco 3: il box del bersaglio corrente (per il feedback visivo sotto) -
+  // cercato in `entries`, non ricostruito: stesse coordinate assolute già
+  // usate per il rendering di quell'entry.
+  const dropTargetEntry = dropTarget ? entries.find((e) => e.box.nodeId === dropTarget.targetNodeId) : undefined;
+
   return (
     <>
-      {moveSourceId !== null ? (
-        <div style={{ marginBottom: 8, fontSize: 12, display: "flex", gap: 8, alignItems: "center" }}>
-          <span>
-            Sposto <code>{moveSourceId}</code>: clicca il contenitore di destinazione (clicca di nuovo l&apos;elemento
-            per annullare).
-          </span>
-          <button onClick={() => setMoveSourceId(null)}>Annulla</button>
-        </div>
-      ) : null}
       {moveError ? (
         <div style={{ marginBottom: 8, fontSize: 12, color: "#b91c1c", display: "flex", gap: 8, alignItems: "center" }}>
           <span>Spostamento non riuscito: {moveError}</span>
@@ -452,13 +500,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         </div>
       ) : null}
       <div
-        onClick={() => {
-          if (moveSourceId !== null) {
-            setMoveSourceId(null);
-            return;
-          }
-          store.deselect();
-        }}
+        ref={canvasRootRef}
+        onClick={() => store.deselect()}
         style={{
           position: "relative",
           width: viewportWidth,
@@ -467,6 +510,31 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
         }}
       >
+        {structuralDrag !== null ? (
+          // Testo d'aiuto durante il trascinamento strutturale -
+          // `position:absolute` DENTRO la radice del Canvas (già
+          // `position:relative`), non un elemento a flusso normale PRIMA
+          // di essa: un blocco a flusso normale che appare/scompare
+          // spostava la radice del Canvas verso il basso ogni volta che il
+          // trascinamento iniziava, un vero difetto (il puntatore restava
+          // fermo mentre il Canvas si spostava sotto di lui) trovato
+          // verificando in browser reale, non dai test.
+          <div
+            style={{
+              position: "absolute",
+              top: 4,
+              left: 4,
+              fontSize: 11,
+              background: "rgba(255,255,255,0.9)",
+              padding: "2px 6px",
+              border: "1px solid #e5e7eb",
+              pointerEvents: "none",
+              zIndex: 10,
+            }}
+          >
+            Rilascia al centro di un contenitore per spostare dentro, sul bordo di un fratello per riordinare.
+          </div>
+        ) : null}
         {entries.map(renderBox)}
         {/* Linee guida: attraversano l'intero Canvas per semplicità di
             rendering - lo snap che le genera resta comunque limitato a
@@ -499,7 +567,67 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             }}
           />
         ) : null}
+        {/* Blocco 3: feedback visivo del bersaglio PRIMA del rilascio -
+            "into" evidenzia l'intero box del contenitore, "before"/"after"
+            una linea di inserimento sottile sul suo bordo superiore/
+            inferiore. Richiesto esplicitamente: non solo un cambio
+            silenzioso al rilascio. */}
+        {dropTarget && dropTargetEntry ? (
+          dropTarget.kind === "into" ? (
+            <div
+              data-drop-indicator="into"
+              data-drop-indicator-target={dropTarget.targetNodeId}
+              style={{
+                position: "absolute",
+                left: dropTargetEntry.box.x,
+                top: dropTargetEntry.box.y,
+                width: dropTargetEntry.box.width,
+                height: dropTargetEntry.box.height,
+                border: "2px solid #2563eb",
+                background: "rgba(37,99,235,0.15)",
+                pointerEvents: "none",
+              }}
+            />
+          ) : (
+            <div
+              data-drop-indicator={dropTarget.kind}
+              data-drop-indicator-target={dropTarget.targetNodeId}
+              style={{
+                position: "absolute",
+                left: dropTargetEntry.box.x,
+                top: dropTarget.kind === "before" ? dropTargetEntry.box.y - 2 : dropTargetEntry.box.y + dropTargetEntry.box.height - 1,
+                width: dropTargetEntry.box.width,
+                height: 3,
+                background: "#2563eb",
+                pointerEvents: "none",
+              }}
+            />
+          )
+        ) : null}
       </div>
+      {/* Blocco 3: etichetta "ghost" che segue il cursore durante il
+          trascinamento strutturale - `position:fixed` in coordinate di
+          VIEWPORT (cursorClient, non le coordinate locali del Canvas usate
+          per il resto), fuori dal contenitore relativo del Canvas per
+          restare visibile anche se il puntatore esce dai suoi bordi. */}
+      {structuralDrag && cursorClient ? (
+        <div
+          style={{
+            position: "fixed",
+            left: cursorClient.x + 12,
+            top: cursorClient.y + 12,
+            background: "#111827",
+            color: "#fff",
+            fontSize: 11,
+            padding: "2px 6px",
+            borderRadius: 3,
+            pointerEvents: "none",
+            zIndex: 9999,
+          }}
+        >
+          {structuralDrag.nodeId}
+        </div>
+      ) : null}
     </>
   );
 }

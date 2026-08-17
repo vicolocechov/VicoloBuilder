@@ -6,6 +6,7 @@ import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument, useSelection 
 import { Canvas } from "./canvas/Canvas.js";
 import { PropertyPanel } from "./panel/PropertyPanel.js";
 import { PageManager } from "./pages/PageManager.js";
+import { Outline } from "./outline/Outline.js";
 import { ElementPalette } from "./elements/ElementPalette.js";
 import { Preview } from "./preview/Preview.js";
 import { TIER_NAMES } from "./breakpoints.js";
@@ -38,8 +39,9 @@ function buildDemoDocument(): Document {
 
 /**
  * B3 (cancellazione elementi da UI) — stesso principio già usato in
- * `Canvas.tsx` per nascondere "Sposta dentro…" sulla radice pagina
- * (`entry.parentBox !== null`), qui riscritto alla granularità disponibile
+ * `Canvas.tsx` per nascondere la maniglia di trascinamento (Blocco 3, ex
+ * "Sposta dentro…") sulla radice pagina (`entry.parentBox !== null`), qui
+ * riscritto alla granularità disponibile
  * in `App.tsx` (nessun `FlatBoxEntry` qui): controlla su TUTTE le pagine,
  * non solo quella attiva, stesso giro già fatto da `applyDeleteNode`
  * (`packages/engine/src/runtime/commands.ts`) - copre anche il caso limite
@@ -167,6 +169,7 @@ export function App(): JSX.Element {
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif" }}>
       <div style={{ width: 260, borderRight: "1px solid #e5e7eb", overflow: "auto" }}>
         <PageManager store={store} activePageId={activePageId} onActivePageChange={setActivePageId} />
+        <Outline store={store} activePageId={activePageId} />
         <FontManager store={store} />
         <SiteSeoManager store={store} />
       </div>
