@@ -923,7 +923,11 @@ In ENTRAMBI i casi, l'overlay di selezione/le maniglie di resize/gli indicatori 
 - (B) `margin` come CSS puro ovunque, accettando il disallineamento noto tra geometria Engine e resa visiva.
 - (C) Rimandato per intero a un blocco futuro, come limitazione nota esplicitamente documentata (stesso trattamento già dato alla navigazione a scene, D-050).
 
-**Non implementato in questo blocco** - in attesa della decisione del proprietario del prodotto.
+**Decisione del proprietario del prodotto: Opzione C.** `margin` resta esplicitamente rimandato a un blocco futuro, stesso trattamento della navigazione a scene (D-050) - non implementato ora, nessun workaround introdotto.
+
+**Motivazione della scelta tra le tre opzioni**: l'Opzione A risolverebbe il problema solo in modalità `pila`, lasciando comunque intatta l'ambiguità "chi controlla la posizione" in modalità `libero` - una soluzione parziale, non una vera chiusura. L'Opzione B rischia di disallineare selezione/maniglie di resize/indicatori di bersaglio del drag-and-drop dal box geometrico reale (tutti calcolati dalle coordinate dell'Engine, mai da una misura DOM) - lo stesso genere di bug invisibile ai test unitari già incontrato ed emerso solo in verifica browser reale nel Blocco 3 (D-053, lo spostamento accidentale della radice del Canvas), qui non accettabile per quello che dovrebbe essere un controllo di semplice rifinitura visiva.
+
+**Non implementato in questo blocco.**
 
 ### Implementazione (resto del blocco, approvato)
 
