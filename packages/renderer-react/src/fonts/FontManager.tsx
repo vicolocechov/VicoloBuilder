@@ -3,6 +3,7 @@ import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useDocument } from "../history/useHistoryStore.js";
 import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import { buildRegisterFontCommand, buildUnregisterFontCommand } from "../write/buildUpdateDocumentPropsCommand.js";
+import { FileUploadButton } from "../fileUpload/FileUploadButton.js";
 
 /**
  * Fase 16 (Font custom, Punto 1 - decisione esplicita del proprietario del
@@ -62,6 +63,13 @@ export function FontManager({ store }: { readonly store: ReactiveHistory }): JSX
         <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Peso (es. 600)" style={{ width: 60 }} />
         <input type="text" value={src} onChange={(e) => setSrc(e.target.value)} placeholder="src (URL o data:)" style={{ flex: 2 }} />
         <button onClick={handleRegister}>+ Font</button>
+      </div>
+      {/* Blocco 5: stesso campo "src" sopra (una data-URI) - solo un modo
+          più comodo di ottenerlo, non un percorso di registrazione
+          separato. La registrazione vera resta "+ Font": l'upload compila
+          solo il valore, l'autore conferma family/weight come già faceva. */}
+      <div style={{ marginTop: 4 }}>
+        <FileUploadButton accept=".ttf,.otf,.woff,.woff2,font/*" onLoaded={(dataUrl) => setSrc(dataUrl)} />
       </div>
       {error ? <div style={{ color: "#b91c1c", marginTop: 4 }}>{error}</div> : null}
     </div>

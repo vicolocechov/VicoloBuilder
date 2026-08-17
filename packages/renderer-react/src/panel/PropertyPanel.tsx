@@ -8,6 +8,7 @@ import { frozenFieldState } from "./frozenFieldState.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { isTextBearingType } from "../elements/textBearingTypes.js";
 import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
+import { FileUploadButton } from "../fileUpload/FileUploadButton.js";
 import type { HoverKey } from "@vicolobuilder/render-conventions";
 
 /**
@@ -645,6 +646,12 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={typeof resolved.src === "string" ? resolved.src : ""}
           onCommit={(s) => commitContent("src", s)}
         />
+      ) : null}
+      {isImage ? (
+        // Blocco 5: stesso valore di "src" sopra (una data-URI), solo un
+        // modo più comodo di ottenerlo - non un campo separato, scrive
+        // sullo stesso "src".
+        <FileUploadButton key={`${fieldKeyPrefix}:src-upload`} accept="image/*" onLoaded={(dataUrl) => commitContent("src", dataUrl)} />
       ) : null}
       {isImage ? (
         <TextField
