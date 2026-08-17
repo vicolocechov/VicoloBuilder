@@ -40,8 +40,16 @@ export type { ResolvedNode, ResolvedModel, ResolverContext, Breakpoint, Breakpoi
  * bisogno per il pulsante di cambio vista e per il congelamento
  * Desktop-first - esattamente il trigger di rivalutazione che D-010 aveva
  * già previsto esplicitamente.
+ *
+ * Exporter Batch 4 (D-042): `getBreakpoint` aggiunta, stesso principio -
+ * reversione MIRATA, non l'intero `BREAKPOINTS` grezzo. Il foglio di stile
+ * "snapshot posizionale" dell'Exporter deve generare `@media` con le
+ * soglie REALI di ciascuna fascia (`minWidth`/`maxWidth`/`orientation`/
+ * `minHeight`/`maxHeight`), non solo il nome - il trigger di rivalutazione
+ * che D-010 aveva già previsto testualmente ("quando emergerà un consumer
+ * esterno reale... che necessiti" di più dei soli nomi).
  */
-export { listBreakpointNames, widerBreakpoints, BASE_BREAKPOINT } from "./resolver/breakpoints.js";
+export { listBreakpointNames, widerBreakpoints, BASE_BREAKPOINT, getBreakpoint } from "./resolver/breakpoints.js";
 export {
   validateResolvedModel,
   assertValidResolvedModel,

@@ -641,3 +641,79 @@ Tre funzioni pure in `src/escape.ts` (analisi Exporter, §3.7 - "tre discipline 
 
 **Rivalutazione**: nessuna prevista per questa parte. Il resto del Batch 4 (generazione del foglio di stile vero e proprio) è **sospeso**: durante la preparazione è emerso un problema strutturale fuori da questo perimetro (sovrapposizione reale tra i predicati CSS di `tablet-orizzontale` e `laptop-compatto` - due fasce dichiaratamente indipendenti nel modello, ma che condividono una regione concreta di larghezza/orientamento/altezza), segnalato al proprietario del prodotto invece di essere risolto autonomamente, in attesa di decisione prima di proseguire.
 
+---
+
+## D-042 — Exporter Batch 4: ordine di emissione dei blocchi `@media` nella zona di overlap `tablet-orizzontale`/`laptop-compatto`
+
+**Fatto verificato #1 (fixture/documenti esistenti)**: cercato in tutto il repository (test, demo, fixture) ogni caso in cui un nodo riceva un override `props.responsive` sia su `tablet-orizzontale` sia su `laptop-compatto`. **Nessun caso trovato.** Ogni test che tocca `laptop-compatto` lo mostra sempre non sovrascritto, uguale al valore base desktop (`buildUpdatePropsCommand.test.ts`, più occorrenze). Nessun file `sito_vicolo.html`/audit è presente nel repository come fixture interrogabile - la fonte di D-019 è esterna. **L'overlap è reale nello spazio dei predicati, ma oggi teorico: nessun documento/fixture esistente ha valori divergenti tra le due fasce.**
+
+**Fatto verificato #2 (semantica di `CASCADE_ORDER`)**: `CASCADE_ORDER` (`resolver/breakpoints.ts`) è una mappa PER-FASCIA-TARGET dell'ordine di eredità usato solo quando il Resolver risolve QUELLA singola fascia richiesta - non un ordine totale/di priorità tra fasce diverse. Il codice stesso dichiara esplicitamente `laptop-compatto`/`desktop-compatto`/`desktop` "bande INDIPENDENTI l'una dall'altra". **`CASCADE_ORDER` non esprime alcuna precedenza tra `tablet-orizzontale` e `laptop-compatto` - anzi dichiara esplicitamente che non ne esiste una nel modello.** Usarlo come ordine di emissione `@media` avrebbe significato inventare una regola di precedenza inesistente, non applicarne una già verificata - per questo non è stato scelto.
+
+**Decisione**: i 7 blocchi `@media` vengono emessi nell'ordine dichiarato dall'array `BREAKPOINTS` (lo stesso ordine restituito da `listBreakpointNames()`, l'unico ordine già esistente e leggibile nel codice). **Questo ordine è una CONVENZIONE DI EMISSIONE arbitraria ma dichiarata, non una precedenza derivata dal modello** (il modello non ne definisce una tra fasce indipendenti, fatto verificato #2) - va letto come scelta di implementazione dell'Exporter, non come una proprietà del Resolver.
+
+**Rischio noto, esplicitamente accettato**: se in futuro un documento avrà valori realmente divergenti tra `tablet-orizzontale` e `laptop-compatto` nella zona condivisa (1025-1199px, landscape, altezza≥551), il risultato visivo pubblicato dipenderà da questo ordine di emissione (l'ultimo blocco dichiarato in `BREAKPOINTS` vince per cascata CSS nativa a parità di selettore). Se/quando questo caso diventa concreto, il generatore NON va corretto silenziosamente - va presa una nuova decisione di prodotto esplicita su quale fascia debba prevalere, con la stessa disciplina di questa voce.
+
+**Evidenza disponibile**: verifica manuale sui fixture esistenti (nessun caso divergente); lettura diretta di `CASCADE_ORDER`/i suoi commenti.
+
+**SUPERATA da D-044**: la verifica browser reale del generatore ha trovato un secondo overlap (`desktop-compatto`/`desktop`, un contenimento completo, non uno spicchio marginale) e un'analisi sistematica ne ha trovati altri 3 (tutti con `mobile-orizzontale`), più un caso a tre vie - l'ordine `BREAKPOINTS` (questa voce) copriva solo la coppia originariamente nota, non l'intero problema. Vedi D-044 per l'analisi semantica completa e la decisione finale (priorità di prodotto esplicita su tutte e 7 le fasce), che sostituisce l'ordine di emissione descritto qui. Questa voce resta come registro del percorso (perché l'overlap sia stato scoperto, perché `CASCADE_ORDER` sia stato scartato come fonte), non come stato attuale del codice.
+
+**Rivalutazione**: chiusa da D-044.
+
+---
+
+## D-043 — Exporter Batch 4: `getBreakpoint` aggiunta al barrel pubblico dell'Engine (reversione mirata di D-010)
+
+**Stato**: `getBreakpoint(name: BreakpointName): Breakpoint` esportata da `packages/engine/src/index.ts`, insieme a `listBreakpointNames`/`widerBreakpoints`/`BASE_BREAKPOINT` già pubbliche. `BREAKPOINTS` (l'array intero) **resta interno**, invariato nella sostanza di D-010 - solo la funzione di lookup per singolo nome è esposta, non la struttura dati grezza.
+
+**Motivazione**: il foglio di stile "snapshot posizionale" dell'Exporter (Batch 4) deve generare `@media` con le soglie REALI di ciascuna fascia (`minWidth`/`maxWidth`/`orientation`/`minHeight`/`maxHeight`), non solo il nome - un bisogno che nessun consumer esterno aveva avuto finora (verificato: `renderer-react/src/breakpoints.ts` duplica solo l'ordine dei nomi via `listBreakpointNames()`, mai i predicati). Questo è **esattamente il trigger di rivalutazione che D-010 aveva già previsto testualmente** ("quando emergerà un consumer esterno reale... che necessiti" di conoscere le fasce dall'esterno del package, con l'indicazione esplicita di progettare "solo nomi validi, non l'intera struttura dati interna" quando arriverà) - non una violazione del principio di D-010, ne è l'applicazione prevista. Stesso stile già usato quando la superficie fu ampliata la prima volta in Fase 6: funzione minima e mirata, non l'intero array.
+
+**Alternative scartate**: esportare l'intero array `BREAKPOINTS` (scartata: espone la struttura dati interna grezza a semver, contro lo spirito esplicito di D-010); duplicare le soglie in una tabella propria dell'Exporter/`render-conventions` (scartata: stesso rischio di disallineamento silenzioso già evitato con `PREVIEW_SIZE`/`htmlTagFor` - le soglie sono dati di dominio del Resolver, non una convenzione di rendering condivisa).
+
+**Impatto sui consumer esistenti**: zero - nessuna funzione esistente modificata, solo una nuova esportata. `getBreakpoint` era già usata internamente (testata in `resolver/breakpoints.test.ts`), qui solo resa raggiungibile dal barrel.
+
+**Evidenza disponibile**: `engine/test/publicApi.test.ts` (+2 test: `getBreakpoint` raggiungibile dal barrel per ognuna delle fasce di `listBreakpointNames()`, lancia su un nome sconosciuto) - 212 test verdi nell'Engine (era 210).
+
+**Rivalutazione**: nessuna prevista - chiude esattamente il bisogno trovato scrivendo il Batch 4.
+
+---
+
+## D-044 — Exporter Batch 4: priorità di prodotto esplicita tra le 7 fasce nelle zone di overlap (chiude il "valutatore di predicati" rimandato da D-019)
+
+**Stato**: i 7 blocchi `@media` vengono emessi secondo un ordine di PRIORITÀ DI PRODOTTO esplicito, dichiarato dal proprietario del prodotto - non l'ordine grezzo di `BREAKPOINTS` (D-042, superata) né una regola derivata automaticamente dai predicati (tentativo scartato, vedi sotto). `EMISSION_ORDER` in `packages/exporter/src/stylesheet.ts` elenca le 7 fasce dalla priorità più bassa (emessa per prima) alla più alta (emessa per ultima, quindi vincente per cascata CSS nativa a parità di selettore nelle zone condivise):
+
+```
+desktop, laptop-compatto, desktop-compatto, mobile-verticale, tablet-verticale, tablet-orizzontale, mobile-orizzontale
+```
+
+Cioè, in ordine di priorità decrescente: `mobile-orizzontale` > `tablet-orizzontale` > `tablet-verticale` > `mobile-verticale` > `desktop-compatto` > `laptop-compatto` > `desktop`.
+
+**Un secondo overlap trovato dalla verifica browser reale, distinto da quello di D-042**: `desktop-compatto` (1200-1399px) e `desktop` (1200px+, nessun `maxWidth`) si sovrappongono per l'INTERO intervallo 1200-1399px - un contenimento completo, non uno spicchio marginale come `tablet-orizzontale`/`laptop-compatto`. Con l'ordine `BREAKPOINTS` di D-042, `desktop` (ultimo nell'array) vinceva sempre - `desktop-compatto` non poteva mai prevalere per nessun nodo con un valore divergente, in nessuna larghezza. Trovato SOLO ridimensionando un browser reale (Chromium via Playwright) a 1300×800: i test unitari (stringhe CSS, non matching reale) non l'avrebbero mai rilevato.
+
+**Analisi semantica (richiesta esplicitamente prima di scegliere qualunque ordine, nessuna modifica di codice in quella fase)**: rilette `resolver/breakpoints.ts` e D-019 senza assumere nulla. Fatti verificati:
+- D-019 (riga 247) dichiara ESPLICITAMENTE, come fatto verificato in Fase 6 (non assunto), che le 7 fasce si sovrappongono per costruzione - citando lo stesso esempio `laptop-compatto`/`tablet-orizzontale` a 1100px landscape. Non è un difetto: è la conseguenza accettata di "combinazioni nominate" invece di un modello ad assi ortogonali.
+- Stessa riga, testualmente: "il CSS reale [il sito Vicolo Cechov] risolve questo con l'ordine di dichiarazione nel foglio di stile, non con una partizione pulita" - fatto osservato sul sito reale, non raccomandazione.
+- La Rivalutazione di D-019 (riga 257) aveva già rimandato esplicitamente questo momento: "se emergerà un vero consumer che deve far combaciare un viewport reale contro le fasce (l'Exporter) - a quel punto servirà un valutatore di predicati, esplicitamente non costruito qui." Questa voce chiude quel rimando.
+- Il sorgente del sito reale non è presente nel repository - impossibile derivare l'ordine di dichiarazione REALE del sito per questi casi; inoltre il sito ha contenuto fisso e probabilmente non manifesta mai la maggioranza degli overlap trovati (in particolare quelli con `mobile-orizzontale`, conseguenza della GENERALITÀ del modello del Builder, non del contenuto specifico del sito).
+- Nessuna contraddizione trovata tra il modello e Preview/Canvas: non fanno mai matching di un viewport reale contro i predicati (usano sempre un nome di fascia già scelto dall'autore), quindi non hanno mai avuto un'opinione sull'overlap - l'Exporter è il primo vero "valutatore di predicati" del sistema.
+
+**Analisi sistematica di TUTTE le coppie (non solo le 2 note)**: enumerate algebricamente tutte le 21 coppie di predicati (intersezione di intervalli larghezza/altezza + compatibilità di orientamento). Risultato: **5 coppie si sovrappongono realmente**, non 2:
+1. `tablet-orizzontale` / `laptop-compatto` (nota, D-042)
+2. `desktop-compatto` / `desktop` (nuova, trovata in browser)
+3. `mobile-orizzontale` / `laptop-compatto` (nuova - `mobile-orizzontale` non ha vincoli di larghezza)
+4. `mobile-orizzontale` / `desktop-compatto` (nuova)
+5. `mobile-orizzontale` / `desktop` (nuova)
+
+Più un **caso a tre vie**: a 1300×400 landscape, `mobile-orizzontale` + `desktop-compatto` + `desktop` corrispondono simultaneamente.
+
+**Tentativo scartato: regola derivata dal conteggio dei campi del predicato** ("più vincoli = più specifico = vince"). Verificato concretamente (script dedicato + browser): risolve correttamente 3 coppie su 5 (`tablet-orizzontale`>`laptop-compatto`, `desktop-compatto`>`desktop`, `mobile-orizzontale`>`desktop`), ma produce PARITÀ non decidibile per 2 (`mobile-orizzontale` vs `laptop-compatto`, `mobile-orizzontale` vs `desktop-compatto` - entrambe le coppie hanno lo stesso numero di campi). Non generalizza - scartata, non forzato uno spareggio.
+
+**Decisione (del proprietario del prodotto, non derivata automaticamente)**: priorità esplicita su tutte e 7 le fasce, dal più specifico al più generico - una fascia con orientamento e/o altezza è più specifica di una fascia che vincola solo la larghezza; tra fasce dello stesso tipo, quella delimitata da un `maxWidth` precede quella senza limite superiore. Stessa filosofia già usata per `CASCADE_ORDER` in D-019 ("curato a mano... non c'è una formula da cui si deriva automaticamente"), qui applicata a un secondo scopo distinto (ordine di emissione CSS per un browser reale, non ereditarietà di valori all'interno di una fascia già scelta).
+
+**Verifica prima dell'implementazione (richiesta esplicitamente, nessuna implementazione prima di questa verifica)**: script dedicato (`verify-priority-order.mjs`) - confermato che la lista è una permutazione valida delle 7 fasce di `listBreakpointNames()`, e che risolve deterministicamente TUTTE e 5 le coppie più il caso a tre vie (un ordine totale su 7 elementi esclude l'ambiguità per costruzione, per qualunque sottoinsieme). Nessuna ambiguità trovata - solo a quel punto implementato.
+
+**Rischio noto residuo, empiricamente confermato in questa verifica, non solo teorico**: la dimensione di anteprima `laptop-compatto` in `PREVIEW_SIZE` (1100×700) ricade ESSA STESSA nella zona di overlap con `tablet-orizzontale` (che vince, D-044). Verificato in browser: un nodo con valori divergenti tra le due fasce mostra il valore di `tablet-orizzontale`, non quello di `laptop-compatto`, a quella precisa dimensione - conseguenza diretta e accettata della decisione, non un bug. Se in futuro emergerà una SESTA coppia di overlap non ancora nota (es. una nuova fascia introdotta), la stessa disciplina si applica: fermarsi e chiedere una nuova priorità di prodotto esplicita, non estendere `EMISSION_ORDER` per analogia.
+
+**Evidenza disponibile**: `test/stylesheet.test.ts` - un test per l'ordine di emissione completo, un test parametrico (`it.each`) per tutte e 5 le coppie con valori divergenti (verifica sia l'ordine dei blocchi sia quale valore concreto vince), un test per il caso a tre vie, un test per il caso non divergente (oggi reale) - 79 test nel pacchetto Exporter (era 74). Build pulita su tutti e 6 i pacchetti (483 test totali). Verificato anche in un browser reale (Chromium via Playwright): il documento demo di `App.tsx` (invariato) produce coordinate identiche tra Preview reale e file statico esportato su tutte e 7 le fasce (14/14 confronti); il caso `desktop-compatto`/`desktop` precedentemente errato ora risolve correttamente; le 3 nuove coppie con `mobile-orizzontale` risolvono tutte a favore di `mobile-orizzontale` a punti rappresentativi reali (1100×400, 1300×400, 1600×400 landscape, altezza≤550).
+
+**Rivalutazione**: se emergerà un'ottava fascia (nuova soglia responsive) - `EMISSION_ORDER` va esteso a mano con una nuova decisione di priorità esplicita, verificata con lo stesso metodo algebrico+browser usato qui, non per analogia silenziosa.
+
