@@ -19,6 +19,17 @@ import type { BreakpointName } from "@vicolobuilder/engine";
  * mostrare la fascia attiva in modo coerente con l'editing - duplicare la
  * mappa avrebbe rischiato un disallineamento silenzioso tra Canvas e
  * Preview.
+ *
+ * Exporter Batch 4 (decisione infrastrutturale #1): spostato da
+ * `renderer-react/src/previewSize.ts` a questo pacchetto neutro, stesso
+ * principio già applicato a `htmlTagFor` nel Batch 3 (D-038): l'Exporter
+ * ha bisogno esattamente della stessa larghezza per fascia già usata da
+ * Canvas/Preview per generare il foglio di stile "snapshot posizionale"
+ * (una fascia CSS per ciascuna delle 7 fasce, D-019) - usare la stessa
+ * tabella invece di ridefinirla evita un disallineamento silenzioso tra
+ * l'anteprima nell'editor e l'HTML pubblicato. Nessun valore o soglia
+ * modificato: stesse 7 coppie, stessi numeri. `renderer-react` importa ora
+ * da qui invece di tenere una copia locale - zero cambi di comportamento.
  */
 export const PREVIEW_SIZE: Record<BreakpointName, { readonly width: number; readonly height: number }> = {
   "mobile-verticale": { width: 375, height: 812 },

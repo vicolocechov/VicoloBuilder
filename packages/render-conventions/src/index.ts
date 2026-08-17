@@ -4,3 +4,4 @@
  * (renderer-react, Exporter) importa solo da qui.
  */
 export { htmlTagFor } from "./htmlTag.js";
+export { PREVIEW_SIZE } from "./previewSize.js";

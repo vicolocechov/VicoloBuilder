@@ -627,3 +627,17 @@ Tre funzioni pure in `src/escape.ts` (analisi Exporter, §3.7 - "tre discipline 
 
 **Rivalutazione**: nessuna prevista per l'ambito di questo batch. Il posizionamento CSS reale (Batch 4) userà `data-node-id` come selettore - se quel batch scoprirà che serve un identificatore diverso, da segnalare come per `IR.types`, non assunto.
 
+---
+
+## D-041 — Exporter Batch 4 (preparazione, decisione infrastrutturale #1): `PREVIEW_SIZE` spostato in `@vicolobuilder/render-conventions`
+
+**Stato**: `PREVIEW_SIZE` (tabella larghezza/altezza di anteprima per ciascuna delle 7 fasce, Fase 6) spostata da `packages/renderer-react/src/previewSize.ts` a `packages/render-conventions/src/previewSize.ts`. Stesso identico principio già applicato a `htmlTagFor` nel Batch 3 (D-038): l'Exporter (foglio di stile "snapshot posizionale", Batch 4) ha bisogno esattamente della stessa larghezza per fascia già usata da Canvas/Preview per generare l'anteprima nell'editor - usare la stessa tabella invece di ridefinirla evita un disallineamento silenzioso tra editor e HTML pubblicato.
+
+**Vincoli rispettati (espliciti dell'istruzione)**: nessun valore o soglia modificato (le 7 coppie width/height sono identiche, verificato con un test dedicato che le blocca esplicitamente); Canvas.tsx e Preview.tsx importano ora `PREVIEW_SIZE` da `@vicolobuilder/render-conventions` invece che dal file locale eliminato - comportamento identico (164 test di renderer-react, stesso numero di prima, tutti verdi); nessuna duplicazione della tabella (un solo modulo sorgente, `render-conventions`).
+
+**Nuova dipendenza**: `render-conventions` dipende ora da `@vicolobuilder/engine` (solo per il tipo `BreakpointName`) - stesso schema di dipendenza già usato da `@vicolobuilder/exporter`.
+
+**Evidenza disponibile**: `render-conventions/test/previewSize.test.ts` (2 nuovi test: le chiavi coincidono esattamente con `listBreakpointNames()` dell'Engine, nessuna in più o in meno; i valori sono bloccati byte-per-byte agli stessi numeri già in uso prima della migrazione). Build pulita su tutti e 6 i pacchetti. Suite esistenti invariate e verdi: Engine 210, render-conventions 5 (era 3), CLI 20, Test Runner 3, renderer-react 164, Exporter 59.
+
+**Rivalutazione**: nessuna prevista per questa parte. Il resto del Batch 4 (generazione del foglio di stile vero e proprio) è **sospeso**: durante la preparazione è emerso un problema strutturale fuori da questo perimetro (sovrapposizione reale tra i predicati CSS di `tablet-orizzontale` e `laptop-compatto` - due fasce dichiaratamente indipendenti nel modello, ma che condividono una regione concreta di larghezza/orientamento/altezza), segnalato al proprietario del prodotto invece di essere risolto autonomamente, in attesa di decisione prima di proseguire.
+
