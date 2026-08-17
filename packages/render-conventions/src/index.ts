@@ -5,3 +5,5 @@
  */
 export { htmlTagFor } from "./htmlTag.js";
 export { PREVIEW_SIZE } from "./previewSize.js";
+export { readRegisteredFonts } from "./fontRegistration.js";
+export type { FontRegistration } from "./fontRegistration.js";

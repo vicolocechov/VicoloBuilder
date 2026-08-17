@@ -86,7 +86,7 @@ export interface Document {
    * Nucleo (Fase 16, Punto 2 - decisione esplicita: Opzione A): un'unica
    * chiave, `fonts`, un array di `{family, weight, src}` annidato dentro
    * questo bag - nessun nuovo campo tipizzato su `Document` (la forma
-   * `FontRegistration` vive in `renderer-react/src/fonts/fontRegistration.ts`
+   * `FontRegistration` vive in `@vicolobuilder/render-conventions` (Batch 6)
    * - l'Engine tratta `props` come opaco, esattamente come per
    * `DocumentNode.props`/`Page.props`).
    */

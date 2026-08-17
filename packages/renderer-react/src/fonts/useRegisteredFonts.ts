@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { FontRegistration } from "./fontRegistration.js";
+import type { FontRegistration } from "@vicolobuilder/render-conventions";
 
 /**
  * Rende effettivamente disponibili al browser i font registrati in

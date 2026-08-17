@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
-import { readRegisteredFonts } from "../../src/fonts/fontRegistration.js";
+import { readRegisteredFonts } from "../src/fontRegistration.js";
 
 function baseDoc() {
   return createDocument({ rootPageId: "page-home", rootNodeId: "root" });

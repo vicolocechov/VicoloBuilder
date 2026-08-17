@@ -1,5 +1,5 @@
 import type { Document, UpdateDocumentPropsCommand } from "@vicolobuilder/engine";
-import { readRegisteredFonts, type FontRegistration } from "../fonts/fontRegistration.js";
+import { readRegisteredFonts, type FontRegistration } from "@vicolobuilder/render-conventions";
 
 /**
  * Fase 16 (Font custom, Punto 1 - decisione esplicita: Opzione B). Mirror

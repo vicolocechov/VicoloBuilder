@@ -6,3 +6,4 @@
 export { escapeHtmlText, escapeHtmlAttribute, escapeCssText } from "./escape.js";
 export { renderMarkup, DuplicateAnchorIdError } from "./markup.js";
 export { renderGeometryStylesheet } from "./stylesheet.js";
+export { renderFontFaces } from "./fonts.js";

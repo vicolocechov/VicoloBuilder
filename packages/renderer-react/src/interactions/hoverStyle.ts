@@ -30,7 +30,7 @@ function isHoverStyle(value: unknown): value is HoverStyle {
 /**
  * Legge `node.props.hover` per ogni nodo del Document, scartando ogni
  * valore che non ha esattamente la forma attesa (stesso trattamento già
- * dato a `document.props.fonts` in `fonts/fontRegistration.ts`) e ogni
+ * dato a `document.props.fonts` in `@vicolobuilder/render-conventions`) e ogni
  * nodo senza alcuna chiave hover valorizzata (bag vuoto o assente).
  */
 export function readHoverStyles(document: Document): ReadonlyMap<NodeId, HoverStyle> {

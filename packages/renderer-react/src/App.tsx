@@ -11,7 +11,7 @@ import { Preview } from "./preview/Preview.js";
 import { TIER_NAMES } from "./breakpoints.js";
 import { FontManager } from "./fonts/FontManager.js";
 import { useRegisteredFonts } from "./fonts/useRegisteredFonts.js";
-import { readRegisteredFonts } from "./fonts/fontRegistration.js";
+import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import { SiteSeoManager } from "./seo/SiteSeoManager.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useDocument } from "../history/useHistoryStore.js";
-import { readRegisteredFonts } from "./fontRegistration.js";
+import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import { buildRegisterFontCommand, buildUnregisterFontCommand } from "../write/buildUpdateDocumentPropsCommand.js";
 
 /**
