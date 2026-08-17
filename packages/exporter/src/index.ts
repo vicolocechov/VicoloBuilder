@@ -8,3 +8,4 @@ export { renderMarkup, DuplicateAnchorIdError } from "./markup.js";
 export { renderGeometryStylesheet } from "./stylesheet.js";
 export { renderFontFaces } from "./fonts.js";
 export { renderHoverRules } from "./hover.js";
+export { renderHead, resolveHtmlLang } from "./head.js";

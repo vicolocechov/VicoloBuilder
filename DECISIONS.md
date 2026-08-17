@@ -775,3 +775,25 @@ Più un **caso a tre vie**: a 1300×400 landscape, `mobile-orizzontale` + `deskt
 
 **Rivalutazione**: nessuna prevista - chiude sia il bisogno del Batch 7 sia la lacuna del `color` base trovata qui. Se emergerà un quinto caso di "convenzione condivisa" tra editor ed Exporter, stessa disciplina di migrazione verso `@vicolobuilder/render-conventions` già applicata 4 volte.
 
+---
+
+## D-048 — Exporter Batch 8: `<head>`/SEO da `Page.props`/`Document.props`
+
+**Stato**: nuovo modulo `packages/exporter/src/head.ts`, due punti di ingresso: `renderHead(document, pageId): string` (produce `<head>...</head>` con i campi SEO) e `resolveHtmlLang(document): string | undefined` (legge `document.props.lang`, separato perché `lang` è un attributo di `<html>`, non un elemento dentro `<head>`). Nessuna nuova lettura dall'Engine: gli stessi valori sono già osservabili end-to-end da `IR.meta.pageProps`/`IR.meta.documentProps` fin da D-027/D-035 - qui letti direttamente da `Document` (`getPage(document, pageId).props`/`document.props`), stesso dato, nessun percorso parallelo.
+
+**Campi coperti** (tutti quelli editabili dall'autore, D-027/D-035): da `Page.props` - `title`→`<title>`, `description`→`<meta name="description">`, `canonical`→`<link rel="canonical">`, `ogTitle`→`<meta property="og:title">`, `ogDescription`→`<meta property="og:description">`; da `Document.props` - `ogSiteName`→`<meta property="og:site_name">`, `ogType`→`<meta property="og:type">`, `ogLocale`→`<meta property="og:locale">`, `lang`→attributo `<html lang>` (via `resolveHtmlLang`).
+
+**`og:url` - sempre derivato da `canonical`, mai una chiave propria (D-035, Opzione H)**: emesso se e solo se `canonical` è una stringa non vuota, con lo STESSO valore verbatim, nessuna trasformazione - coerente con la decisione che vietava esplicitamente un campo `ogUrl` scrivibile proprio per evitare due valori che dovrebbero sempre coincidere.
+
+**Nessun valore inventato** (coerente con "Nessuna validazione" di D-027/D-035): ogni campo è OMESSO se assente o non stringa - nessun campo SEO ha mai avuto un default in tutto il prodotto, stesso trattamento già dato a `fontFamily`/`fontWeight` (Batch 5), mai quello di `fontSize`/`objectFit` (che hanno un fallback fisso).
+
+**Confine esplicito di questo batch, non un'omissione**: `<meta charset>`/`<meta name="viewport">` - requisiti di base di qualunque documento HTML, mai editabili dall'autore, nessun dato da leggere - restano fuori da `renderHead`, stesso trattamento già dato a `html,body{margin:0}` (Batch 4/5): compito dell'assemblaggio del documento completo (Batch 9), non di questo generatore. Idem per l'apertura del tag `<html lang="...">` vero e proprio (`resolveHtmlLang` restituisce solo il valore, l'attributo lo scrive Batch 9).
+
+**Escaping**: `title` con `escapeHtmlText` (contenuto testuale); `description`/`canonical`/ogni `content=`/`href=` con `escapeHtmlAttribute` (valore di attributo) - stesse due discipline già stabilite in Batch 2/3, nessuna nuova utility introdotta. Il `<link rel="canonical">` non passa dalla whitelist `href` del Batch 3 (Opzione B): quella whitelist esiste per i link CLICCABILI (`<a href>`, dove uno schema `javascript:` è realmente eseguibile) - `<link rel="canonical">` non è mai un elemento navigabile/eseguibile, il rischio che la whitelist previene non si applica qui, solo l'escaping è necessario.
+
+**Evidenza disponibile**: `test/head.test.ts` (nuovo, 15 test: `<head>` vuoto senza campi, ciascuno dei campi `Page.props`/`Document.props` singolarmente, `og:url` derivato quando `canonical` presente/assente, due casi di escaping avversario su `title`/`description`, determinismo, `resolveHtmlLang` con valore assente/presente/non-stringa) - 125 test nel pacchetto Exporter (era 110). Build pulita su tutti e 6 i pacchetti (529 test totali).
+
+**Verifica browser reale** (apertura del file assemblato manualmente per questa verifica - l'assemblaggio vero e proprio resta compito del Batch 9): documento con tutti gli 9 campi SEO impostati, incluso `fonts: []` in `Document.props` per verificare che nessun dato estraneo trapeli in `<head>`. Ispezionato `document.head` in un browser reale: `document.documentElement.lang === "it"`, `document.title` corretto, tutti i meta/link attesi presenti con i valori corretti, **`og:url` === `canonical` esattamente** (derivazione verificata, non assunta), esattamente 7 `<meta>` e 1 `<link>` nel documento (nessun tag in più, nessun dato estraneo). Zero `<script>`, zero errori console.
+
+**Rivalutazione**: nessuna prevista - chiude esattamente il bisogno del Batch 8. Se un futuro campo SEO (non ancora richiesto da alcuna evidenza) emergerà, stessa disciplina di elenco chiuso già stabilita in D-027/D-035.
+
