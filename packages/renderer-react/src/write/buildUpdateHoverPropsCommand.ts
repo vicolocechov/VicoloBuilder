@@ -1,6 +1,6 @@
 import { requireNode } from "@vicolobuilder/engine";
 import type { Document, NodeId, UpdatePropsCommand } from "@vicolobuilder/engine";
-import { HOVER_KEYS, type HoverKey } from "../interactions/hoverStyle.js";
+import { HOVER_KEYS, type HoverKey } from "@vicolobuilder/render-conventions";
 
 /**
  * Fase 17 (Transizioni CSS di base, Punto 2). `props.hover` è un quarto bag

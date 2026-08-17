@@ -8,7 +8,7 @@ import { flattenBoxes } from "../canvas/flattenBoxes.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
 import { sceneNodeIds } from "./scenes.js";
 import { initialPosition, navigatePage, navigateScene, type PreviewPosition } from "./navigation.js";
-import { readHoverStyles } from "../interactions/hoverStyle.js";
+import { readHoverStyles } from "@vicolobuilder/render-conventions";
 import { useHoverStyles } from "../interactions/useHoverStyles.js";
 
 /**

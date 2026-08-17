@@ -7,3 +7,5 @@ export { htmlTagFor } from "./htmlTag.js";
 export { PREVIEW_SIZE } from "./previewSize.js";
 export { readRegisteredFonts } from "./fontRegistration.js";
 export type { FontRegistration } from "./fontRegistration.js";
+export { HOVER_KEYS, readHoverStyles } from "./hoverStyle.js";
+export type { HoverKey, HoverStyle } from "./hoverStyle.js";

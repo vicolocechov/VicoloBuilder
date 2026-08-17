@@ -13,6 +13,20 @@ import type { Document, NodeId } from "@vicolobuilder/engine";
  * Nessuna cascata con `props.responsive`: verificato che `:hover` non
  * compare mai dentro un blocco `@media` nel sito reale - l'hover è un asse
  * ortogonale alla fascia, non integrato nel Resolver (Punto 2, approvato).
+ *
+ * ATTENZIONE - `color` qui (nel bag hover) mappa alla proprietà CSS
+ * `color` (testo), MENTRE la `color` BASE di un nodo (`CONTENT_KEYS`,
+ * `DocumentNode.props.color`, mai in questo bag) mappa a `background` -
+ * stessa chiave, semantica diversa a seconda del bag: convenzione già
+ * consolidata nell'editor (`Preview.tsx`/Canvas.tsx), non reinventata qui.
+ *
+ * Exporter Batch 7: spostato da `renderer-react/src/interactions/hoverStyle.ts`
+ * a questo pacchetto neutro, stesso principio già applicato a `htmlTagFor`
+ * (D-038), `PREVIEW_SIZE` (D-041) e `FontRegistration` (D-046) - l'Exporter
+ * ha bisogno esattamente della stessa forma/lettura di `props.hover` già
+ * usata da `Preview.tsx`/`useHoverStyles.ts` per renderizzare l'hover
+ * nell'editor. `renderer-react` importa ora da qui invece di tenere una
+ * copia locale - zero cambi di comportamento, stesso identico output.
  */
 export const HOVER_KEYS = ["color", "background", "transform", "borderColor"] as const;
 export type HoverKey = (typeof HOVER_KEYS)[number];
@@ -30,8 +44,8 @@ function isHoverStyle(value: unknown): value is HoverStyle {
 /**
  * Legge `node.props.hover` per ogni nodo del Document, scartando ogni
  * valore che non ha esattamente la forma attesa (stesso trattamento già
- * dato a `document.props.fonts` in `@vicolobuilder/render-conventions`) e ogni
- * nodo senza alcuna chiave hover valorizzata (bag vuoto o assente).
+ * dato a `document.props.fonts`) e ogni nodo senza alcuna chiave hover
+ * valorizzata (bag vuoto o assente).
  */
 export function readHoverStyles(document: Document): ReadonlyMap<NodeId, HoverStyle> {
   const result = new Map<NodeId, HoverStyle>();

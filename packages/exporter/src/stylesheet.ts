@@ -97,8 +97,24 @@ function mediaCondition(breakpointName: string): string {
  * le stringhe tra apici, verificato con un caso avversario end-to-end in
  * un browser reale (non solo assunto dalla specifica).
  */
+/**
+ * Batch 7 dell'Exporter: `color` (`CONTENT_KEYS`) come sfondo BASE del
+ * nodo - lacuna del piano originale a 9 batch (mai assegnata a nessun
+ * batch: la tabella di mapping del Batch 3, D-040, non la includeva;
+ * Batch 4/5 coprono solo geometria e `STYLE_KEYS`, `color` è
+ * `CONTENT_KEYS`), trovata affrontando l'hover (Batch 7) per la
+ * sovrapposizione di nomi tra la `color` BASE (sfondo) e la `color` del
+ * bag `props.hover` (testo) - non un'omissione di questo batch, del piano
+ * di suddivisione iniziale (D-047). Stesso identico trattamento/default già
+ * usato da Canvas.tsx/Preview.tsx: `color` (se stringa) mappa a
+ * `background`, MAI a `color` CSS - fallback `"transparent"` se assente,
+ * sempre emesso (mai omesso, a differenza di `fontFamily`/`fontWeight`).
+ */
 function styleDeclarations(props: Readonly<Record<string, unknown>>): string {
   const decls: string[] = [];
+
+  const background = typeof props.color === "string" ? props.color : "transparent";
+  decls.push(`background:${escapeCssText(background)}`);
 
   const fontSize = typeof props.fontSize === "string" ? props.fontSize : "12px";
   decls.push(`font-size:${escapeCssText(fontSize)}`);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
-import { readHoverStyles } from "../../src/interactions/hoverStyle.js";
+import { readHoverStyles } from "../src/hoverStyle.js";
 
 function baseDoc() {
   let doc = createDocument({ rootPageId: "page-home", rootNodeId: "root" });

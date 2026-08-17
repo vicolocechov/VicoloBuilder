@@ -42,7 +42,7 @@ import { BASE_TIER } from "../breakpoints.js";
  * `STYLE_KEYS`, mirror esatto di `fontSize`: stringa CSS opaca, stesso
  * congelamento per fascia. A differenza di `props.hover` (Punto 2, un
  * bag separato NON integrato con `props.responsive` - vedi
- * `interactions/hoverStyle.ts`), `transition` è un valore scalare sui
+ * `@vicolobuilder/render-conventions`), `transition` è un valore scalare sui
  * props BASE del nodo, mirror esatto del sito reale (`transition` è
  * sempre dichiarata sulla regola base, mai dentro `:hover`).
  *

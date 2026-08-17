@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { NodeId } from "@vicolobuilder/engine";
-import { type HoverKey, type HoverStyle } from "./hoverStyle.js";
+import { type HoverKey, type HoverStyle } from "@vicolobuilder/render-conventions";
 
 /**
  * Rende effettive le regole `:hover` di `readHoverStyles` (Fase 17, Punto

@@ -84,7 +84,7 @@ describe("renderGeometryStylesheet — regole di geometria per nodo", () => {
     const css = renderGeometryStylesheet(doc, PAGE_ID);
     expect(css).toContain('[data-node-id="root"]{position:absolute;');
     expect(css).toContain('[data-node-id="a"]{position:absolute;left:0px;top:0px;width:');
-    expect(css).toContain(";height:30px;font-size:12px;object-fit:cover;}");
+    expect(css).toContain(";height:30px;background:transparent;font-size:12px;object-fit:cover;}");
   });
 
   it("struttura piatta: ogni nodo è un selettore proprio, un figlio non è annidato dentro la regola del genitore", () => {
@@ -171,7 +171,7 @@ describe("renderGeometryStylesheet — le 5 coppie di overlap reale (D-044)", ()
     doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "text", parentId: "root", props: { x: 0, y: 0, width: 50, height: 50 } });
 
     const css = renderGeometryStylesheet(doc, PAGE_ID);
-    const nRule = '[data-node-id="n"]{position:absolute;left:0px;top:0px;width:50px;height:50px;font-size:12px;object-fit:cover;}';
+    const nRule = '[data-node-id="n"]{position:absolute;left:0px;top:0px;width:50px;height:50px;background:transparent;font-size:12px;object-fit:cover;}';
 
     for (const bp of ["tablet-orizzontale", "laptop-compatto", "desktop-compatto", "desktop", "mobile-orizzontale"]) {
       const blockStart = css.indexOf(`@media ${expectedMediaCondition(bp)}{`);
@@ -318,5 +318,35 @@ describe("renderGeometryStylesheet — Batch 5: determinismo con STYLE_KEYS pres
       props: { fontSize: "clamp(16px, 2vw, 24px)", fontFamily: "Georgia, serif", fontWeight: "700", objectFit: "contain", transition: "all 0.3s ease" },
     });
     expect(renderGeometryStylesheet(doc, PAGE_ID)).toBe(renderGeometryStylesheet(doc, PAGE_ID));
+  });
+});
+
+/**
+ * Batch 7 (D-047): `color` (CONTENT_KEYS) come sfondo BASE del nodo -
+ * lacuna del piano originale a 9 batch, colmata qui insieme all'hover.
+ */
+describe("renderGeometryStylesheet — Batch 7: color come sfondo base (D-047)", () => {
+  it("fallback 'transparent' se 'color' è assente, sempre emesso (mai omesso)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root" });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("background:transparent;");
+  });
+
+  it("'color' esplicito mappa a 'background' (MAI a 'color' CSS testuale) - stessa convenzione già consolidata nell'editor", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root", props: { color: "#dbeafe" } });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).toContain("background:#dbeafe;");
+    expect(css).not.toMatch(/[^-]color:#dbeafe/); // non deve comparire come "color:#dbeafe" (solo "background:")
+  });
+
+  it("un valore avversario per 'color' viene escapato", () => {
+    const malicious = 'red";}[data-node-id="x"]{display:none;}[y="';
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "CREATE_NODE", nodeId: "n", nodeType: "box", parentId: "root", props: { color: malicious } });
+    const css = renderGeometryStylesheet(doc, PAGE_ID);
+    expect(css).not.toContain(`background:${malicious}`);
+    expect(css).toContain(`background:${escapeCssText(malicious)}`);
   });
 });

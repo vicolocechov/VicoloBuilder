@@ -7,7 +7,7 @@ import { buildUpdateHoverPropsCommand } from "../write/buildUpdateHoverPropsComm
 import { frozenFieldState } from "./frozenFieldState.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { isTextBearingType } from "../elements/textBearingTypes.js";
-import type { HoverKey } from "../interactions/hoverStyle.js";
+import type { HoverKey } from "@vicolobuilder/render-conventions";
 
 /**
  * Fase 5, Blocco D (Decisione D7): ambito minimo — solo i campi già
