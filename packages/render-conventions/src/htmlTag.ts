@@ -10,6 +10,16 @@
  * questo elenco: vedi `Canvas.tsx` (overlay di selezione ristrutturato
  * come fratelli, non figli, proprio per restare compatibile con un tag
  * che non può avere children).
+ *
+ * Exporter Batch 3 — spostato da `renderer-react/src/elements/htmlTag.ts`
+ * a questo pacchetto neutro (decisione esplicita del proprietario del
+ * prodotto, Alternativa A): l'Exporter (`packages/exporter`) ne aveva
+ * bisogno per generare markup HTML statico, ma non deve dipendere da un
+ * pacchetto React per una convenzione che non è un dato di dominio
+ * dell'Engine (che non interpreta mai il significato di `type` - stesso
+ * principio già rispettato per le convenzioni SEO). `renderer-react`
+ * importa ora da qui invece di tenere una copia locale - zero cambi di
+ * comportamento, stesso identico output, solo collocazione diversa.
  */
 const TAG_BY_NODE_TYPE: Readonly<Record<string, string>> = {
   h1: "h1",

@@ -6,7 +6,7 @@ import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument } from "../history/useHistoryStore.js";
 import { flattenBoxes } from "../canvas/flattenBoxes.js";
 import { PREVIEW_SIZE } from "../previewSize.js";
-import { htmlTagFor } from "../elements/htmlTag.js";
+import { htmlTagFor } from "@vicolobuilder/render-conventions";
 import { sceneNodeIds } from "./scenes.js";
 import { initialPosition, navigatePage, navigateScene, type PreviewPosition } from "./navigation.js";
 import { readHoverStyles } from "../interactions/hoverStyle.js";

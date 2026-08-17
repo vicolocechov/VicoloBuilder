@@ -9,7 +9,7 @@ import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE } from "../previewSize.js";
-import { htmlTagFor } from "../elements/htmlTag.js";
+import { htmlTagFor } from "@vicolobuilder/render-conventions";
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per

@@ -575,3 +575,17 @@ Tre funzioni pure in `src/escape.ts` (analisi Exporter, §3.7 - "tre discipline 
 
 **Rivalutazione**: nessuna prevista per questo batch. Se un batch successivo scoprirà un quarto contesto di inserimento (es. un attributo `style=""` che combina HTML-attributo E CSS-testo nello stesso valore) - da trattare come composizione esplicita delle funzioni esistenti, non una quarta funzione nuova, salvo che l'analisi di quel batch dimostri il contrario.
 
+---
+
+## D-038 — Exporter Batch 3 (preparazione): `htmlTagFor` spostato in un nuovo pacchetto neutro `@vicolobuilder/render-conventions`
+
+**Stato**: `htmlTagFor` (mappa `DocumentNode.type` → tag HTML) spostato da `renderer-react/src/elements/htmlTag.ts` a un nuovo pacchetto `packages/render-conventions` (Alternativa A, decisione esplicita del proprietario del prodotto, dopo un confronto con "duplicarla nell'Exporter" e "far dipendere l'Exporter da renderer-react"). Motivazione: `packages/exporter` (CLI/filesystem, Batch 3) aveva bisogno della stessa mappa per generare markup statico, ma non deve dipendere da un pacchetto React per una convenzione che non è dato di dominio dell'Engine - l'Engine non interpreta mai il significato di `type` (stesso principio già rispettato per le convenzioni SEO/font, mai duplicate lì). Non è però lo stesso caso di `PREVIEW_SIZE` (dato di dominio Resolver/breakpoint, spostabile nell'Engine senza obiezioni): `htmlTagFor` interpreta `type` in termini HTML, cosa che l'Engine non fa per principio (RFC-000 §10) - spostarla lì avrebbe violato quella purezza. Un pacchetto neutro terzo, non Engine non renderer-react, è la collocazione corretta per una convenzione di rendering condivisa da DUE target diversi (DOM live, HTML statico).
+
+**`renderer-react` aggiornato per importare dal nuovo pacchetto** (`Canvas.tsx`, `Preview.tsx`) invece di tenere una copia locale - **zero cambi di comportamento**, stesso identico output, solo collocazione diversa. Verificato: build pulita, 164 test in `renderer-react` (era 167 - i 3 test di `htmlTagFor` spostati in `render-conventions`, che ne ha ora altrettanti - stessa copertura totale, nessuna perdita).
+
+**Ambito strettamente minimale** (vincolo esplicito): spostato SOLO `htmlTagFor` - nessun'altra convenzione anticipata "in previsione" di future esigenze. La migrazione di `PREVIEW_SIZE` (infra decisione #1, stesso principio) resta rimandata al Batch 4, come già deciso, non anticipata qui.
+
+**Evidenza disponibile**: `packages/render-conventions/test/htmlTag.test.ts` (3 test, identici a quelli spostati). Build pulita su tutti e 6 i pacchetti del monorepo (Engine, render-conventions, CLI, Test Runner, renderer-react, Exporter). Nessuna modifica a `Canvas.tsx`/`Preview.tsx` oltre alla riga di import.
+
+**Rivalutazione**: nessuna prevista - la collocazione risolve il bisogno attuale, non introduce un'astrazione oltre a quanto richiesto.
+

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { htmlTagFor } from "../../src/elements/htmlTag.js";
+import { htmlTagFor } from "../src/htmlTag.js";
 
 describe("htmlTagFor", () => {
   it("mappa i type semantici di Fase 9 al tag HTML corrispondente", () => {

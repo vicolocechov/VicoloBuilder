@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "workspaces": [
     "packages/engine",
+    "packages/render-conventions",
     "packages/cli",
     "packages/test-runner",
     "packages/renderer-react",
