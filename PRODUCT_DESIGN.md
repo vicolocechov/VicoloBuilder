@@ -2,6 +2,25 @@
 
 Registro versionato delle scelte di prodotto/architettura per VicoloBuilder, con lo stesso ruolo che `DECISIONS.md` ha per le singole decisioni tecniche: `PROJECT_BRIEF.md`/RFC definiscono i vincoli, `DECISIONS.md` registra le scelte tecniche fatte dentro lo spazio che le RFC lasciano aperto, questo file registra le scelte di **visione e scope del prodotto** fatte prima e durante la Fase 5, con lo stesso livello di motivazione ed evidenza.
 
+---
+
+## PROSSIMO BLOCCO PIANIFICATO (dopo l'editor grafico)
+
+Al termine di: Blocco 4 (rifinitura visiva), Blocco 5 (upload asset), duplicazione elementi, tipo "card" (per l'hover sulle porte/contenitori-carta, rimandato in D-030) — se non emerge altro lavoro prioritario nel frattempo, il prossimo blocco da aprire è:
+
+### TOGGLE SEDI / STATO GLOBALE (Civitavecchia ↔ Montegiorgio)
+
+Decisione del proprietario del prodotto, da tenere ferma in apertura di quell'analisi:
+
+- NON è una soluzione a "due pagine separate" — raddoppierebbe il lavoro di manutenzione e non replicherebbe il comportamento richiesto (scambio istantaneo sulla stessa schermata, senza navigazione).
+- È un valore alternativo su certe proprietà di un nodo (testo, immagine, colore), scelto da uno stato globale del documento pubblicato ("quale sede è attiva"), applicato in tempo reale.
+- Rompe CONSAPEVOLMENTE il vincolo "zero JavaScript" dell'Exporter v1 (D-050 e batch precedenti) — è la prima funzionalità del prodotto che richiede JS nel sito pubblicato. Va trattata come una vera decisione architetturale nuova, con analisi dedicata (stesso livello di rigore già usato per l'Exporter: fatti verificati, alternative, cross-dipendenze, criteri di chiusura) — non un'aggiunta rapida dentro un altro blocco.
+- È il blocco che la Fase 13 (PRODUCT_DESIGN.md, mai chiusa, lasciata esplicitamente in sospeso in attesa di questo momento) stava aspettando.
+
+**Non aprire questo blocco autonomamente prima che il proprietario del prodotto lo richieda esplicitamente — questa voce è un promemoria, non un'autorizzazione a procedere.**
+
+---
+
 ## Nota metodologica
 
 Ogni affermazione rilevante è etichettata con una delle quattro categorie seguenti:
