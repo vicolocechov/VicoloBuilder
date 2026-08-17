@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { applyCommand, createDocument } from "@vicolobuilder/engine";
 import type { Document, NodeId, PageId } from "@vicolobuilder/engine";
 import { ReactiveHistory } from "./history/ReactiveHistory.js";
@@ -13,6 +13,7 @@ import { FontManager } from "./fonts/FontManager.js";
 import { useRegisteredFonts } from "./fonts/useRegisteredFonts.js";
 import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import { SiteSeoManager } from "./seo/SiteSeoManager.js";
+import { loadDocumentFromLocalStorage, saveDocumentToLocalStorage } from "./persistence/localDocumentStorage.js";
 
 /** Documento dimostrativo: una radice in modalità "libero" con due card, per avere subito qualcosa da selezionare/trascinare/ridimensionare. */
 function buildDemoDocument(): Document {
@@ -66,7 +67,18 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function App(): JSX.Element {
-  const store = useMemo(() => new ReactiveHistory(buildDemoDocument()), []);
+  // Blocco 1 (audit Builder UI/UX, Punto 2): `store` non è più fisso per
+  // tutta la vita del componente (`useMemo` con dipendenze vuote) - "Apri"
+  // deve poter sostituire l'intero Document caricato con un nuovo
+  // `ReactiveHistory`. `History` (Engine) non espone un modo di rimpiazzare
+  // il Document di un'istanza esistente (execute/undo/redo sono le uniche
+  // vie, e caricare un documento salvato non è un comando) - creare una
+  // nuova istanza qui, invece di aggiungere un metodo `load` all'Engine, è
+  // la scelta a minor impatto: nessuna modifica a un package già stabile
+  // (Engine), e concettualmente coerente con "caricare un documento salvato
+  // inizia una nuova sessione di editing" (undo/redo/selezione ripartono
+  // vuoti, che è anche il comportamento desiderato qui).
+  const [store, setStore] = useState<ReactiveHistory>(() => new ReactiveHistory(buildDemoDocument()));
   const document = useDocument(store);
   const activeBreakpoint = useActiveBreakpoint(store);
   const canUndo = useCanUndo(store);
@@ -99,6 +111,31 @@ export function App(): JSX.Element {
     if (!canDeleteSelection || selection === null) return;
     store.execute({ type: "DELETE_NODE", nodeId: selection });
     store.deselect();
+  }
+
+  // Blocco 1, Punto 2 (persistenza minima): messaggio di esito transitorio,
+  // stesso pattern di `moveError` in Canvas.tsx/`error` in PageManager.tsx -
+  // stato locale, non History, azzerato dal prossimo tentativo.
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  function handleSave(): void {
+    saveDocumentToLocalStorage(store.getDocument());
+    setSaveStatus("Documento salvato.");
+  }
+
+  function handleLoad(): void {
+    try {
+      const loaded = loadDocumentFromLocalStorage();
+      setStore(new ReactiveHistory(loaded));
+      // Stato di sessione dell'editor (pagina/anteprima) riparte da un
+      // default (decisione esplicita del proprietario del prodotto per
+      // questo blocco) - solo il Document deve sopravvivere intatto.
+      setActivePageId(loaded.rootPageId);
+      setPreviewOpen(false);
+      setSaveStatus("Documento caricato.");
+    } catch (e) {
+      setSaveStatus(e instanceof Error ? e.message : String(e));
+    }
   }
 
   // B3 (scorciatoia da tastiera, complementare non sostitutiva - analisi
@@ -156,6 +193,13 @@ export function App(): JSX.Element {
           <button onClick={() => setPreviewOpen(true)} disabled={previewOpen}>
             Anteprima
           </button>
+          <button onClick={handleSave}>Salva</button>
+          <button onClick={handleLoad}>Apri</button>
+          {saveStatus ? (
+            <span style={{ fontSize: 12, opacity: 0.7 }}>
+              {saveStatus} <button onClick={() => setSaveStatus(null)}>OK</button>
+            </span>
+          ) : null}
         </div>
         {previewOpen ? (
           <Preview store={store} initialPageId={activePageId} onClose={() => setPreviewOpen(false)} />

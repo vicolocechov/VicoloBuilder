@@ -9,6 +9,7 @@ import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
+import { isTextBearingType } from "../elements/textBearingTypes.js";
 
 /**
  * Un semplice click (pointerdown+pointerup nello stesso punto, per
@@ -58,6 +59,14 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   // selection/activeBreakpoint, è transitorio a un singolo gesto utente.
   const [moveSourceId, setMoveSourceId] = useState<NodeId | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
+
+  // Blocco 1 (audit Builder UI/UX): il bordo 1px onnipresente su ogni
+  // elemento non selezionato rendeva ogni tipo (testo, immagine, link...)
+  // visivamente indistinguibile da un rettangolo generico. Sostituito da
+  // un evidenziamento solo on-hover - stato locale del Canvas, stessa
+  // natura di moveDrag/resizeDrag (transitorio a un singolo elemento sotto
+  // il puntatore, mai in Document/History).
+  const [hoveredId, setHoveredId] = useState<NodeId | null>(null);
 
   const model = useMemo(() => resolveDocument(document, { breakpoint: activeBreakpoint }), [document, activeBreakpoint]);
   const previewSize = PREVIEW_SIZE[activeBreakpoint] ?? { width: 1600, height: 900 };
@@ -232,6 +241,27 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         ? resolvedNode.resolvedProps.anchorId
         : undefined;
 
+    // Blocco 1 (audit Builder UI/UX, Punto 1): un elemento che porta testo
+    // (isTextBearingType) o un'immagine non deve avere alcun bordo/sfondo
+    // di editing di default - deve "sembrare" testo o un'immagine, non un
+    // rettangolo. Un contenitore (tutto il resto: box/griglia/scena/radice
+    // pagina) resta invece percepibile anche vuoto e senza sfondo esplicito
+    // scelto dall'autore, altrimenti sarebbe invisibile nel Canvas.
+    const isTextBearing = isTextBearingType(resolvedNode.type);
+    const isImage = Tag === "img";
+    const isContainerLike = !isTextBearing && !isImage;
+    const isHovered = hoveredId === entry.box.nodeId;
+
+    let border: string;
+    if (isSelected) {
+      border = "2px solid #2563eb";
+    } else if (isContainerLike) {
+      border = isHovered ? "1px dashed rgba(37,99,235,0.7)" : "1px dashed rgba(0,0,0,0.2)";
+    } else {
+      border = isHovered ? "1px solid rgba(37,99,235,0.4)" : "none";
+    }
+    const background = backgroundColor ?? (isContainerLike ? "rgba(37,99,235,0.03)" : "transparent");
+
     return (
       // Fase 15 (Punto 1, analisi - Opzione A): l'overlay di selezione
       // ("Sposta dentro…" + maniglia di ridimensionamento) è un FRATELLO
@@ -294,6 +324,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             }
             store.select(entry.box.nodeId);
           }}
+          onMouseEnter={() => setHoveredId(entry.box.nodeId)}
+          onMouseLeave={() => setHoveredId((current) => (current === entry.box.nodeId ? null : current))}
           onPointerDown={(e: ReactPointerEvent<HTMLElement>) => {
             if (!caps.canMoveXY) return;
             e.stopPropagation();
@@ -314,8 +346,8 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             width,
             height,
             boxSizing: "border-box",
-            border: isSelected ? "2px solid #2563eb" : "1px solid rgba(0,0,0,0.15)",
-            background: backgroundColor ?? "transparent",
+            border,
+            background,
             cursor: caps.canMoveXY ? "move" : "default",
             userSelect: "none",
             fontSize,

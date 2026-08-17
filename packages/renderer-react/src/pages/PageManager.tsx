@@ -95,6 +95,17 @@ export function PageManager({
 
     try {
       store.execute({ type: "CREATE_PAGE", pageId, name, rootNodeId });
+      // Blocco 1 (audit Builder UI/UX, decisione esplicita del proprietario
+      // del prodotto): CREATE_PAGE non accetta props per la radice nuova
+      // (sempre `{}`, vedi applyCreatePage in commands.ts) - qui si applica
+      // subito un secondo comando per farla nascere in "libero" invece del
+      // "pila" implicito di prima. Motivazione: l'obiettivo è il controllo
+      // massimo e il posizionamento libero fin dal primo elemento aggiunto;
+      // un default che blocca il trascinamento finché l'autore non scopre
+      // di dover creare un Contenitore libero andava contro questo
+      // obiettivo. "Pila" resta disponibile come scelta esplicita nel
+      // PropertyPanel (campo layoutMode), non più il default silenzioso.
+      store.execute({ type: "UPDATE_PROPS", nodeId: rootNodeId, props: { layoutMode: "libero" } });
       setNewPageName("");
       onActivePageChange(pageId);
     } catch (e) {

@@ -119,6 +119,41 @@ function NumberField({
   );
 }
 
+// Blocco 1 (audit Builder UI/UX): `layoutMode` non aveva finora alcun campo
+// nel pannello (era leggibile solo indirettamente, es. spostando un
+// elemento in un contenitore libero) - qui esposto con un <select> invece
+// di un TextField libero, perché l'insieme dei valori validi è chiuso e
+// noto ("pila"/"libero"/"griglia": stesso insieme validato da
+// resolver/breakpoints.ts) - un campo di testo libero permetterebbe refusi
+// silenziosi (es. "Libero" con maiuscola) che non produrrebbero errore
+// finché non si prova a trascinare.
+const LAYOUT_MODES = ["pila", "libero", "griglia"] as const;
+
+function LayoutModeField({
+  value,
+  badge,
+  onCommit,
+}: {
+  readonly value: string;
+  readonly badge?: string;
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        layoutMode {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <select value={value} onChange={(e) => onCommit(e.target.value)}>
+        {LAYOUT_MODES.map((mode) => (
+          <option key={mode} value={mode}>
+            {mode}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function TextField({
   label,
   value,
@@ -253,6 +288,12 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         value={asFiniteNumber(resolved.height)}
         badge={frozenFieldState(node, activeBreakpoint, "height")}
         onCommit={(n) => commitGeometry("height", n)}
+      />
+      <LayoutModeField
+        key={`${fieldKeyPrefix}:layoutMode`}
+        value={typeof resolved.layoutMode === "string" ? resolved.layoutMode : "pila"}
+        badge={frozenFieldState(node, activeBreakpoint, "layoutMode")}
+        onCommit={(s) => commitGeometry("layoutMode", s)}
       />
 
       {isGrid ? (
