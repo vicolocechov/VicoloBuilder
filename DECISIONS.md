@@ -823,3 +823,30 @@ Più un **caso a tre vie**: a 1300×400 landscape, `mobile-orizzontale` + `deskt
 
 **Rivalutazione**: la domanda sul font-family di base (sopra) resta esplicitamente aperta. Se emergerà un bisogno di pubblicazione multi-pagina (più file, navigazione), o di un flag di selezione pagina per `builder publish` - nuova decisione di prodotto, non anticipata qui.
 
+---
+
+## D-050 — Chiusura Batch 9: confronto visivo diretto Preview/pubblicato, limitazione nota sulla navigazione a scene
+
+**Richiesta**: prima di chiudere definitivamente il Batch 9, un confronto visivo diretto (non solo test automatici) tra lo stesso documento sintetico aperto nella Preview reale (dev server, editor in esecuzione) e il file HTML esportato, fianco a fianco.
+
+**Metodo**: documento con ogni tipo di elemento (stesso di D-049) ricostruito nell'editor dal vivo tramite gli stessi comandi usati per generare il file JSON di verifica (hook di debug temporaneo su `App.tsx`, rimosso subito dopo, mai committato - stesso schema già usato per le verifiche dei Batch 5/6). Geometria letta con `offsetLeft`/`offsetTop` relativi al contenitore proprio di ciascuna vista (stesso metodo già validato in Batch 4) - una prima misurazione con `getBoundingClientRect()` grezzo aveva prodotto un falso allarme (offset costante di 286px), causato dal chrome dell'interfaccia dell'editor attorno alla Preview, non da una differenza di geometria reale - corretto prima di trarre conclusioni.
+
+**Risultato del confronto (16 nodi verificati)**: geometria (`left`/`top`/`width`/`height`), colori di sfondo e `font-size` **identici byte-per-byte** tra Preview e file esportato, per ogni nodo, senza eccezioni.
+
+**I tre punti sollevati dal proprietario del prodotto, chiariti con le prove del confronto**:
+1. **Font "Times New Roman" ovunque**: confermato essere esattamente D-045/D-049 - per i nodi senza `fontFamily` esplicito, Preview mostra `sans-serif` (ereditato dallo stile dell'interfaccia dell'editor, `App.tsx`, non una proprietà del documento), il file esportato mostra il default nudo del browser. Per il nodo con `fontFamily` esplicito, i due coincidono esattamente. Non una discrepanza tecnica - conseguenza diretta della decisione non ancora presa in D-045/D-049.
+2. **Blocchi larghi quanto l'intera pagina**: identici tra Preview e file esportato (stessa larghezza in entrambi) - diversi nodi del documento di verifica non hanno una `width` esplicita e in modalità "pila" ereditano la larghezza intera del genitore. Caratteristica del documento di test grezzo, non una discrepanza dell'Exporter.
+3. **Un blocco "nero" inatteso**: il nodo immagine - l'asset PNG 1×1 usato nel documento di verifica non era in realtà rosso come assunto nella preparazione del test (era "gray+alpha", non RGB) - errore nella scelta dell'asset di prova, non un bug di rendering: l'immagine è identica tra Preview e file esportato (stesso `data:` URI, stesso `objectFit`, stesso box).
+
+**Discrepanza reale trovata, non corretta in questo turno**: un nodo `type:"scene"` attiva in Preview un meccanismo di navigazione a scene (Fase 7/D-020) - un contenitore con `overflow:hidden` più `transform:translateY(-scrollY)` (`Preview.tsx`, righe 140/235/248) che mostra SOLO la scena corrente, nascondendo/ritagliando il resto della pagina. Il file esportato non replica mai questo comportamento in nessuno dei 9 batch - mostra sempre l'intera pagina piatta. La geometria sottostante di ogni nodo (inclusa la scena stessa) resta identica tra i due - non è un errore nei dati/nel calcolo - ma il risultato VISIVO per una pagina con scene è profondamente diverso tra editor e pubblicato. Corrisponde esattamente al trigger di rivalutazione già previsto testualmente in D-020 ("quando (e se) verrà introdotto routing/deep-link... riguarderà un output pubblicato, non l'editor, da rivalutare con l'Exporter").
+
+**Decisione del proprietario del prodotto**: la limitazione NON va risolta come parte della chiusura dell'Exporter - il motore di navigazione a scene per il pubblicato è un blocco di lavoro a sé, non una correzione da assorbire qui. Nessun workaround minimo introdotto. Trattata esplicitamente come limitazione nota, non minimizzata.
+
+**Stato di chiusura dell'Exporter (formulazione approvata dal proprietario del prodotto)**: *"Exporter v1 completo per lo scope definito nei Batch 1-9: produce un HTML standalone pubblicabile, senza JavaScript, con responsive, stile, font, hover, asset e SEO verificati end-to-end, nell'ambito verificato dal Batch 9. La navigazione a scene per il sito pubblicato è una limitazione funzionale nota, non ancora affrontata: resta un blocco di lavoro separato (progettazione del runtime/motore di navigazione pubblicata), da affrontare con la stessa disciplina di analisi già usata per l'Exporter."*
+
+**Ambito pratico della limitazione**: pagine SENZA nodi `"scene"` sono pubblicabili e fedeli alla Preview (verificato end-to-end, D-049/D-050). Pagine CON nodi `"scene"` sono esportate correttamente nei dati (geometria identica, verificato), ma il file pubblicato mostra l'intera pagina piatta invece della navigazione a scene che Preview offre nell'editor - una lacuna funzionale reale tra ciò che l'editor mostra e ciò che il pubblicato oggi può fare.
+
+**Evidenza disponibile**: confronto in browser reale (Chromium via Playwright) tra Preview (dev server) e file statico esportato sullo stesso documento, 16 nodi, geometria/colore/font-size verificati identici; screenshot di entrambe le viste catturati; lettura diretta del codice di `Preview.tsx` (righe 140/235/248) a conferma del meccanismo di scroll/ritaglio delle scene.
+
+**Rivalutazione**: quando (e se) si affronterà la progettazione di un motore di navigazione a scene per il sito pubblicato - blocco di lavoro separato, con la stessa disciplina di analisi già usata per l'Exporter (fatti verificati, alternative, approvazione esplicita prima dell'implementazione), non anticipato qui.
+
