@@ -49,6 +49,8 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
     // Fase 16: stesso trattamento di Canvas.tsx.
     const fontFamily = typeof props.fontFamily === "string" ? props.fontFamily : undefined;
     const fontWeight = typeof props.fontWeight === "string" ? props.fontWeight : undefined;
+    // Blocco 2: stesso trattamento di Canvas.tsx.
+    const textAlign = typeof props.textAlign === "string" ? props.textAlign : undefined;
     // Fase 17 (Punto 2/3): `transition` applicato SOLO qui, mai in
     // Canvas.tsx - vedi `interactions/useHoverStyles.ts` per il motivo
     // (conflitto con il trascinamento dal vivo e con l'overlay di
@@ -90,6 +92,7 @@ function renderStaticBox(box: Box, resolvedNodeFor: (nodeId: string) => Resolved
           fontSize,
           fontFamily,
           fontWeight,
+          textAlign,
           padding: 4,
           objectFit,
           transition,

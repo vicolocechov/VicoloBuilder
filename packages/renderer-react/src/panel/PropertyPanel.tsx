@@ -7,6 +7,7 @@ import { buildUpdateHoverPropsCommand } from "../write/buildUpdateHoverPropsComm
 import { frozenFieldState } from "./frozenFieldState.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { isTextBearingType } from "../elements/textBearingTypes.js";
+import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import type { HoverKey } from "@vicolobuilder/render-conventions";
 
 /**
@@ -193,6 +194,197 @@ function TextField({
   );
 }
 
+/**
+ * Blocco 2 (audit Builder UI/UX, "controlli visivi"): un vero selettore
+ * colore interattivo (`<input type="color">`, nativo del browser - palette/
+ * gradiente reali), non un campo HEX travestito. Il valore memorizzato può
+ * però essere una stringa CSS che il picker nativo non sa rappresentare
+ * (es. "transparent", "rgba(...)", un nome colore) - `<input type="color">`
+ * accetta SOLO "#rrggbb". Il campo di testo accanto non è un travestimento
+ * del picker (che resta il controllo primario e sempre presente): è
+ * l'unico modo di vedere/scrivere un valore che il picker non può
+ * rappresentare, senza perderlo silenziosamente al primo tocco del picker
+ * stesso (che scrive SOLO quando l'autore lo usa davvero, `onChange` del
+ * colore, mai in automatico dalla sola lettura del valore corrente).
+ */
+function isHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+function ColorField({
+  label,
+  value,
+  badge,
+  onCommit,
+}: {
+  readonly label: string;
+  readonly value: string;
+  readonly badge?: string;
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  const [text, setText] = useState(value);
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setText(value);
+  }, [value]);
+
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <div style={{ display: "flex", gap: 4 }}>
+        <input
+          type="color"
+          value={isHexColor(text) ? text : "#000000"}
+          title="Scegli un colore"
+          onChange={(e) => {
+            setText(e.target.value);
+            onCommit(e.target.value);
+          }}
+          style={{ width: 32, height: 24, padding: 0, border: "1px solid #d1d5db", cursor: "pointer" }}
+        />
+        <input
+          type="text"
+          value={text}
+          placeholder="hex, rgba(), transparent…"
+          onFocus={() => {
+            focused.current = true;
+          }}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => {
+            focused.current = false;
+            onCommit(text);
+          }}
+          style={{ flex: 1, minWidth: 0 }}
+        />
+      </div>
+    </label>
+  );
+}
+
+/**
+ * Blocco 2: elenco a tendina dei font EFFETTIVAMENTE registrati
+ * (`Document.props.fonts`, stessa lettura di `App.tsx`/`FontManager.tsx`
+ * tramite `readRegisteredFonts` - nessuna lista inventata qui). Una
+ * famiglia può avere più pesi registrati (FontManager.tsx) - deduplicata
+ * per famiglia: il peso si sceglie a parte nel campo `fontWeight` già
+ * esistente. Se non c'è ancora nessun font registrato, un messaggio
+ * esplicito sostituisce il menu (decisione esplicita del proprietario del
+ * prodotto: mai un dropdown vuoto silenzioso).
+ */
+function FontFamilyField({
+  value,
+  badge,
+  families,
+  onCommit,
+}: {
+  readonly value: string;
+  readonly badge?: string;
+  readonly families: readonly string[];
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  if (families.length === 0) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+        <span>
+          fontFamily {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        </span>
+        <span style={{ opacity: 0.7, fontStyle: "italic" }}>
+          Nessun font registrato — aggiungilo dal pannello "Font" a sinistra.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        fontFamily {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <select value={families.includes(value) ? value : ""} onChange={(e) => onCommit(e.target.value)}>
+        <option value="">(predefinito del browser)</option>
+        {families.map((family) => (
+          <option key={family} value={family}>
+            {family}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+const TEXT_ALIGN_OPTIONS = [
+  { value: "left", label: "Sinistra" },
+  { value: "center", label: "Centro" },
+  { value: "right", label: "Destra" },
+] as const;
+
+/** Tre righe orizzontali, allineate/centrate/allineate a destra dentro l'icona - la lunghezza decrescente imita un blocco di testo reale, non tre barre identiche. */
+function AlignIcon({ align }: { readonly align: "left" | "center" | "right" }): JSX.Element {
+  const widths = [12, 8, 10];
+  function lineX(w: number): number {
+    if (align === "left") return 2;
+    if (align === "center") return (16 - w) / 2;
+    return 14 - w;
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      {widths.map((w, i) => (
+        <rect key={i} x={lineX(w)} y={3 + i * 4} width={w} height={1.6} rx={0.8} fill="currentColor" />
+      ))}
+    </svg>
+  );
+}
+
+/** Icon-button (Blocco 2, "controlli visivi"): stato attivo mostrato con bordo/sfondo/colore, non solo un valore di testo selezionato in un <select>. */
+function TextAlignField({
+  value,
+  badge,
+  onCommit,
+}: {
+  readonly value: string;
+  readonly badge?: string;
+  readonly onCommit: (value: string) => void;
+}): JSX.Element {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span>
+        textAlign {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+      </span>
+      <div style={{ display: "flex", gap: 4 }}>
+        {TEXT_ALIGN_OPTIONS.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              title={opt.label}
+              aria-label={opt.label}
+              aria-pressed={active}
+              onClick={() => onCommit(opt.value)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 28,
+                height: 24,
+                padding: 0,
+                border: active ? "1px solid #2563eb" : "1px solid #d1d5db",
+                background: active ? "#dbeafe" : "#fff",
+                color: active ? "#2563eb" : "#374151",
+                cursor: "pointer",
+              }}
+            >
+              <AlignIcon align={opt.value} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Element {
   const document = useDocument(store);
   const selection = useSelection(store);
@@ -246,6 +438,13 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
   // RISOLTO: `type` non ha mai un override per fascia.
   const isInteractive = node.type === "link";
   const hover = isPlainObject(resolved.hover) ? resolved.hover : {};
+
+  // Blocco 2: famiglie deduplicate (una famiglia può avere più pesi
+  // registrati, FontManager.tsx) - stesso ordine di registrazione, nessun
+  // riordino alfabetico non richiesto.
+  const registeredFontFamilies: readonly string[] = Array.from(
+    new Set(readRegisteredFonts(document).map((f) => f.family)),
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
@@ -325,11 +524,11 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         />
       ) : null}
       {isTextBearing ? (
-        <TextField
+        <FontFamilyField
           key={`${fieldKeyPrefix}:fontFamily`}
-          label="fontFamily"
           value={typeof resolved.fontFamily === "string" ? resolved.fontFamily : ""}
           badge={frozenFieldState(node, activeBreakpoint, "fontFamily")}
+          families={registeredFontFamilies}
           onCommit={(s) => commitStyle("fontFamily", s)}
         />
       ) : null}
@@ -340,6 +539,14 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           value={typeof resolved.fontWeight === "string" ? resolved.fontWeight : ""}
           badge={frozenFieldState(node, activeBreakpoint, "fontWeight")}
           onCommit={(s) => commitStyle("fontWeight", s)}
+        />
+      ) : null}
+      {isTextBearing ? (
+        <TextAlignField
+          key={`${fieldKeyPrefix}:textAlign`}
+          value={typeof resolved.textAlign === "string" ? resolved.textAlign : "left"}
+          badge={frozenFieldState(node, activeBreakpoint, "textAlign")}
+          onCommit={(s) => commitStyle("textAlign", s)}
         />
       ) : null}
 
@@ -387,7 +594,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         />
       ) : null}
       {isInteractive ? (
-        <TextField
+        <ColorField
           key={`${fieldKeyPrefix}:hover:color`}
           label="hover: color"
           value={typeof hover.color === "string" ? hover.color : ""}
@@ -395,7 +602,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         />
       ) : null}
       {isInteractive ? (
-        <TextField
+        <ColorField
           key={`${fieldKeyPrefix}:hover:background`}
           label="hover: background"
           value={typeof hover.background === "string" ? hover.background : ""}
@@ -411,7 +618,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         />
       ) : null}
       {isInteractive ? (
-        <TextField
+        <ColorField
           key={`${fieldKeyPrefix}:hover:borderColor`}
           label="hover: borderColor"
           value={typeof hover.borderColor === "string" ? hover.borderColor : ""}
@@ -425,7 +632,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         value={typeof resolved.text === "string" ? resolved.text : ""}
         onCommit={(s) => commitContent("text", s)}
       />
-      <TextField
+      <ColorField
         key={`${fieldKeyPrefix}:color`}
         label="color"
         value={typeof resolved.color === "string" ? resolved.color : ""}

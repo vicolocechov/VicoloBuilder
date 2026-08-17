@@ -229,6 +229,10 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // un valore inventato).
     const fontFamily = typeof resolvedNode.resolvedProps.fontFamily === "string" ? resolvedNode.resolvedProps.fontFamily : undefined;
     const fontWeight = typeof resolvedNode.resolvedProps.fontWeight === "string" ? resolvedNode.resolvedProps.fontWeight : undefined;
+    // Blocco 2: stesso trattamento di fontFamily/fontWeight - stringa CSS
+    // opaca, nessun fallback fisso (l'assenza lascia il browser libero di
+    // usare il proprio default, "left" in LTR).
+    const textAlign = typeof resolvedNode.resolvedProps.textAlign === "string" ? resolvedNode.resolvedProps.textAlign : undefined;
     // B2 (identificatore stabile per ancore interne, Opzione C): un vero
     // attributo HTML `id=`, separato da `data-node-id` (che resta lo
     // sganciamento interno usato dal drag/dall'overlay/da `useHoverStyles`
@@ -353,6 +357,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             fontSize,
             fontFamily,
             fontWeight,
+            textAlign,
             padding: 4,
             objectFit,
           }}

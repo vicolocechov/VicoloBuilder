@@ -70,9 +70,30 @@ import { BASE_TIER } from "../breakpoints.js";
  * ristretti a "link"): i 13 bersagli reali di ancora nel sito di
  * riferimento non condividono un ruolo strutturale comune, mai un
  * "link" - nessuna restrizione di tipo pulita emerge dai dati.
+ *
+ * Blocco 2 (audit Builder UI/UX, "controlli visivi") — `textAlign` entra in
+ * `STYLE_KEYS`, stessa classificazione/congelamento di `fontFamily`/
+ * `fontWeight` (D-046): una proprietà tipografica, non contenuto, nessuna
+ * evidenza contraria a trattarla come le altre STYLE_KEYS. Applicato in
+ * Canvas.tsx E Preview.tsx insieme (stesso schema seguito per ogni
+ * STYLE_KEY precedente: fontSize/S2, fontFamily+fontWeight/Fase16,
+ * objectFit/Fase15, transition/Fase17) - i due renderer dell'editor restano
+ * allineati, evitando la stessa classe di disallineamento Preview/pubblicato
+ * chiusa con D-050 per le scene. L'Exporter (pacchetto chiuso, D-050) NON è
+ * toccato: fuori dal perimetro di questa fase (Builder UI/UX), non
+ * dell'Exporter v1.
  */
 export const GEOMETRY_KEYS = ["x", "y", "width", "height", "layoutMode"] as const;
-export const STYLE_KEYS = ["columns", "gap", "fontSize", "objectFit", "fontFamily", "fontWeight", "transition"] as const;
+export const STYLE_KEYS = [
+  "columns",
+  "gap",
+  "fontSize",
+  "objectFit",
+  "fontFamily",
+  "fontWeight",
+  "transition",
+  "textAlign",
+] as const;
 export const CONTENT_KEYS = ["text", "color", "src", "alt", "href", "anchorId"] as const;
 
 export type GeometryKey = (typeof GEOMETRY_KEYS)[number];

@@ -388,6 +388,29 @@ describe("buildUpdatePropsCommand — Fase 17 (Transizioni CSS di base): 'transi
   });
 });
 
+describe("buildUpdatePropsCommand — Blocco 2 (audit Builder UI/UX): 'textAlign' come STYLE_KEYS", () => {
+  it("non lancia 'proprietà non riconosciuta' per textAlign", () => {
+    const doc = baseDoc();
+    expect(() => buildUpdatePropsCommand(doc, "card", "desktop", { textAlign: "center" })).not.toThrow();
+  });
+
+  it("congela come qualunque altra chiave di STYLE_KEYS quando editata su una fascia stretta", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "card", props: { textAlign: "left" } });
+    const command = buildUpdatePropsCommand(doc, "card", "mobile-verticale", { textAlign: "center" });
+    expect(command).toEqual({
+      type: "UPDATE_PROPS",
+      nodeId: "card",
+      props: {
+        responsive: {
+          "mobile-verticale": { textAlign: "center" },
+          "tablet-verticale": { textAlign: "left" },
+        },
+      },
+    });
+  });
+});
+
 describe("buildUpdatePropsCommand — B1 (href modificabile): 'href' come CONTENT_KEYS", () => {
   it("non lancia 'proprietà non riconosciuta' per href", () => {
     const doc = baseDoc();
