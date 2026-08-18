@@ -81,22 +81,12 @@ function NumberField({
   value,
   badge,
   description,
-  disabled,
-  disabledReason,
   onCommit,
 }: {
   readonly label: string;
   readonly value: number | undefined;
   readonly badge?: string;
   readonly description?: string | undefined;
-  // Blocco 6, Punto 8 (audit Builder UI/UX): usato per x/y - quando il
-  // genitore del nodo non è "libero", questi campi non hanno ALCUN effetto
-  // (computeLayout.ts non li legge in "pila"/"griglia", né per un nodo
-  // senza genitore come la radice pagina) - disabilitato, non solo
-  // modificabile senza risultato, con il motivo mostrato al posto della
-  // descrizione generica.
-  readonly disabled?: boolean;
-  readonly disabledReason?: string | undefined;
   readonly onCommit: (value: number) => void;
 }): JSX.Element {
   const [text, setText] = useState(value === undefined ? "" : String(value));
@@ -112,8 +102,6 @@ function NumberField({
     if (!focused.current) setText(value === undefined ? "" : String(value));
   }, [value]);
 
-  const helpText = disabled && disabledReason ? disabledReason : description;
-
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
@@ -122,7 +110,6 @@ function NumberField({
       <input
         type="number"
         value={text}
-        disabled={disabled}
         onFocus={() => {
           focused.current = true;
         }}
@@ -133,8 +120,69 @@ function NumberField({
           if (Number.isFinite(n)) onCommit(n);
         }}
       />
-      {helpText ? <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{helpText}</span> : null}
+      {description ? <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{description}</span> : null}
     </label>
+  );
+}
+
+/**
+ * Blocco 7 (audit Builder UI/UX, Punto 1 - revisione della soluzione del
+ * Blocco 6): sostituisce il `NumberField` disabilitato usato finora per x/y
+ * quando il genitore non è "libero". Analisi prima della modifica (richiesta
+ * esplicita del proprietario del prodotto):
+ *
+ * - NON azzerare x/y: sono dati legittimi, potenzialmente utili se il nodo
+ *   torna "libero" in futuro (riparent, o il genitore cambia modalità) -
+ *   verificato che nessun comando in questo blocco tocca `props.x`/`props.y`
+ *   di un nodo il cui genitore non è "libero".
+ * - Un `<input type="number">` disabilitato (soluzione del Blocco 6) resta
+ *   visivamente un CAMPO MODIFICABILE (stessa forma/bordo di ogni altro
+ *   input del pannello) - comunica "al momento non puoi cambiarlo", non
+ *   "questo valore non sta governando nulla in questo momento". La
+ *   distinzione conta: il layout qui è determinato interamente dal
+ *   genitore "Pila"/"Griglia" (computeLayout.ts, ramo "pila"/"griglia" non
+ *   legge MAI x/y del figlio) - x/y non sono "temporaneamente bloccati",
+ *   sono strutturalmente SENZA EFFETTO nella vista/contesto corrente.
+ * - Nascondere il campo del tutto (l'altra opzione proposta) rispetterebbe
+ *   la richiesta ("non presentarli come valori attivi") ma renderebbe i
+ *   dati residui non scopribili: se il nodo torna "libero" in un secondo
+ *   momento, l'elemento salterebbe a una posizione preesistente senza che
+ *   l'autore abbia mai potuto sapere che quel valore era lì. Coerente con
+ *   il principio già seguito ovunque in questo pannello (badge ereditato/
+ *   overridden, messaggio di spostamento bloccato, avviso di redirect alla
+ *   creazione - MAI nascondere un'informazione rilevante, sempre spiegarla)
+ *   nascondere del tutto sarebbe l'UNICA eccezione a quel principio.
+ *
+ * Scelta: valore mostrato in sola lettura (nessun elemento `<input>`, per
+ * non assomigliare a un campo modificabile) insieme al motivo per cui non è
+ * attivo - stessa informazione già disponibile prima, in una forma che non
+ * si presenta come "un campo che potresti modificare".
+ */
+function InactiveGeometryValue({
+  label,
+  value,
+  reason,
+}: {
+  readonly label: string;
+  readonly value: number | undefined;
+  readonly reason: string;
+}): JSX.Element {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span style={{ opacity: 0.7 }}>{label}</span>
+      <div
+        style={{
+          padding: "4px 6px",
+          background: "#f9fafb",
+          border: "1px solid #e5e7eb",
+          color: "#6b7280",
+          fontStyle: "italic",
+        }}
+      >
+        {value ?? 0} <span style={{ opacity: 0.7 }}>— valore non attivo</span>
+      </div>
+      <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{reason}</span>
+    </div>
   );
 }
 
@@ -592,10 +640,10 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
     parentNode !== null &&
     parentNode !== undefined &&
     resolveNode(parentNode, { breakpoint: activeBreakpoint }).resolvedProps.layoutMode === "libero";
-  const positionDisabledReason =
+  const positionInactiveReason =
     node.parentId === null
       ? "Questo elemento è la radice della pagina: la sua posizione è sempre l'origine del Canvas."
-      : 'Questo campo non ha effetto: il contenitore che lo racchiude non è in modalità "Libero" (dispone i figli automaticamente).';
+      : 'Non attivo: il contenitore che lo racchiude non è in modalità "Libero" (dispone i figli automaticamente). Il valore resta salvato e tornerebbe utile se il contenitore diventasse "Libero".';
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
@@ -612,26 +660,40 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
         onCommit={(s) => commitContent("anchorId", s)}
       />
 
-      <NumberField
-        key={`${fieldKeyPrefix}:x`}
-        label={fieldLabel("x")}
-        value={asFiniteNumber(resolved.x)}
-        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "x"))}
-        description={FIELD_DESCRIPTIONS.x}
-        disabled={!parentIsLibero}
-        disabledReason={positionDisabledReason}
-        onCommit={(n) => commitGeometry("x", n)}
-      />
-      <NumberField
-        key={`${fieldKeyPrefix}:y`}
-        label={fieldLabel("y")}
-        value={asFiniteNumber(resolved.y)}
-        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "y"))}
-        description={FIELD_DESCRIPTIONS.y}
-        disabled={!parentIsLibero}
-        disabledReason={positionDisabledReason}
-        onCommit={(n) => commitGeometry("y", n)}
-      />
+      {parentIsLibero ? (
+        <NumberField
+          key={`${fieldKeyPrefix}:x`}
+          label={fieldLabel("x")}
+          value={asFiniteNumber(resolved.x)}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "x"))}
+          description={FIELD_DESCRIPTIONS.x}
+          onCommit={(n) => commitGeometry("x", n)}
+        />
+      ) : (
+        <InactiveGeometryValue
+          key={`${fieldKeyPrefix}:x:inactive`}
+          label={fieldLabel("x")}
+          value={asFiniteNumber(resolved.x)}
+          reason={positionInactiveReason}
+        />
+      )}
+      {parentIsLibero ? (
+        <NumberField
+          key={`${fieldKeyPrefix}:y`}
+          label={fieldLabel("y")}
+          value={asFiniteNumber(resolved.y)}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "y"))}
+          description={FIELD_DESCRIPTIONS.y}
+          onCommit={(n) => commitGeometry("y", n)}
+        />
+      ) : (
+        <InactiveGeometryValue
+          key={`${fieldKeyPrefix}:y:inactive`}
+          label={fieldLabel("y")}
+          value={asFiniteNumber(resolved.y)}
+          reason={positionInactiveReason}
+        />
+      )}
       <NumberField
         key={`${fieldKeyPrefix}:width`}
         label={fieldLabel("width")}

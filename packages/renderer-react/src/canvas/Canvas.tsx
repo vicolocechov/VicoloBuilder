@@ -444,11 +444,22 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     } else if (hasAuthorBorder) {
       border = `${authorBorderWidth}px ${authorBorderStyle ?? "solid"} ${authorBorderColor ?? "#000000"}`;
     } else if (isContainerLike) {
-      border = "1px dashed rgba(0,0,0,0.2)";
+      // Blocco 7 (audit Builder UI/UX, Punto 2): valori del Blocco 1
+      // (rgba(0,0,0,0.2)/rgba(37,99,235,0.03)) verificati troppo tenui su
+      // sfondo bianco - un contenitore senza stile scelto dall'autore
+      // risultava visivamente indistinguibile dallo sfondo del Canvas
+      // (confermato via screenshot durante la diagnosi del Punto 2
+      // dell'audit). Resta un indicatore ESCLUSIVO dell'editor (calcolato
+      // qui, non scritto in `props`, non letto da Preview.tsx né
+      // dall'Exporter - verificato: nessuno dei due applica alcun fallback
+      // di bordo/sfondo per un container senza `color`/`borderWidth`
+      // dell'autore) - solo l'intensità è cambiata, non la natura del
+      // segnale né dove vive.
+      border = "1px dashed rgba(0,0,0,0.35)";
     } else {
       border = "none";
     }
-    const background = backgroundColor ?? (isContainerLike ? "rgba(37,99,235,0.03)" : "transparent");
+    const background = backgroundColor ?? (isContainerLike ? "rgba(37,99,235,0.07)" : "transparent");
     // Proprietà visive pure (Blocco 4): non toccano geometria/posizione,
     // solo pittura dentro il box già calcolato dall'Engine - stesso
     // principio già rispettato dal bordo di editing sopra.

@@ -38,6 +38,23 @@ function buildDemoDocument(): Document {
 }
 
 /**
+ * Blocco 7 (audit Builder UI/UX, Punto 4): documento REALMENTE vuoto - una
+ * sola pagina, nessun nodo oltre alla radice (`createDocument()` di default
+ * produce esattamente questo: una Page + una radice "page-root" senza
+ * figli, già invariant-valid). Unica aggiunta rispetto al default
+ * dell'Engine: `layoutMode: "libero"` sulla radice, per coerenza con "+
+ * Pagina" (PageManager.tsx, stessa identica UPDATE_PROPS - Blocco 1.2,
+ * D-046) - senza questa aggiunta, la radice di un documento nuovo si
+ * comporterebbe diversamente da quella di una pagina nuova creata dentro un
+ * documento esistente, un'incoerenza non richiesta da nessuno.
+ */
+function buildBlankDocument(): Document {
+  let doc = createDocument();
+  doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "node-root", props: { layoutMode: "libero" } });
+  return doc;
+}
+
+/**
  * B3 (cancellazione elementi da UI) — stesso principio già usato in
  * `Canvas.tsx` per nascondere la maniglia di trascinamento (Blocco 3, ex
  * "Sposta dentro…") sulla radice pagina (`entry.parentBox !== null`), qui
@@ -158,6 +175,34 @@ export function App(): JSX.Element {
     }
   }
 
+  /**
+   * Blocco 7 (audit Builder UI/UX, Punto 4): il documento demo (Card 1/
+   * Card 2) non è mai stato un residuo di localStorage - è semplicemente il
+   * punto di partenza fisso di `useState(() => new ReactiveHistory(...))`,
+   * usato ad ogni montaggio. Non toccato qui (resterebbe come demo alla
+   * primissima apertura, comportamento invariato): questo bottone dà solo
+   * un modo ESPLICITO di ripartire da un documento vuoto in qualunque
+   * momento, senza passare da "Apri" (che richiede un salvataggio
+   * precedente) né toccarne il comportamento. Stesso schema di
+   * `handleLoad` (nuova `ReactiveHistory`, stato di sessione dell'editor
+   * riportato a un default) - NESSUNA lettura di `localStorage` qui: un
+   * salvataggio precedente resta raggiungibile solo tramite "Apri",
+   * esplicitamente, mai caricato automaticamente da questo bottone.
+   * Nessuna conferma richiesta: stessa scelta già in vigore per "Apri"
+   * (anch'esso sostituisce l'intero documento in memoria senza chiedere
+   * conferma) - l'indicatore "Modifiche non salvate" (Blocco 6) resta
+   * comunque visibile prima di cliccare, stesso avviso ambientale già
+   * presente per "Apri".
+   */
+  function handleNewDocument(): void {
+    const blank = buildBlankDocument();
+    setStore(new ReactiveHistory(blank));
+    setActivePageId(blank.rootPageId);
+    setPreviewOpen(false);
+    setLastSavedDocument(null);
+    setSaveStatus("Nuovo documento creato.");
+  }
+
   // B3 (scorciatoia da tastiera, complementare non sostitutiva - analisi
   // approvata): "Delete" principale, "Backspace" secondario. Non si attiva
   // quando il fuoco è su un campo editabile (`isEditableTarget`) - senza
@@ -222,6 +267,9 @@ export function App(): JSX.Element {
           </button>
           <button onClick={handleSave}>Salva</button>
           <button onClick={handleLoad}>Apri</button>
+          <button onClick={handleNewDocument} title="Crea un documento vuoto (una pagina, nessun contenuto) - non tocca alcun salvataggio esistente">
+            Nuovo documento
+          </button>
           {/* Blocco 6, Punto 7: dove va "Salva" e se il documento corrente è
               aggiornato rispetto all'ultimo salvataggio - nessuna delle due
               informazioni esisteva prima (verificato nell'audit). */}
