@@ -31,6 +31,21 @@ import { isContainerLikeType, isTextBearingType } from "../elements/textBearingT
  */
 const DRAG_THRESHOLD_PX = 2;
 
+/**
+ * Blocco Z1 (Fit-to-screen/Zoom, fondamenta visive - analisi approvata):
+ * confini dello zoom manuale (+/-). "Adatta allo schermo" può comunque
+ * produrre un valore intermedio non allineato a questo passo (arrotondato
+ * al punto percentuale più vicino, non a un multiplo di ZOOM_STEP) - i due
+ * meccanismi sono indipendenti, nessuno dei due vincola l'altro.
+ */
+const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 2;
+
+function roundZoom(z: number): number {
+  return Math.round(z * 100) / 100;
+}
+
 interface MoveDrag {
   readonly nodeId: NodeId;
   readonly startClientX: number;
@@ -78,20 +93,38 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [moveError, setMoveError] = useState<string | null>(null);
   const canvasRootRef = useRef<HTMLDivElement | null>(null);
 
-  // Blocco 6 (rifinitura UI/UX, Punto 2 dell'audit): un tentativo di
-  // trascinamento su un elemento con `!caps.canMoveXY` (il genitore non è
-  // "libero") oggi non produce ALCUN messaggio - l'unico segnale è il
-  // cursore "default" invece di "move", verificato insufficiente
-  // nell'audit. Stato separato da `moveDrag` (che parte solo quando
-  // `canMoveXY` è vero): registra il tentativo al pointerdown, ma mostra
+  // Blocco Z1 (Fit-to-screen/Zoom, fondamenta visive - analisi approvata,
+  // "Fit-to-screen / Device Preview"): SOLO una trasformazione di VISTA -
+  // mai letta da `computeLayout`/`resolveDocument`, mai passata a
+  // `buildUpdatePropsCommand`/`store.execute`. 1 = 100% (nessuna
+  // trasformazione, identico al comportamento precedente a questo blocco).
+  // Locale al Canvas (non sollevato in App.tsx): nessun altro componente ha
+  // bisogno di conoscere lo zoom in questo blocco.
+  const [zoom, setZoom] = useState(1);
+  // Misura lo spazio ORIZZONTALE realmente disponibile per "Adatta allo
+  // schermo" - attaccato all'elemento PIÙ ESTERNO restituito da questo
+  // componente (mai esso stesso trasformato/scalato), quindi il suo
+  // `clientWidth` riflette sempre lo spazio della colonna centrale
+  // (App.tsx), indipendente dallo zoom corrente o da quanto il contenuto
+  // scalato eventualmente eccede quello spazio.
+  const canvasOuterRef = useRef<HTMLDivElement | null>(null);
+
+  // Blocco 6 (rifinitura UI/UX, Punto 2 dell'audit) + Blocco Z1: un
+  // tentativo di trascinamento su un elemento con `!caps.canMoveXY` (il
+  // genitore non è "libero") o mentre lo zoom non è al 100% (Z1: l'editing
+  // via puntatore non è ancora convertito in coordinate documento, quindi
+  // temporaneamente disattivato) non deve produrre alcun comando - stato
+  // separato da `moveDrag` (che parte solo quando nessuna delle due
+  // condizioni si applica): registra il tentativo al pointerdown, ma mostra
   // il messaggio solo se il puntatore si muove oltre `DRAG_THRESHOLD_PX`
-  // prima del rilascio - un semplice click di selezione su un elemento non
-  // trascinabile (l'azione più comune) non deve mostrare un avviso che
-  // nessuno ha chiesto.
+  // prima del rilascio - un semplice click di selezione (l'azione più
+  // comune) non deve mostrare un avviso che nessuno ha chiesto. `reason`
+  // distingue le due cause per un messaggio accurato, senza duplicare
+  // l'intero meccanismo di soglia/effect per la seconda.
   const [blockedDragAttempt, setBlockedDragAttempt] = useState<{
     readonly startClientX: number;
     readonly startClientY: number;
-    readonly parentModeLabel: string;
+    readonly reason: { readonly kind: "zoom" } | { readonly kind: "parent-not-libero"; readonly parentModeLabel: string };
   } | null>(null);
 
   // Blocco 4 ("rifinitura visiva", editing testo diretto): quale nodo è
@@ -220,8 +253,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       const dx = e.clientX - blockedDragAttempt!.startClientX;
       const dy = e.clientY - blockedDragAttempt!.startClientY;
       if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
+        const { reason } = blockedDragAttempt!;
         setMoveError(
-          `questo elemento segue la disposizione automatica del contenitore (modalità "${blockedDragAttempt!.parentModeLabel}"). Per spostarlo liberamente, seleziona il contenitore e imposta la sua modalità su "Libero".`,
+          reason.kind === "zoom"
+            ? zoomBlockedMessage()
+            : `questo elemento segue la disposizione automatica del contenitore (modalità "${reason.parentModeLabel}"). Per spostarlo liberamente, seleziona il contenitore e imposta la sua modalità su "Libero".`,
         );
         setBlockedDragAttempt(null);
       }
@@ -235,7 +271,17 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [blockedDragAttempt]);
+  }, [blockedDragAttempt, zoom]);
+
+  // Blocco Z1: stesso testo per i tre gesti bloccati dallo zoom (spostamento,
+  // resize, trascinamento strutturale) - la causa è identica (zoom≠100%,
+  // conversione schermo->documento non ancora implementata, rimandata a
+  // Z2/Z3), nessun bisogno di tre formulazioni diverse. Funzione (non una
+  // stringa memorizzata) per leggere SEMPRE lo zoom corrente al momento in
+  // cui il messaggio viene davvero mostrato.
+  function zoomBlockedMessage(): string {
+    return `l'editing (spostamento/ridimensionamento/riparent) è temporaneamente disattivato mentre lo zoom non è al 100% (${Math.round(zoom * 100)}%). Riporta lo zoom a 100% per continuare.`;
+  }
 
   useEffect(() => {
     if (!resizeDrag) return;
@@ -559,6 +605,15 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             // cursore/la selezione nativa - un trascinamento avviato qui
             // sposterebbe l'elemento invece di posizionare il cursore.
             if (editingId === entry.box.nodeId) return;
+            // Blocco Z1: stesso trattamento del gate `!caps.canMoveXY` sotto
+            // (nessuno `stopPropagation()` - un semplice click deve
+            // continuare a selezionare via `onClick` dello stesso Tag),
+            // controllato PRIMA: a zoom≠100% il gesto è bloccato
+            // indipendentemente da `canMoveXY`.
+            if (zoom !== 1) {
+              setBlockedDragAttempt({ startClientX: e.clientX, startClientY: e.clientY, reason: { kind: "zoom" } });
+              return;
+            }
             if (!caps.canMoveXY) {
               // Blocco 6, Punto 2: nessuno `stopPropagation()` qui - un
               // semplice click (senza superare la soglia) deve continuare a
@@ -566,7 +621,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
               // dello stesso Tag, invariata).
               const parentNode = entry.parentBox ? model.nodes.get(entry.parentBox.nodeId) : undefined;
               const parentModeLabel = parentNode?.resolvedProps.layoutMode === "griglia" ? "Griglia" : "Pila";
-              setBlockedDragAttempt({ startClientX: e.clientX, startClientY: e.clientY, parentModeLabel });
+              setBlockedDragAttempt({
+                startClientX: e.clientX,
+                startClientY: e.clientY,
+                reason: { kind: "parent-not-libero", parentModeLabel },
+              });
               return;
             }
             e.stopPropagation();
@@ -589,7 +648,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             boxSizing: "border-box",
             border,
             background,
-            cursor: caps.canMoveXY ? "move" : "default",
+            // Blocco Z1: "move" solo se il gesto sarebbe DAVVERO possibile
+            // (zoom a 100% E genitore "libero") - a zoom≠100% il cursore
+            // resta "default" anche su un elemento altrimenti spostabile,
+            // stesso principio già in uso per `!caps.canMoveXY`.
+            cursor: zoom === 1 && caps.canMoveXY ? "move" : "default",
             userSelect: "none",
             fontSize,
             fontFamily,
@@ -618,6 +681,17 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             title="Trascina per spostare (riparent/riordino)"
             onPointerDown={(e) => {
               e.stopPropagation();
+              // Blocco Z1: nessun precedente "tentativo bloccato" a soglia
+              // per questa maniglia (un click su un controllo dedicato,
+              // 18x16px, ha senso SOLO per iniziare un trascinamento - a
+              // differenza del corpo dell'elemento, non c'è un'azione
+              // "click semplice" legittima da distinguere) - messaggio
+              // immediato, stesso principio del gate sotto per le maniglie
+              // di resize.
+              if (zoom !== 1) {
+                setMoveError(zoomBlockedMessage());
+                return;
+              }
               setStructuralDrag({ nodeId: entry.box.nodeId });
               setMoveError(null);
             }}
@@ -635,7 +709,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
               color: "#fff",
               fontSize: 10,
               lineHeight: 1,
-              cursor: "grab",
+              cursor: zoom === 1 ? "grab" : "default",
               userSelect: "none",
             }}
           >
@@ -660,6 +734,14 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                     data-resize-handle={`${entry.box.nodeId}:${h.key}`}
                     onPointerDown={(e) => {
                       e.stopPropagation();
+                      // Blocco Z1: stesso principio della maniglia di
+                      // trascinamento strutturale sopra - un click su una
+                      // maniglia di resize (8x8px, dedicata) ha senso SOLO
+                      // per ridimensionare, messaggio immediato.
+                      if (zoom !== 1) {
+                        setMoveError(zoomBlockedMessage());
+                        return;
+                      }
                       setResizeDrag({
                         nodeId: entry.box.nodeId,
                         startClientX: e.clientX,
@@ -693,7 +775,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                       background: "#2563eb",
                       border: "1px solid #fff",
                       boxSizing: "border-box",
-                      cursor: h.cursor,
+                      cursor: zoom === 1 ? h.cursor : "default",
                     }}
                   />
                 );
@@ -708,16 +790,80 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   // usate per il rendering di quell'entry.
   const dropTargetEntry = dropTarget ? entries.find((e) => e.box.nodeId === dropTarget.targetNodeId) : undefined;
 
+  // Blocco Z1: altezza REALE del Canvas in coordinate DOCUMENTO (invariata
+  // rispetto a prima di questo blocco - lo stesso valore che la radice del
+  // Canvas usava già come propria `height`). `scaledWidth`/`scaledHeight`
+  // sono SOLO dimensioni CSS del contenitore di dimensionamento (vedi sotto,
+  // mai lette da `computeLayout`/passate a un comando) - la distinzione tra
+  // "quanto è grande la pagina" (canvasHeight, documento) e "quanto spazio
+  // occupa sullo schermo" (scaledWidth/Height, vista) è esattamente il
+  // confine che questo blocco introduce.
+  const canvasHeight = Math.max(box.height, previewSize.height);
+  const scaledWidth = viewportWidth * zoom;
+  const scaledHeight = canvasHeight * zoom;
+
+  function handleZoomOut(): void {
+    setZoom((z) => Math.max(ZOOM_MIN, roundZoom(z - ZOOM_STEP)));
+  }
+  function handleZoomIn(): void {
+    setZoom((z) => Math.min(ZOOM_MAX, roundZoom(z + ZOOM_STEP)));
+  }
+  function handleZoomReset(): void {
+    setZoom(1);
+  }
+  // Blocco Z1: calcolo "one-shot" (un click = una misura), non una modalità
+  // continuamente aggiornata - se la finestra viene ridimensionata dopo,
+  // serve un nuovo click. Scelta deliberata per restare nel perimetro
+  // "fondamenta visive" (nessun ResizeObserver/listener di resize in questo
+  // blocco). Non ingrandisce mai oltre il 100% (solo `Math.min(1, ...)`):
+  // l'obiettivo è far entrare un Canvas più largo dello spazio disponibile,
+  // non ingrandire automaticamente uno già più piccolo - un ingrandimento
+  // automatico non è stato richiesto, decisione di scope minimo.
+  function handleFitToScreen(): void {
+    const available = canvasOuterRef.current?.clientWidth;
+    if (!available) return;
+    setZoom(roundZoom(Math.min(1, available / viewportWidth)));
+  }
+
   return (
-    <>
+    <div ref={canvasOuterRef}>
       {moveError ? (
         <div style={{ marginBottom: 8, fontSize: 12, color: "#b91c1c", display: "flex", gap: 8, alignItems: "center" }}>
           <span>Spostamento non riuscito: {moveError}</span>
           <button onClick={() => setMoveError(null)}>OK</button>
         </div>
       ) : null}
-      <div
-        ref={canvasRootRef}
+      {/* Blocco Z1 (Fit-to-screen/Zoom, fondamenta visive): controlli SOLO
+          di vista - nessuno di questi bottoni esegue mai un comando su
+          `store`. */}
+      <div style={{ marginBottom: 8, display: "flex", gap: 8, alignItems: "center", fontSize: 12 }}>
+        <span style={{ opacity: 0.7 }}>Zoom</span>
+        <button onClick={handleZoomOut} disabled={zoom <= ZOOM_MIN} title="Riduci zoom">
+          −
+        </button>
+        <span style={{ minWidth: 40, textAlign: "center" }}>{Math.round(zoom * 100)}%</span>
+        <button onClick={handleZoomIn} disabled={zoom >= ZOOM_MAX} title="Aumenta zoom">
+          +
+        </button>
+        <button onClick={handleZoomReset} disabled={zoom === 1}>
+          100%
+        </button>
+        <button onClick={handleFitToScreen}>Adatta allo schermo</button>
+        {zoom !== 1 ? (
+          <span style={{ opacity: 0.7, fontStyle: "italic" }}>
+            Editing (spostamento/ridimensionamento/riparent) temporaneamente disattivato finché lo zoom non torna al 100%.
+          </span>
+        ) : null}
+      </div>
+      {/* Blocco Z1: contenitore di dimensionamento - "prenota" nel flusso
+          normale esattamente lo spazio VISIVO che il Canvas scalato occupa
+          (`scaledWidth`/`scaledHeight`), altrimenti una `transform:scale()`
+          da sola non ridurrebbe mai lo spazio riservato dal genitore
+          (`overflow:auto` continuerebbe a "vedere" le dimensioni piene non
+          scalate, vanificando "Adatta allo schermo"). */}
+      <div style={{ width: scaledWidth, height: scaledHeight }}>
+        <div
+          ref={canvasRootRef}
         onClick={() => {
           // Blocco 4 (editing testo diretto): durante l'editing, un gesto
           // di selezione del testo (click+trascinamento per selezionare
@@ -735,10 +881,18 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         }}
         style={{
           position: "relative",
+          // Blocco Z1: width/height restano ESATTAMENTE le stesse coordinate
+          // DOCUMENTO di prima di questo blocco (nessun *zoom qui) - la
+          // scala è applicata SOLO da `transform`, che non tocca la
+          // geometria che il resto del componente (renderBox, guide,
+          // indicatori di drop) continua a calcolare/leggere in coordinate
+          // documento, invariata.
           width: viewportWidth,
-          height: Math.max(box.height, previewSize.height),
+          height: canvasHeight,
           background: "#ffffff",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+          transform: `scale(${zoom})`,
+          transformOrigin: "0 0",
         }}
       >
         {structuralDrag !== null ? (
@@ -835,12 +989,16 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             />
           )
         ) : null}
+        </div>
       </div>
       {/* Blocco 3: etichetta "ghost" che segue il cursore durante il
           trascinamento strutturale - `position:fixed` in coordinate di
           VIEWPORT (cursorClient, non le coordinate locali del Canvas usate
           per il resto), fuori dal contenitore relativo del Canvas per
-          restare visibile anche se il puntatore esce dai suoi bordi. */}
+          restare visibile anche se il puntatore esce dai suoi bordi. Resta
+          FUORI dal contenitore di dimensionamento scalato (Blocco Z1) per
+          lo stesso motivo per cui resta in coordinate viewport - non deve
+          mai essere influenzata dallo zoom. */}
       {structuralDrag && cursorClient ? (
         <div
           style={{
@@ -859,6 +1017,6 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           {structuralDrag.nodeId}
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
