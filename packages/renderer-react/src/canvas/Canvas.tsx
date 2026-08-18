@@ -15,6 +15,7 @@ import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
 import { computeDropTarget, type DropTarget } from "./dropTarget.js";
 import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
 import { computeResizedGeometry, resizeHandles, type ResizeEdges, type ResizeStart } from "./resizeGeometry.js";
+import { screenPointToDocument } from "./zoomCoordinates.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
@@ -280,7 +281,12 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   // stringa memorizzata) per leggere SEMPRE lo zoom corrente al momento in
   // cui il messaggio viene davvero mostrato.
   function zoomBlockedMessage(): string {
-    return `l'editing (spostamento/ridimensionamento/riparent) è temporaneamente disattivato mentre lo zoom non è al 100% (${Math.round(zoom * 100)}%). Riporta lo zoom a 100% per continuare.`;
+    // Blocco Z2: "riparent" rimosso dall'elenco - il drag-and-drop
+    // strutturale (maniglia ⠿) è il gesto convertito in questo blocco,
+    // funziona già a qualunque zoom (vedi `localPoint()` sopra); questo
+    // messaggio resta usato solo per spostamento/ridimensionamento
+    // (Blocco Z3, non ancora convertiti).
+    return `l'editing (spostamento/ridimensionamento) è temporaneamente disattivato mentre lo zoom non è al 100% (${Math.round(zoom * 100)}%). Riporta lo zoom a 100% per continuare.`;
   }
 
   useEffect(() => {
@@ -342,10 +348,18 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       const resolvedNode = model.nodes.get(nodeId);
       return resolvedNode ? isContainerLikeType(resolvedNode.type) : false;
     }
+    // Blocco Z2 (Fit-to-screen/Zoom): `rect` è già il bounding box
+    // RENDERIZZATO (quindi già scalato dal `transform:scale(zoom)` di
+    // Canvas.tsx) - `screenPointToDocument` divide per `zoom` DOPO aver
+    // sottratto l'origine, riportando il punto in coordinate DOCUMENTO
+    // (le stesse di `entries[i].box.x/y/width/height`, lette da
+    // `computeDropTarget` sotto). Unico punto di conversione per questo
+    // gesto (identificato nell'analisi "Fit-to-screen / Device Preview"
+    // come l'unico consumatore basato su `rect`, non su delta).
     function localPoint(e: PointerEvent): { x: number; y: number } | null {
       const rect = canvasRootRef.current?.getBoundingClientRect();
       if (!rect) return null;
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      return screenPointToDocument(e.clientX, e.clientY, rect, zoom);
     }
     function onMove(e: PointerEvent): void {
       setCursorClient({ x: e.clientX, y: e.clientY });
@@ -383,7 +397,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [structuralDrag, store, entries, document, model]);
+  }, [structuralDrag, store, entries, document, model, zoom]);
 
   function renderBox(entry: FlatBoxEntry): JSX.Element {
     const resolvedNode = model.nodes.get(entry.box.nodeId);
@@ -681,17 +695,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             title="Trascina per spostare (riparent/riordino)"
             onPointerDown={(e) => {
               e.stopPropagation();
-              // Blocco Z1: nessun precedente "tentativo bloccato" a soglia
-              // per questa maniglia (un click su un controllo dedicato,
-              // 18x16px, ha senso SOLO per iniziare un trascinamento - a
-              // differenza del corpo dell'elemento, non c'è un'azione
-              // "click semplice" legittima da distinguere) - messaggio
-              // immediato, stesso principio del gate sotto per le maniglie
-              // di resize.
-              if (zoom !== 1) {
-                setMoveError(zoomBlockedMessage());
-                return;
-              }
+              // Blocco Z2 (Fit-to-screen/Zoom): il gate "zoom≠100% blocca
+              // questo gesto" del Blocco Z1 è stato RIMOSSO qui - questo è
+              // esattamente il gesto convertito in questo blocco
+              // (`localPoint()`, sopra, divide ora per `zoom`), funziona
+              // correttamente a qualunque livello di zoom.
               setStructuralDrag({ nodeId: entry.box.nodeId });
               setMoveError(null);
             }}
@@ -709,7 +717,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
               color: "#fff",
               fontSize: 10,
               lineHeight: 1,
-              cursor: zoom === 1 ? "grab" : "default",
+              cursor: "grab",
               userSelect: "none",
             }}
           >
@@ -849,9 +857,12 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           100%
         </button>
         <button onClick={handleFitToScreen}>Adatta allo schermo</button>
+        {/* Blocco Z2: "riparent/riordino" rimosso dall'elenco disattivato -
+            funziona già a qualunque zoom da questo blocco in poi. */}
         {zoom !== 1 ? (
           <span style={{ opacity: 0.7, fontStyle: "italic" }}>
-            Editing (spostamento/ridimensionamento/riparent) temporaneamente disattivato finché lo zoom non torna al 100%.
+            Spostamento/ridimensionamento temporaneamente disattivati finché lo zoom non torna al 100% (riparent/riordino con la maniglia ⠿
+            funziona già a qualunque zoom).
           </span>
         ) : null}
       </div>
