@@ -27,3 +27,22 @@ export interface ClientOrigin {
 export function screenPointToDocument(clientX: number, clientY: number, origin: ClientOrigin, zoom: number): { x: number; y: number } {
   return { x: (clientX - origin.left) / zoom, y: (clientY - origin.top) / zoom };
 }
+
+/**
+ * Blocco Z3 (Fit-to-screen/Zoom): conversione per i gesti a DELTA
+ * (spostamento, resize - `moveDrag`/`resizeDrag` in Canvas.tsx), a
+ * differenza di `screenPointToDocument` sopra (usata dal gesto a `rect`,
+ * Blocco Z2). Nessuna origine da sottrarre qui: un delta è per natura
+ * indipendente dalla posizione (una traslazione), serve solo dividere per
+ * `zoom` - a differenza di un punto assoluto, non serve MAI il
+ * `getBoundingClientRect()` della radice del Canvas per un delta, coerente
+ * con l'analisi originale ("Fit-to-screen / Device Preview": i gesti a
+ * delta erano già indipendenti da scroll/origine anche prima di questo
+ * blocco). Vincolo esplicito rispettato: `alignmentGuides.ts`/
+ * `resizeGeometry.ts` non vengono mai toccati - ricevono SEMPRE un delta
+ * già in spazio documento da questa funzione, applicata qui in Canvas.tsx,
+ * mai al loro interno.
+ */
+export function screenDeltaToDocument(dx: number, dy: number, zoom: number): { dx: number; dy: number } {
+  return { dx: dx / zoom, dy: dy / zoom };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screenPointToDocument } from "../../src/canvas/zoomCoordinates.js";
+import { screenDeltaToDocument, screenPointToDocument } from "../../src/canvas/zoomCoordinates.js";
 
 // Blocco Z2 (Fit-to-screen/Zoom): conversione screen->documento per il
 // gesto drag-and-drop strutturale (unico consumatore basato su `rect`).
@@ -47,6 +47,40 @@ describe("screenPointToDocument", () => {
 
       expect(end.x - start.x).toBeCloseTo(deltaDoc.x, 10);
       expect(end.y - start.y).toBeCloseTo(deltaDoc.y, 10);
+    }
+  });
+});
+
+// Blocco Z3 (Fit-to-screen/Zoom): conversione screen->documento per i gesti
+// a DELTA (spostamento/resize) - `moveDrag`/`resizeDrag` in Canvas.tsx.
+describe("screenDeltaToDocument", () => {
+  it("a zoom 100% (1) è l'identità (nessuna scala)", () => {
+    expect(screenDeltaToDocument(40, 20, 1)).toEqual({ dx: 40, dy: 20 });
+  });
+
+  it("a zoom 50% (0.5), lo stesso delta SCHERMO corrisponde al DOPPIO in coordinate documento", () => {
+    expect(screenDeltaToDocument(40, 20, 0.5)).toEqual({ dx: 80, dy: 40 });
+  });
+
+  it("a zoom 200%, lo stesso delta schermo corrisponde alla METÀ in coordinate documento", () => {
+    expect(screenDeltaToDocument(40, 20, 2)).toEqual({ dx: 20, dy: 10 });
+  });
+
+  // Richiesto esplicitamente (approvazione Blocco Z3): un gesto FISICO
+  // proporzionale (stesso spostamento in coordinate SCHERMO, scalato per
+  // rappresentare "lo stesso punto" a zoom diverso) deve produrre lo
+  // stesso delta DOCUMENTO a qualunque livello di zoom.
+  it("un gesto fisico proporzionale produce lo STESSO delta documento a zoom 100%/50%/150%", () => {
+    const deltaDoc = { dx: 60, dy: 30 };
+    for (const zoom of [1, 0.5, 1.5]) {
+      // Il delta SCHERMO che corrisponde allo stesso spostamento
+      // documento, a QUESTO zoom, è deltaDoc*zoom - stessa relazione già
+      // usata in `screenPointToDocument`, qui senza bisogno di un'origine
+      // (un delta è per natura indipendente dalla posizione di partenza).
+      const deltaScreen = { dx: deltaDoc.dx * zoom, dy: deltaDoc.dy * zoom };
+      const result = screenDeltaToDocument(deltaScreen.dx, deltaScreen.dy, zoom);
+      expect(result.dx).toBeCloseTo(deltaDoc.dx, 10);
+      expect(result.dy).toBeCloseTo(deltaDoc.dy, 10);
     }
   });
 });
