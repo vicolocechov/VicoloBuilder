@@ -89,4 +89,31 @@ describe("computeDropTarget", () => {
     const target = computeDropTarget(entries, new Set(), canReceiveChildren, 250, 30);
     expect(target?.kind).toBe("into");
   });
+
+  // Blocco Z4 (Fit-to-screen/Zoom): `edgeZoneMaxPx` è un parametro
+  // OPZIONALE - Canvas.tsx lo converte in spazio documento
+  // (`screenLengthToDocument(EDGE_ZONE_MAX_PX, zoom)`) prima di chiamare
+  // questa funzione, mai al suo interno (il modulo resta ignaro dello
+  // zoom). Ogni test sopra, che non passa questo parametro, continua a
+  // verificare il comportamento di default (EDGE_ZONE_MAX_PX=16,
+  // equivalente a zoom 100%).
+  it("un cap esplicito più ampio del default estende la fascia di bordo ('before' invece di 'into')", () => {
+    const entries = buildEntries();
+    // Stesso punto del test sopra (20px dal bordo superiore di "container",
+    // dentro "container" stesso - 25% di 200=50, ancora sopra qualunque cap
+    // qui usato): col cap di default (16px) ricade su 'into' "container";
+    // con un cap esplicito di 24px la fascia di bordo raggiunge quei 20px,
+    // ricadendo su 'before' "container" (rispetto al proprio genitore "root").
+    const target = computeDropTarget(entries, new Set(), canReceiveChildren, 250, 30, 24);
+    expect(target).toEqual({ kind: "before", targetNodeId: "container", parentNodeId: "root" });
+  });
+
+  it("un cap esplicito più stretto del default riduce la fascia di bordo ('into' invece di 'before')", () => {
+    const entries = buildEntries();
+    // "a" [20,20,100,50]: y=22 è a 2px dal bordo superiore (20) - entro il
+    // cap di default (16px, ancora sotto il 25% di 50=12.5), ma un cap
+    // esplicito di 1px lo esclude, ricadendo su 'into' il contenitore.
+    const target = computeDropTarget(entries, new Set(), canReceiveChildren, 60, 22, 1);
+    expect(target).toEqual({ kind: "into", targetNodeId: "container", parentNodeId: "container" });
+  });
 });

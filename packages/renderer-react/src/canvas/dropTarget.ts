@@ -19,7 +19,7 @@ export interface DropTarget {
  * (`DRAG_THRESHOLD_PX`, `SNAP_THRESHOLD_PX` di alignmentGuides.ts).
  */
 const EDGE_ZONE_RATIO = 0.25;
-const EDGE_ZONE_MAX_PX = 16;
+export const EDGE_ZONE_MAX_PX = 16;
 
 /**
  * Blocco 3 (drag-and-drop reale per riparent/riordino): trova il box più in
@@ -34,12 +34,23 @@ const EDGE_ZONE_MAX_PX = 16;
  * il rendering, D1 "Canvas piatto") - nessuna dipendenza dal DOM/
  * `elementFromPoint`, coerente con `alignmentGuides.ts`.
  */
+/**
+ * `edgeZoneMaxPx` (Blocco Z4, Fit-to-screen/Zoom): parametro opzionale,
+ * default `EDGE_ZONE_MAX_PX` (comportamento invariato per ogni chiamante
+ * che non lo specifica, incluso ogni test esistente). Solo il CAP in
+ * pixel viene convertito da Canvas.tsx (`screenLengthToDocument`,
+ * zoomCoordinates.ts) - `EDGE_ZONE_RATIO` resta un valore fisso qui dentro,
+ * non necessita conversione: è una proporzione del box (già in spazio
+ * documento, già coerente con lo zoom per costruzione), non una misura in
+ * pixel. Questo modulo resta ignaro dello zoom, come alignmentGuides.ts.
+ */
 export function computeDropTarget(
   entries: readonly FlatBoxEntry[],
   excludedNodeIds: ReadonlySet<NodeId>,
   canReceiveChildren: (nodeId: NodeId) => boolean,
   pointerX: number,
   pointerY: number,
+  edgeZoneMaxPx: number = EDGE_ZONE_MAX_PX,
 ): DropTarget | null {
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]!;
@@ -48,7 +59,7 @@ export function computeDropTarget(
     if (pointerX < x || pointerX > x + width || pointerY < y || pointerY > y + height) continue;
 
     const parentNodeId = entry.parentBox?.nodeId;
-    const edgeHeight = Math.min(height * EDGE_ZONE_RATIO, EDGE_ZONE_MAX_PX);
+    const edgeHeight = Math.min(height * EDGE_ZONE_RATIO, edgeZoneMaxPx);
     if (parentNodeId !== undefined) {
       if (pointerY - y < edgeHeight) return { kind: "before", targetNodeId: nodeId, parentNodeId };
       if (y + height - pointerY < edgeHeight) return { kind: "after", targetNodeId: nodeId, parentNodeId };

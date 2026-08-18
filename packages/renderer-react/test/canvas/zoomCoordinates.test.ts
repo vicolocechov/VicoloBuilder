@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screenDeltaToDocument, screenPointToDocument } from "../../src/canvas/zoomCoordinates.js";
+import { screenDeltaToDocument, screenLengthToDocument, screenPointToDocument } from "../../src/canvas/zoomCoordinates.js";
 
 // Blocco Z2 (Fit-to-screen/Zoom): conversione screen->documento per il
 // gesto drag-and-drop strutturale (unico consumatore basato su `rect`).
@@ -82,5 +82,23 @@ describe("screenDeltaToDocument", () => {
       expect(result.dx).toBeCloseTo(deltaDoc.dx, 10);
       expect(result.dy).toBeCloseTo(deltaDoc.dy, 10);
     }
+  });
+});
+
+// Blocco Z4 (Fit-to-screen/Zoom): conversione screen->documento per le
+// SOGLIE geometriche (SNAP_THRESHOLD_PX, EDGE_ZONE_MAX_PX) - le uniche due
+// rimaste in spazio documento dopo Z1-Z3, ora rese costanti in spazio
+// schermo come DRAG_THRESHOLD_PX.
+describe("screenLengthToDocument", () => {
+  it("a zoom 100% (1) è l'identità (nessuna scala)", () => {
+    expect(screenLengthToDocument(6, 1)).toBe(6);
+  });
+
+  it("a zoom 50% (0.5), la stessa soglia SCHERMO corrisponde al DOPPIO in coordinate documento", () => {
+    expect(screenLengthToDocument(16, 0.5)).toBe(32);
+  });
+
+  it("a zoom 200%, la stessa soglia schermo corrisponde alla METÀ in coordinate documento", () => {
+    expect(screenLengthToDocument(16, 2)).toBe(8);
   });
 });

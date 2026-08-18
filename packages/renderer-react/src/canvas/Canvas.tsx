@@ -11,11 +11,11 @@ import type { NodeId, PageId } from "@vicolobuilder/engine";
 import type { ReactiveHistory } from "../history/ReactiveHistory.js";
 import { useActiveBreakpoint, useDocument, useSelection } from "../history/useHistoryStore.js";
 import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxes.js";
-import { computeAlignmentSnap, type AxisGuide } from "./alignmentGuides.js";
-import { computeDropTarget, type DropTarget } from "./dropTarget.js";
+import { computeAlignmentSnap, SNAP_THRESHOLD_PX, type AxisGuide } from "./alignmentGuides.js";
+import { computeDropTarget, EDGE_ZONE_MAX_PX, type DropTarget } from "./dropTarget.js";
 import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
 import { computeResizedGeometry, resizeHandles, type ResizeEdges, type ResizeStart } from "./resizeGeometry.js";
-import { screenDeltaToDocument, screenPointToDocument } from "./zoomCoordinates.js";
+import { screenDeltaToDocument, screenLengthToDocument, screenPointToDocument } from "./zoomCoordinates.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
 import { PREVIEW_SIZE, htmlTagFor } from "@vicolobuilder/render-conventions";
@@ -206,7 +206,12 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
         width: draggedEntry.box.width,
         height: draggedEntry.box.height,
       };
-      return computeAlignmentSnap(dragged, siblings, container);
+      // Blocco Z4 (Fit-to-screen/Zoom): la soglia di aggancio resta
+      // costante in spazio SCHERMO (decisione già presa all'approvazione
+      // dell'analisi) - convertita qui, all'ingresso in Canvas.tsx, mai
+      // dentro alignmentGuides.ts (che resta ignaro dello zoom, riceve solo
+      // un numero già in spazio documento, come i delta di Z3).
+      return computeAlignmentSnap(dragged, siblings, container, screenLengthToDocument(SNAP_THRESHOLD_PX, zoom));
     }
 
     // Blocco Z3 (Fit-to-screen/Zoom): `screenDeltaToDocument` converte SOLO
@@ -364,10 +369,15 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       if (!rect) return null;
       return screenPointToDocument(e.clientX, e.clientY, rect, zoom);
     }
+    // Blocco Z4 (Fit-to-screen/Zoom): la fascia di bordo "prima/dopo" vs
+    // "dentro" resta costante in spazio SCHERMO (16px, come da decisione
+    // già presa) - convertita qui, mai dentro dropTarget.ts (che resta
+    // ignaro dello zoom, stesso principio di SNAP_THRESHOLD_PX sopra).
+    const edgeZoneMaxPxDoc = screenLengthToDocument(EDGE_ZONE_MAX_PX, zoom);
     function onMove(e: PointerEvent): void {
       setCursorClient({ x: e.clientX, y: e.clientY });
       const local = localPoint(e);
-      setDropTarget(local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y) : null);
+      setDropTarget(local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y, edgeZoneMaxPxDoc) : null);
     }
     function onUp(e: PointerEvent): void {
       // Non si legge lo stato `dropTarget` (potenzialmente stantio in
@@ -376,7 +386,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       // rilascio, stesso principio già usato da onUp di moveDrag/resizeDrag
       // (che ricalcolano dx/dy invece di leggere lo stato React).
       const local = localPoint(e);
-      const target = local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y) : null;
+      const target = local ? computeDropTarget(entries, excluded, canReceiveChildren, local.x, local.y, edgeZoneMaxPxDoc) : null;
       if (target) {
         try {
           store.execute(buildStructuralMoveCommand(document, structuralDrag!.nodeId, target));
@@ -711,6 +721,18 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
               lineHeight: 1,
               cursor: "grab",
               userSelect: "none",
+              // Blocco Z4 (Fit-to-screen/Zoom): contro-scala - la maniglia
+              // eredita `transform:scale(zoom)` dall'antenato (canvasRootRef),
+              // quindi a zoom ridotto apparirebbe troppo piccola per essere
+              // presa comodamente. `scale(1/zoom)` sulla maniglia stessa
+              // annulla la scala ereditata SOLO per la sua dimensione
+              // visiva, mantenendo fisso il proprio centro geometrico
+              // (`transformOrigin` di default, "50% 50%" del proprio box
+              // documento) - il gesto che avvia (`onPointerDown`) legge
+              // `e.clientX/clientY`, indipendenti da qualunque trasformazione
+              // CSS sull'elemento target, quindi nessuna modifica alla
+              // matematica del gesto è necessaria qui.
+              transform: `scale(${1 / zoom})`,
             }}
           >
             ⠿
@@ -772,6 +794,11 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                       border: "1px solid #fff",
                       boxSizing: "border-box",
                       cursor: h.cursor,
+                      // Blocco Z4: stessa contro-scala della maniglia ⠿
+                      // sopra - dimensione visiva costante indipendente
+                      // dallo zoom, ancorata al proprio centro geometrico
+                      // (`left`/`top` invariati).
+                      transform: `scale(${1 / zoom})`,
                     }}
                   />
                 );

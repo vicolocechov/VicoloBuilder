@@ -38,12 +38,17 @@ function edgesOf(start: number, size: number): readonly number[] {
   return [start, start + size / 2, start + size];
 }
 
-function bestSnap(draggedStart: number, draggedSize: number, targets: readonly number[]): { delta: number; position: number } | null {
+function bestSnap(
+  draggedStart: number,
+  draggedSize: number,
+  targets: readonly number[],
+  thresholdPx: number,
+): { delta: number; position: number } | null {
   let best: { delta: number; position: number } | null = null;
   for (const edge of edgesOf(draggedStart, draggedSize)) {
     for (const target of targets) {
       const delta = target - edge;
-      if (Math.abs(delta) <= SNAP_THRESHOLD_PX && (best === null || Math.abs(delta) < Math.abs(best.delta))) {
+      if (Math.abs(delta) <= thresholdPx && (best === null || Math.abs(delta) < Math.abs(best.delta))) {
         best = { delta, position: target };
       }
     }
@@ -57,11 +62,19 @@ function bestSnap(draggedStart: number, draggedSize: number, targets: readonly n
  * stesso contenitore libero (non l'intero albero). `container`: il box del
  * contenitore libero immediato - il suo CENTRO (non i bordi) è l'unico
  * target di "scena" considerato, come da paletto dato.
+ *
+ * `snapThresholdPx` (Blocco Z4, Fit-to-screen/Zoom): parametro opzionale,
+ * default `SNAP_THRESHOLD_PX` (comportamento invariato per ogni chiamante
+ * che non lo specifica, incluso ogni test esistente). Questo modulo resta
+ * ignaro dello zoom: Canvas.tsx converte la soglia in spazio documento
+ * PRIMA di chiamare questa funzione (`screenLengthToDocument`,
+ * zoomCoordinates.ts) - la conversione non avviene mai qui dentro.
  */
 export function computeAlignmentSnap(
   dragged: Rect,
   siblings: readonly Rect[],
   container: Rect,
+  snapThresholdPx: number = SNAP_THRESHOLD_PX,
 ): AlignmentSnapResult {
   const xTargets: number[] = [container.x + container.width / 2];
   const yTargets: number[] = [container.y + container.height / 2];
@@ -70,8 +83,8 @@ export function computeAlignmentSnap(
     yTargets.push(...edgesOf(sibling.y, sibling.height));
   }
 
-  const snapX = bestSnap(dragged.x, dragged.width, xTargets);
-  const snapY = bestSnap(dragged.y, dragged.height, yTargets);
+  const snapX = bestSnap(dragged.x, dragged.width, xTargets, snapThresholdPx);
+  const snapY = bestSnap(dragged.y, dragged.height, yTargets, snapThresholdPx);
 
   return {
     x: dragged.x + (snapX?.delta ?? 0),

@@ -46,3 +46,26 @@ export function screenPointToDocument(clientX: number, clientY: number, origin: 
 export function screenDeltaToDocument(dx: number, dy: number, zoom: number): { dx: number; dy: number } {
   return { dx: dx / zoom, dy: dy / zoom };
 }
+
+/**
+ * Blocco Z4 (Fit-to-screen/Zoom): conversione per le SOGLIE geometriche
+ * rimaste in spazio documento dopo Z1-Z3 (`SNAP_THRESHOLD_PX` in
+ * alignmentGuides.ts, `EDGE_ZONE_MAX_PX` in dropTarget.ts) - decisione già
+ * presa all'approvazione dell'analisi "Fit-to-screen / Device Preview":
+ * tutte e tre le soglie geometriche del Canvas restano costanti in spazio
+ * SCHERMO (come `DRAG_THRESHOLD_PX`, già così fin da Z1), mai in spazio
+ * documento - altrimenti la stessa soglia "6px" agganciherebbe a distanze
+ * documento diverse a seconda dello zoom, un comportamento percepito come
+ * incoerente. Stessa formula di `screenDeltaToDocument` (dividere per
+ * `zoom`), qui per una singola lunghezza scalare invece di una coppia
+ * dx/dy - una soglia in pixel è concettualmente una lunghezza, non un
+ * punto né un delta direzionale, ma la relazione schermo->documento è
+ * identica. Il valore convertito viene passato come PARAMETRO a
+ * `computeAlignmentSnap`/`computeDropTarget` (mai come `zoom` stesso):
+ * quei moduli restano ignari dello zoom, ricevono solo un numero già in
+ * spazio documento, esattamente come già avviene per i delta convertiti
+ * in Z3.
+ */
+export function screenLengthToDocument(px: number, zoom: number): number {
+  return px / zoom;
+}

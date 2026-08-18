@@ -75,3 +75,29 @@ describe("SNAP_THRESHOLD_PX", () => {
     expect(SNAP_THRESHOLD_PX).toBe(6);
   });
 });
+
+// Blocco Z4 (Fit-to-screen/Zoom): `snapThresholdPx` è un parametro
+// OPZIONALE - Canvas.tsx lo converte in spazio documento
+// (`screenLengthToDocument(SNAP_THRESHOLD_PX, zoom)`) prima di chiamare
+// questa funzione, mai al suo interno (il modulo resta ignaro dello zoom).
+// Ogni test sopra, che non passa questo parametro, continua a verificare
+// il comportamento di default (SNAP_THRESHOLD_PX, equivalente a zoom 100%).
+describe("computeAlignmentSnap — soglia personalizzata (Blocco Z4)", () => {
+  it("una soglia esplicita più ampia della costante di default aggancia dove il default non aggancerebbe", () => {
+    const dragged = { x: 170, y: 50, width: 20, height: 20 }; // 10px dal centro contenitore (200) - fuori dal default 6px
+    const withoutOverride = computeAlignmentSnap(dragged, [], container);
+    expect(withoutOverride.guideX).toBeNull();
+
+    const withOverride = computeAlignmentSnap(dragged, [], container, 12); // soglia esplicita 12px, copre i 10px
+    expect(withOverride.guideX).toEqual({ position: 200 });
+  });
+
+  it("una soglia esplicita più stretta della costante di default NON aggancia dove il default agancerebbe", () => {
+    const dragged = { x: 191, y: 50, width: 20, height: 20 }; // 1px dal centro contenitore (200) - entro il default 6px
+    const withoutOverride = computeAlignmentSnap(dragged, [], container);
+    expect(withoutOverride.guideX).not.toBeNull();
+
+    const withOverride = computeAlignmentSnap(dragged, [], container, 0.5); // soglia esplicita 0.5px, non copre 1px
+    expect(withOverride.guideX).toBeNull();
+  });
+});
