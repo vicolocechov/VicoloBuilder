@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { applyCommand, createDocument } from "@vicolobuilder/engine";
+import { applyCommand, createDocument, getBreakpoint } from "@vicolobuilder/engine";
 import type { Document, NodeId, PageId } from "@vicolobuilder/engine";
 import { ReactiveHistory } from "./history/ReactiveHistory.js";
 import { useActiveBreakpoint, useCanRedo, useCanUndo, useDocument, useSelection } from "./history/useHistoryStore.js";
@@ -9,7 +9,7 @@ import { PageManager } from "./pages/PageManager.js";
 import { Outline } from "./outline/Outline.js";
 import { ElementPalette } from "./elements/ElementPalette.js";
 import { Preview } from "./preview/Preview.js";
-import { TIER_NAMES } from "./breakpoints.js";
+import { TIER_NAMES, describeBreakpoint } from "./breakpoints.js";
 import { FontManager } from "./fonts/FontManager.js";
 import { useRegisteredFonts } from "./fonts/useRegisteredFonts.js";
 import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
@@ -120,8 +120,25 @@ export function App(): JSX.Element {
   // stato locale, non History, azzerato dal prossimo tentativo.
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
+  // Blocco 6 (rifinitura UI/UX, Punto 7 dell'audit): nessun indicatore di
+  // "modifiche non salvate" esisteva finora - `saveStatus` è solo un
+  // messaggio TRANSITORIO ("Documento salvato.") che scompare al click su
+  // "OK", non uno stato persistente. `lastSavedDocument` tiene il
+  // riferimento ESATTO del Document all'ultimo salvataggio/caricamento:
+  // `Document` è immutabile per costruzione (Engine) - un nuovo comando
+  // produce sempre un nuovo riferimento, `undo`/`redo` restituiscono lo
+  // STESSO riferimento quando non c'è nulla da annullare/ripetere (già
+  // garantito da `History`, sfruttato anche da `useSyncExternalStore` in
+  // useHistoryStore.ts) - quindi un confronto per riferimento (non un hash)
+  // basta ed è corretto anche dopo un ciclo undo/redo che torna esattamente
+  // allo stato salvato. `null` all'avvio: il documento demo non è mai stato
+  // salvato in questa sessione, "non salvato" è l'informazione corretta.
+  const [lastSavedDocument, setLastSavedDocument] = useState<Document | null>(null);
+  const hasUnsavedChanges = document !== lastSavedDocument;
+
   function handleSave(): void {
     saveDocumentToLocalStorage(store.getDocument());
+    setLastSavedDocument(store.getDocument());
     setSaveStatus("Documento salvato.");
   }
 
@@ -134,6 +151,7 @@ export function App(): JSX.Element {
       // questo blocco) - solo il Document deve sopravvivere intatto.
       setActivePageId(loaded.rootPageId);
       setPreviewOpen(false);
+      setLastSavedDocument(loaded);
       setSaveStatus("Documento caricato.");
     } catch (e) {
       setSaveStatus(e instanceof Error ? e.message : String(e));
@@ -179,9 +197,15 @@ export function App(): JSX.Element {
             <button
               key={tier}
               onClick={() => store.setActiveBreakpoint(tier)}
-              style={{ fontWeight: tier === activeBreakpoint ? "bold" : "normal" }}
+              title={describeBreakpoint(getBreakpoint(tier))}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.3 }}
             >
-              {tier}
+              <span style={{ fontWeight: tier === activeBreakpoint ? "bold" : "normal" }}>{tier}</span>
+              {/* Blocco 6, Punto 6: fascia reale sempre visibile (non solo
+                  al passaggio del mouse) - è il controllo primario della
+                  toolbar, usato di continuo, non un dettaglio secondario da
+                  scoprire con un tooltip. */}
+              <span style={{ fontSize: 9, fontWeight: "normal", opacity: 0.6 }}>{describeBreakpoint(getBreakpoint(tier))}</span>
             </button>
           ))}
           <button onClick={() => store.undo()} disabled={!canUndo}>
@@ -198,6 +222,17 @@ export function App(): JSX.Element {
           </button>
           <button onClick={handleSave}>Salva</button>
           <button onClick={handleLoad}>Apri</button>
+          {/* Blocco 6, Punto 7: dove va "Salva" e se il documento corrente è
+              aggiornato rispetto all'ultimo salvataggio - nessuna delle due
+              informazioni esisteva prima (verificato nell'audit). */}
+          <span style={{ fontSize: 11, opacity: 0.6 }} title="Il documento è salvato in questo browser, non condiviso tra dispositivi.">
+            (salvato in questo browser)
+          </span>
+          {hasUnsavedChanges ? (
+            <span style={{ fontSize: 11, color: "#b45309" }}>● Modifiche non salvate</span>
+          ) : (
+            <span style={{ fontSize: 11, opacity: 0.5 }}>✓ Salvato</span>
+          )}
           {saveStatus ? (
             <span style={{ fontSize: 12, opacity: 0.7 }}>
               {saveStatus} <button onClick={() => setSaveStatus(null)}>OK</button>

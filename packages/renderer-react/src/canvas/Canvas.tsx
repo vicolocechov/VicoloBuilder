@@ -78,6 +78,22 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   const [moveError, setMoveError] = useState<string | null>(null);
   const canvasRootRef = useRef<HTMLDivElement | null>(null);
 
+  // Blocco 6 (rifinitura UI/UX, Punto 2 dell'audit): un tentativo di
+  // trascinamento su un elemento con `!caps.canMoveXY` (il genitore non è
+  // "libero") oggi non produce ALCUN messaggio - l'unico segnale è il
+  // cursore "default" invece di "move", verificato insufficiente
+  // nell'audit. Stato separato da `moveDrag` (che parte solo quando
+  // `canMoveXY` è vero): registra il tentativo al pointerdown, ma mostra
+  // il messaggio solo se il puntatore si muove oltre `DRAG_THRESHOLD_PX`
+  // prima del rilascio - un semplice click di selezione su un elemento non
+  // trascinabile (l'azione più comune) non deve mostrare un avviso che
+  // nessuno ha chiesto.
+  const [blockedDragAttempt, setBlockedDragAttempt] = useState<{
+    readonly startClientX: number;
+    readonly startClientY: number;
+    readonly parentModeLabel: string;
+  } | null>(null);
+
   // Blocco 4 ("rifinitura visiva", editing testo diretto): quale nodo è
   // attualmente in modifica diretta (doppio click), al più uno per volta -
   // stessa natura locale/transitoria di `moveDrag`/`resizeDrag`/
@@ -192,6 +208,34 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       window.removeEventListener("pointerup", onUp);
     };
   }, [moveDrag, store, entries]);
+
+  // Blocco 6, Punto 2: stessa struttura dell'effect di moveDrag sopra
+  // (listener globali, ricalcolo da zero al pointerup) - qui però non
+  // scrive mai un comando, mostra solo `moveError` se il gesto supera la
+  // soglia di un vero trascinamento (altrimenti si azzera in silenzio: era
+  // solo un click).
+  useEffect(() => {
+    if (!blockedDragAttempt) return;
+    function onMove(e: PointerEvent): void {
+      const dx = e.clientX - blockedDragAttempt!.startClientX;
+      const dy = e.clientY - blockedDragAttempt!.startClientY;
+      if (Math.abs(dx) >= DRAG_THRESHOLD_PX || Math.abs(dy) >= DRAG_THRESHOLD_PX) {
+        setMoveError(
+          `questo elemento segue la disposizione automatica del contenitore (modalità "${blockedDragAttempt!.parentModeLabel}"). Per spostarlo liberamente, seleziona il contenitore e imposta la sua modalità su "Libero".`,
+        );
+        setBlockedDragAttempt(null);
+      }
+    }
+    function onUp(): void {
+      setBlockedDragAttempt(null);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [blockedDragAttempt]);
 
   useEffect(() => {
     if (!resizeDrag) return;
@@ -504,7 +548,16 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             // cursore/la selezione nativa - un trascinamento avviato qui
             // sposterebbe l'elemento invece di posizionare il cursore.
             if (editingId === entry.box.nodeId) return;
-            if (!caps.canMoveXY) return;
+            if (!caps.canMoveXY) {
+              // Blocco 6, Punto 2: nessuno `stopPropagation()` qui - un
+              // semplice click (senza superare la soglia) deve continuare a
+              // comportarsi esattamente come prima (selezione via `onClick`
+              // dello stesso Tag, invariata).
+              const parentNode = entry.parentBox ? model.nodes.get(entry.parentBox.nodeId) : undefined;
+              const parentModeLabel = parentNode?.resolvedProps.layoutMode === "griglia" ? "Griglia" : "Pila";
+              setBlockedDragAttempt({ startClientX: e.clientX, startClientY: e.clientY, parentModeLabel });
+              return;
+            }
             e.stopPropagation();
             const startLocalX = asFiniteNumber(resolvedNode.resolvedProps.x) ?? 0;
             const startLocalY = asFiniteNumber(resolvedNode.resolvedProps.y) ?? 0;

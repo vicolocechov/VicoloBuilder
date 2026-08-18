@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, computeLayout, createDocument, resolveDocument } from "@vicolobuilder/engine";
 import {
+  applyCreationOffset,
   buildCreateElementCommand,
   elementIdBase,
   resolveNewElementParent,
@@ -239,5 +240,65 @@ describe("resolveNewElementParent", () => {
     });
     expect(resolveNewElementParent(doc, "root", "canvas", "mobile-verticale")).toBe("root");
     expect(resolveNewElementParent(doc, "root", "canvas", "desktop")).toBe("canvas");
+  });
+});
+
+// Blocco 6 (rifinitura UI/UX, Punto 1 dell'audit): due elementi creati in
+// sequenza nello stesso genitore "libero" nascevano perfettamente
+// sovrapposti (stessi x/y fissi in ELEMENT_DEFAULTS), senza alcun avviso.
+describe("applyCreationOffset", () => {
+  it("non tocca il comando se il genitore NON è 'libero' (offset senza effetto visibile, computeLayout ignora x/y)", () => {
+    const doc = baseDoc(); // radice 'root', nessun layoutMode -> 'pila' di default
+    const command = buildCreateElementCommand("text", "testo-2", "root");
+    expect(applyCreationOffset(doc, "root", "desktop", command)).toEqual(command);
+  });
+
+  it("non tocca il comando se il genitore 'libero' non ha ancora figli (primo elemento, nessuna sovrapposizione possibile)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    const command = buildCreateElementCommand("text", "testo-1", "root");
+    expect(applyCreationOffset(doc, "root", "desktop", command)).toEqual(command);
+  });
+
+  it("sposta il secondo elemento di un passo fisso quando il genitore 'libero' ha già un figlio", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("text", "testo-1", "root"));
+    const command = buildCreateElementCommand("container", "contenitore-1", "root");
+    const offset = applyCreationOffset(doc, "root", "desktop", command);
+    expect(offset.props.x).toBe((command.props.x as number) + 20);
+    expect(offset.props.y).toBe((command.props.y as number) + 20);
+  });
+
+  it("sposta il terzo elemento di due passi (un passo per ciascun fratello già presente)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("text", "testo-1", "root"));
+    doc = applyCommand(doc, buildCreateElementCommand("text", "testo-2", "root"));
+    const command = buildCreateElementCommand("text", "testo-3", "root");
+    const offset = applyCreationOffset(doc, "root", "desktop", command);
+    expect(offset.props.x).toBe((command.props.x as number) + 40);
+    expect(offset.props.y).toBe((command.props.y as number) + 40);
+  });
+
+  it("rispetta un override responsive di layoutMode alla fascia attiva (stesso principio di resolveNewElementParent)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { responsive: { desktop: { layoutMode: "libero" } } } });
+    doc = applyCommand(doc, buildCreateElementCommand("text", "testo-1", "root"));
+    const command = buildCreateElementCommand("text", "testo-2", "root");
+    expect(applyCreationOffset(doc, "root", "mobile-verticale", command)).toEqual(command);
+    expect(applyCreationOffset(doc, "root", "desktop", command).props.x).toBe((command.props.x as number) + 20);
+  });
+
+  it("non tocca il comando se x/y non sono numerici (nessun caso reale oggi, ma la funzione resta sicura)", () => {
+    let doc = baseDoc();
+    doc = applyCommand(doc, { type: "UPDATE_PROPS", nodeId: "root", props: { layoutMode: "libero" } });
+    doc = applyCommand(doc, buildCreateElementCommand("text", "testo-1", "root"));
+    const base = buildCreateElementCommand("text", "testo-2", "root");
+    const props = { ...base.props };
+    delete (props as Record<string, unknown>).x;
+    delete (props as Record<string, unknown>).y;
+    const command = { ...base, props };
+    expect(applyCreationOffset(doc, "root", "desktop", command)).toEqual(command);
   });
 });

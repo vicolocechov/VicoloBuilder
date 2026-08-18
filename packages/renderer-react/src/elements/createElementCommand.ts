@@ -183,3 +183,43 @@ export function buildCreateElementCommand(elementType: ElementType, nodeId: Node
   const { nodeType, props } = ELEMENT_DEFAULTS[elementType];
   return { type: "CREATE_NODE", nodeId, nodeType, parentId, props: { ...props } };
 }
+
+/**
+ * Blocco 6 (rifinitura UI/UX, Punto 1 dell'audit): tutti i tipi in
+ * `ELEMENT_DEFAULTS` nascono con x/y FISSI - due elementi creati in
+ * sequenza nello stesso genitore "libero" nascono perfettamente
+ * sovrapposti, senza alcun avviso (trovato verificando in browser durante
+ * l'audit). Ha senso spostarli solo quando il genitore RISOLTO è "libero"
+ * (`isLiberoContainer`, stessa funzione già usata per il collocamento
+ * sopra): in "pila"/"griglia" `computeLayout` ignora del tutto x/y del
+ * figlio (ereditano width dall'alto, l'altezza è impilata) - un offset lì
+ * non avrebbe alcun effetto visibile, sarebbe lavoro sprecato.
+ *
+ * Deliberatamente separata da `buildCreateElementCommand` (non integrata
+ * nella sua firma): quella funzione è chiamata da ~15 casi di test
+ * esistenti con la firma originale a 3 argomenti - separarla evita di
+ * toccarli tutti per un comportamento aggiuntivo, non una correzione di
+ * quella funzione.
+ */
+const CREATION_OFFSET_STEP_PX = 20;
+
+export function applyCreationOffset(
+  document: Document,
+  parentId: NodeId,
+  activeBreakpoint: BreakpointName,
+  command: CreateNodeCommand,
+): CreateNodeCommand {
+  const x = command.props?.x;
+  const y = command.props?.y;
+  if (typeof x !== "number" || typeof y !== "number") return command;
+  if (!isLiberoContainer(document, parentId, activeBreakpoint)) return command;
+
+  const parent = getNode(document, parentId);
+  const siblingCount = parent ? parent.childrenIds.length : 0;
+  if (siblingCount === 0) return command;
+
+  return {
+    ...command,
+    props: { ...command.props, x: x + siblingCount * CREATION_OFFSET_STEP_PX, y: y + siblingCount * CREATION_OFFSET_STEP_PX },
+  };
+}

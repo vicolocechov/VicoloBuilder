@@ -10,6 +10,7 @@ import { isTextBearingType } from "../elements/textBearingTypes.js";
 import { readRegisteredFonts } from "@vicolobuilder/render-conventions";
 import { FileUploadButton } from "../fileUpload/FileUploadButton.js";
 import type { HoverKey } from "@vicolobuilder/render-conventions";
+import { fieldLabel, FIELD_DESCRIPTIONS, frozenStateLabel } from "./fieldLabels.js";
 
 /**
  * Fase 5, Blocco D (Decisione D7): ambito minimo — solo i campi già
@@ -79,11 +80,23 @@ function NumberField({
   label,
   value,
   badge,
+  description,
+  disabled,
+  disabledReason,
   onCommit,
 }: {
   readonly label: string;
   readonly value: number | undefined;
   readonly badge?: string;
+  readonly description?: string | undefined;
+  // Blocco 6, Punto 8 (audit Builder UI/UX): usato per x/y - quando il
+  // genitore del nodo non è "libero", questi campi non hanno ALCUN effetto
+  // (computeLayout.ts non li legge in "pila"/"griglia", né per un nodo
+  // senza genitore come la radice pagina) - disabilitato, non solo
+  // modificabile senza risultato, con il motivo mostrato al posto della
+  // descrizione generica.
+  readonly disabled?: boolean;
+  readonly disabledReason?: string | undefined;
   readonly onCommit: (value: number) => void;
 }): JSX.Element {
   const [text, setText] = useState(value === undefined ? "" : String(value));
@@ -99,6 +112,8 @@ function NumberField({
     if (!focused.current) setText(value === undefined ? "" : String(value));
   }, [value]);
 
+  const helpText = disabled && disabledReason ? disabledReason : description;
+
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
@@ -107,6 +122,7 @@ function NumberField({
       <input
         type="number"
         value={text}
+        disabled={disabled}
         onFocus={() => {
           focused.current = true;
         }}
@@ -117,6 +133,7 @@ function NumberField({
           if (Number.isFinite(n)) onCommit(n);
         }}
       />
+      {helpText ? <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{helpText}</span> : null}
     </label>
   );
 }
@@ -130,28 +147,38 @@ function NumberField({
 // silenziosi (es. "Libero" con maiuscola) che non produrrebbero errore
 // finché non si prova a trascinare.
 const LAYOUT_MODES = ["pila", "libero", "griglia"] as const;
+const LAYOUT_MODE_OPTION_LABELS: Readonly<Record<(typeof LAYOUT_MODES)[number], string>> = {
+  pila: "Pila",
+  libero: "Libero",
+  griglia: "Griglia",
+};
 
 function LayoutModeField({
+  label,
   value,
   badge,
+  description,
   onCommit,
 }: {
+  readonly label: string;
   readonly value: string;
   readonly badge?: string;
+  readonly description?: string | undefined;
   readonly onCommit: (value: string) => void;
 }): JSX.Element {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
-        layoutMode {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
       </span>
       <select value={value} onChange={(e) => onCommit(e.target.value)}>
         {LAYOUT_MODES.map((mode) => (
           <option key={mode} value={mode}>
-            {mode}
+            {LAYOUT_MODE_OPTION_LABELS[mode]}
           </option>
         ))}
       </select>
+      {description ? <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{description}</span> : null}
     </label>
   );
 }
@@ -160,11 +187,13 @@ function TextField({
   label,
   value,
   badge,
+  description,
   onCommit,
 }: {
   readonly label: string;
   readonly value: string;
   readonly badge?: string;
+  readonly description?: string | undefined;
   readonly onCommit: (value: string) => void;
 }): JSX.Element {
   const [text, setText] = useState(value);
@@ -191,6 +220,7 @@ function TextField({
           onCommit(text);
         }}
       />
+      {description ? <span style={{ fontSize: 11, opacity: 0.6, fontStyle: "italic" }}>{description}</span> : null}
     </label>
   );
 }
@@ -276,11 +306,13 @@ function ColorField({
  * prodotto: mai un dropdown vuoto silenzioso).
  */
 function FontFamilyField({
+  label,
   value,
   badge,
   families,
   onCommit,
 }: {
+  readonly label: string;
   readonly value: string;
   readonly badge?: string;
   readonly families: readonly string[];
@@ -290,7 +322,7 @@ function FontFamilyField({
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
         <span>
-          fontFamily {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+          {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
         </span>
         <span style={{ opacity: 0.7, fontStyle: "italic" }}>
           Nessun font registrato — aggiungilo dal pannello "Font" a sinistra.
@@ -301,7 +333,7 @@ function FontFamilyField({
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
-        fontFamily {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
       </span>
       <select value={families.includes(value) ? value : ""} onChange={(e) => onCommit(e.target.value)}>
         <option value="">(predefinito del browser)</option>
@@ -340,10 +372,12 @@ function AlignIcon({ align }: { readonly align: "left" | "center" | "right" }): 
 
 /** Icon-button (Blocco 2, "controlli visivi"): stato attivo mostrato con bordo/sfondo/colore, non solo un valore di testo selezionato in un <select>. */
 function TextAlignField({
+  label,
   value,
   badge,
   onCommit,
 }: {
+  readonly label: string;
   readonly value: string;
   readonly badge?: string;
   readonly onCommit: (value: string) => void;
@@ -351,7 +385,7 @@ function TextAlignField({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
-        textAlign {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
       </span>
       <div style={{ display: "flex", gap: 4 }}>
         {TEXT_ALIGN_OPTIONS.map((opt) => {
@@ -392,11 +426,19 @@ function TextAlignField({
 // produrrebbe un bordo silenziosamente invisibile, non un errore).
 const BORDER_STYLES = ["solid", "dashed", "dotted"] as const;
 
+const BORDER_STYLE_OPTION_LABELS: Readonly<Record<(typeof BORDER_STYLES)[number], string>> = {
+  solid: "Continuo",
+  dashed: "Tratteggiato",
+  dotted: "Puntinato",
+};
+
 function BorderStyleField({
+  label,
   value,
   badge,
   onCommit,
 }: {
+  readonly label: string;
   readonly value: string;
   readonly badge?: string;
   readonly onCommit: (value: string) => void;
@@ -404,12 +446,12 @@ function BorderStyleField({
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
-        borderStyle {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
       </span>
       <select value={value} onChange={(e) => onCommit(e.target.value)}>
         {BORDER_STYLES.map((s) => (
           <option key={s} value={s}>
-            {s}
+            {BORDER_STYLE_OPTION_LABELS[s]}
           </option>
         ))}
       </select>
@@ -427,10 +469,12 @@ function BorderStyleField({
  * la soglia di trascinamento del Canvas.
  */
 function OpacityField({
+  label,
   value,
   badge,
   onCommit,
 }: {
+  readonly label: string;
   readonly value: number;
   readonly badge?: string;
   readonly onCommit: (value: number) => void;
@@ -445,7 +489,7 @@ function OpacityField({
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
       <span>
-        opacity {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
+        {label} {badge ? <em style={{ opacity: 0.6 }}>({badge})</em> : null}
       </span>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <input
@@ -535,6 +579,24 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
     new Set(readRegisteredFonts(document).map((f) => f.family)),
   );
 
+  // Blocco 6 (rifinitura UI/UX, Punto 8 dell'audit): x/y del nodo hanno
+  // effetto SOLO se il suo genitore dispone i propri figli in modalità
+  // "libero" (confermato in computeLayout.ts: in "pila"/"griglia" x/y non
+  // vengono mai letti; per la radice pagina, senza genitore, x/y non
+  // vengono mai letti affatto - `layoutNode` riceve l'ancora (0,0) come
+  // parametro, non dai props del nodo). Nessun genitore -> stesso
+  // trattamento di un genitore non "libero": in entrambi i casi il campo
+  // non produce alcun risultato modificandolo.
+  const parentNode = node.parentId !== null ? getNode(document, node.parentId) : null;
+  const parentIsLibero =
+    parentNode !== null &&
+    parentNode !== undefined &&
+    resolveNode(parentNode, { breakpoint: activeBreakpoint }).resolvedProps.layoutMode === "libero";
+  const positionDisabledReason =
+    node.parentId === null
+      ? "Questo elemento è la radice della pagina: la sua posizione è sempre l'origine del Canvas."
+      : 'Questo campo non ha effetto: il contenitore che lo racchiude non è in modalità "Libero" (dispone i figli automaticamente).';
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 8 }}>
       <div>
@@ -544,61 +606,70 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
 
       <TextField
         key={`${fieldKeyPrefix}:anchorId`}
-        label="ancora"
+        label={fieldLabel("anchorId")}
+        description={FIELD_DESCRIPTIONS.anchorId}
         value={typeof resolved.anchorId === "string" ? resolved.anchorId : ""}
         onCommit={(s) => commitContent("anchorId", s)}
       />
 
       <NumberField
         key={`${fieldKeyPrefix}:x`}
-        label="x"
+        label={fieldLabel("x")}
         value={asFiniteNumber(resolved.x)}
-        badge={frozenFieldState(node, activeBreakpoint, "x")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "x"))}
+        description={FIELD_DESCRIPTIONS.x}
+        disabled={!parentIsLibero}
+        disabledReason={positionDisabledReason}
         onCommit={(n) => commitGeometry("x", n)}
       />
       <NumberField
         key={`${fieldKeyPrefix}:y`}
-        label="y"
+        label={fieldLabel("y")}
         value={asFiniteNumber(resolved.y)}
-        badge={frozenFieldState(node, activeBreakpoint, "y")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "y"))}
+        description={FIELD_DESCRIPTIONS.y}
+        disabled={!parentIsLibero}
+        disabledReason={positionDisabledReason}
         onCommit={(n) => commitGeometry("y", n)}
       />
       <NumberField
         key={`${fieldKeyPrefix}:width`}
-        label="width"
+        label={fieldLabel("width")}
         value={asFiniteNumber(resolved.width)}
-        badge={frozenFieldState(node, activeBreakpoint, "width")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "width"))}
         onCommit={(n) => commitGeometry("width", n)}
       />
       <NumberField
         key={`${fieldKeyPrefix}:height`}
-        label="height"
+        label={fieldLabel("height")}
         value={asFiniteNumber(resolved.height)}
-        badge={frozenFieldState(node, activeBreakpoint, "height")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "height"))}
         onCommit={(n) => commitGeometry("height", n)}
       />
       <LayoutModeField
         key={`${fieldKeyPrefix}:layoutMode`}
+        label={fieldLabel("layoutMode")}
         value={typeof resolved.layoutMode === "string" ? resolved.layoutMode : "pila"}
-        badge={frozenFieldState(node, activeBreakpoint, "layoutMode")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "layoutMode"))}
+        description={FIELD_DESCRIPTIONS.layoutMode}
         onCommit={(s) => commitGeometry("layoutMode", s)}
       />
 
       {isGrid ? (
         <NumberField
           key={`${fieldKeyPrefix}:columns`}
-          label="columns"
+          label={fieldLabel("columns")}
           value={asFiniteNumber(resolved.columns)}
-          badge={frozenFieldState(node, activeBreakpoint, "columns")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "columns"))}
           onCommit={(n) => commitStyle("columns", n)}
         />
       ) : null}
       {isGrid ? (
         <NumberField
           key={`${fieldKeyPrefix}:gap`}
-          label="gap"
+          label={fieldLabel("gap")}
           value={asFiniteNumber(resolved.gap)}
-          badge={frozenFieldState(node, activeBreakpoint, "gap")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "gap"))}
           onCommit={(n) => commitStyle("gap", n)}
         />
       ) : null}
@@ -606,17 +677,18 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isTextBearing ? (
         <TextField
           key={`${fieldKeyPrefix}:fontSize`}
-          label="fontSize"
+          label={fieldLabel("fontSize")}
           value={typeof resolved.fontSize === "string" ? resolved.fontSize : ""}
-          badge={frozenFieldState(node, activeBreakpoint, "fontSize")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "fontSize"))}
           onCommit={(s) => commitStyle("fontSize", s)}
         />
       ) : null}
       {isTextBearing ? (
         <FontFamilyField
           key={`${fieldKeyPrefix}:fontFamily`}
+          label={fieldLabel("fontFamily")}
           value={typeof resolved.fontFamily === "string" ? resolved.fontFamily : ""}
-          badge={frozenFieldState(node, activeBreakpoint, "fontFamily")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "fontFamily"))}
           families={registeredFontFamilies}
           onCommit={(s) => commitStyle("fontFamily", s)}
         />
@@ -624,17 +696,18 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isTextBearing ? (
         <TextField
           key={`${fieldKeyPrefix}:fontWeight`}
-          label="fontWeight"
+          label={fieldLabel("fontWeight")}
           value={typeof resolved.fontWeight === "string" ? resolved.fontWeight : ""}
-          badge={frozenFieldState(node, activeBreakpoint, "fontWeight")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "fontWeight"))}
           onCommit={(s) => commitStyle("fontWeight", s)}
         />
       ) : null}
       {isTextBearing ? (
         <TextAlignField
           key={`${fieldKeyPrefix}:textAlign`}
+          label={fieldLabel("textAlign")}
           value={typeof resolved.textAlign === "string" ? resolved.textAlign : "left"}
-          badge={frozenFieldState(node, activeBreakpoint, "textAlign")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "textAlign"))}
           onCommit={(s) => commitStyle("textAlign", s)}
         />
       ) : null}
@@ -642,7 +715,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isImage ? (
         <TextField
           key={`${fieldKeyPrefix}:src`}
-          label="src"
+          label={fieldLabel("src")}
           value={typeof resolved.src === "string" ? resolved.src : ""}
           onCommit={(s) => commitContent("src", s)}
         />
@@ -656,7 +729,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isImage ? (
         <TextField
           key={`${fieldKeyPrefix}:alt`}
-          label="alt"
+          label={fieldLabel("alt")}
           value={typeof resolved.alt === "string" ? resolved.alt : ""}
           onCommit={(s) => commitContent("alt", s)}
         />
@@ -664,9 +737,9 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isImage ? (
         <TextField
           key={`${fieldKeyPrefix}:objectFit`}
-          label="objectFit"
+          label={fieldLabel("objectFit")}
           value={typeof resolved.objectFit === "string" ? resolved.objectFit : ""}
-          badge={frozenFieldState(node, activeBreakpoint, "objectFit")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "objectFit"))}
           onCommit={(s) => commitStyle("objectFit", s)}
         />
       ) : null}
@@ -674,7 +747,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isInteractive ? (
         <TextField
           key={`${fieldKeyPrefix}:href`}
-          label="href"
+          label={fieldLabel("href")}
           value={typeof resolved.href === "string" ? resolved.href : ""}
           onCommit={(s) => commitContent("href", s)}
         />
@@ -682,16 +755,16 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isInteractive ? (
         <TextField
           key={`${fieldKeyPrefix}:transition`}
-          label="transition"
+          label={fieldLabel("transition")}
           value={typeof resolved.transition === "string" ? resolved.transition : ""}
-          badge={frozenFieldState(node, activeBreakpoint, "transition")}
+          badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "transition"))}
           onCommit={(s) => commitStyle("transition", s)}
         />
       ) : null}
       {isInteractive ? (
         <ColorField
           key={`${fieldKeyPrefix}:hover:color`}
-          label="hover: color"
+          label={fieldLabel("hover: color")}
           value={typeof hover.color === "string" ? hover.color : ""}
           onCommit={(s) => commitHover("color", s)}
         />
@@ -699,7 +772,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isInteractive ? (
         <ColorField
           key={`${fieldKeyPrefix}:hover:background`}
-          label="hover: background"
+          label={fieldLabel("hover: background")}
           value={typeof hover.background === "string" ? hover.background : ""}
           onCommit={(s) => commitHover("background", s)}
         />
@@ -707,7 +780,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isInteractive ? (
         <TextField
           key={`${fieldKeyPrefix}:hover:transform`}
-          label="hover: transform"
+          label={fieldLabel("hover: transform")}
           value={typeof hover.transform === "string" ? hover.transform : ""}
           onCommit={(s) => commitHover("transform", s)}
         />
@@ -715,7 +788,7 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
       {isInteractive ? (
         <ColorField
           key={`${fieldKeyPrefix}:hover:borderColor`}
-          label="hover: borderColor"
+          label={fieldLabel("hover: borderColor")}
           value={typeof hover.borderColor === "string" ? hover.borderColor : ""}
           onCommit={(s) => commitHover("borderColor", s)}
         />
@@ -728,54 +801,56 @@ export function PropertyPanel({ store }: { store: ReactiveHistory }): JSX.Elemen
           x/y/width/height. */}
       <NumberField
         key={`${fieldKeyPrefix}:borderWidth`}
-        label="borderWidth"
+        label={fieldLabel("borderWidth")}
         value={asFiniteNumber(resolved.borderWidth)}
-        badge={frozenFieldState(node, activeBreakpoint, "borderWidth")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "borderWidth"))}
         onCommit={(n) => commitStyle("borderWidth", n)}
       />
       <ColorField
         key={`${fieldKeyPrefix}:borderColor`}
-        label="borderColor"
+        label={fieldLabel("borderColor")}
         value={typeof resolved.borderColor === "string" ? resolved.borderColor : ""}
-        badge={frozenFieldState(node, activeBreakpoint, "borderColor")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "borderColor"))}
         onCommit={(s) => commitStyle("borderColor", s)}
       />
       <BorderStyleField
         key={`${fieldKeyPrefix}:borderStyle`}
+        label={fieldLabel("borderStyle")}
         value={typeof resolved.borderStyle === "string" ? resolved.borderStyle : "solid"}
-        badge={frozenFieldState(node, activeBreakpoint, "borderStyle")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "borderStyle"))}
         onCommit={(s) => commitStyle("borderStyle", s)}
       />
       <NumberField
         key={`${fieldKeyPrefix}:borderRadius`}
-        label="borderRadius"
+        label={fieldLabel("borderRadius")}
         value={asFiniteNumber(resolved.borderRadius)}
-        badge={frozenFieldState(node, activeBreakpoint, "borderRadius")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "borderRadius"))}
         onCommit={(n) => commitStyle("borderRadius", n)}
       />
       <OpacityField
         key={`${fieldKeyPrefix}:opacity`}
+        label={fieldLabel("opacity")}
         value={asFiniteNumber(resolved.opacity) ?? 1}
-        badge={frozenFieldState(node, activeBreakpoint, "opacity")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "opacity"))}
         onCommit={(n) => commitStyle("opacity", n)}
       />
       <NumberField
         key={`${fieldKeyPrefix}:padding`}
-        label="padding"
+        label={fieldLabel("padding")}
         value={asFiniteNumber(resolved.padding)}
-        badge={frozenFieldState(node, activeBreakpoint, "padding")}
+        badge={frozenStateLabel(frozenFieldState(node, activeBreakpoint, "padding"))}
         onCommit={(n) => commitStyle("padding", n)}
       />
 
       <TextField
         key={`${fieldKeyPrefix}:text`}
-        label="text"
+        label={fieldLabel("text")}
         value={typeof resolved.text === "string" ? resolved.text : ""}
         onCommit={(s) => commitContent("text", s)}
       />
       <ColorField
         key={`${fieldKeyPrefix}:color`}
-        label="color"
+        label={fieldLabel("color")}
         value={typeof resolved.color === "string" ? resolved.color : ""}
         onCommit={(s) => commitContent("color", s)}
       />
