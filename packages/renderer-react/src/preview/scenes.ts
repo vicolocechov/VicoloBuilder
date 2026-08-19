@@ -21,42 +21,54 @@ export function sceneNodeIds(document: Document, pageId: PageId): readonly NodeI
 }
 
 /**
- * Fallback difensivo, mai realmente raggiunto in pratica (ogni scena creata
- * da `buildCreateElementCommand`/`ELEMENT_DEFAULTS.scene`, in
- * createElementCommand.ts, ha sempre un `height` esplicito - stesso valore,
- * 400, usato qui) - serve solo a non produrre un salto a `NaN` se un
- * documento più vecchio o modificato a mano avesse un nodo "scene" senza
- * `height` valido in `resolvedProps`.
+ * Fallback difensivo per un figlio SENZA `height` valido in `resolvedProps`
+ * - raggiunto raramente in pratica (ogni tipo di elemento foglia ha sempre
+ * un `height` esplicito nei propri default, `createElementCommand.ts`), ma
+ * possibile per un contenitore/griglia in modalità "libero" SENZA `height`
+ * esplicito: la sua altezza reale è calcolata dall'Engine dal riquadro dei
+ * figli, mai scritta indietro nei props, quindi `resolvedProps.height`
+ * resta `undefined` per quel nodo. Limite noto e accettato di questa
+ * funzione (non esegue `computeLayout`, legge solo i props già risolti) -
+ * un valore "ragionevole ma approssimato" invece di richiedere l'intero
+ * albero di layout qui solo per questo calcolo.
  */
-const FALLBACK_SCENE_HEIGHT = 400;
+const FALLBACK_CHILD_HEIGHT = 400;
 
 /**
- * Richiesta di prodotto (dopo la diagnosi del bug "una nuova scena non si
- * impila sotto l'ultima"): le scene si comportano SEMPRE come impilate
- * verticalmente tra loro - stessa X (0, l'ancora comune), Y = somma delle
- * altezze RISOLTE (alla fascia attiva, non solo il prop base - un override
- * responsive va rispettato) di TUTTE le scene esistenti, nell'ordine già
- * stabilito da `sceneNodeIds` (riusato qui, non ridefinito: stessa identità
- * "cos'è una scena" di Fase 7) - GARANTITO indipendentemente dal
- * `layoutMode` della radice pagina (che può essere "libero" e contenere
- * anche altri elementi non-scena, la cui presenza/posizione è del tutto
- * irrilevante a questo calcolo: solo le scene contano). Non legge le
- * posizioni Y effettive delle scene esistenti (che potrebbero essere state
- * spostate manualmente) - solo la somma delle loro altezze, uno "slot
- * successivo ideale", più semplice e senza effetti a catena se una scena
- * viene ridimensionata dopo la creazione delle successive.
+ * Bug segnalato (diagnosi precedente): la versione originale sommava SOLO
+ * le altezze delle altre SCENE esistenti (`sceneNodeIds`), ignorando
+ * qualunque elemento non-scena che le precedesse alla radice pagina - una
+ * nuova scena poteva sovrapporsi a un testo/contenitore già presente.
+ * Corretto (Opzione B, decisione esplicita del proprietario del prodotto):
+ * la Y della prossima scena è la somma delle altezze RISOLTE (alla fascia
+ * attiva, non solo il prop base) di TUTTI i figli diretti della radice
+ * pagina, nell'ordine di `childrenIds` - scena o no. Dato che una nuova
+ * scena nasce sempre come ULTIMO figlio (nessun comando di inserimento a
+ * metà lista), "tutti i figli attuali" coincide esattamente con "tutti i
+ * figli che la precederanno" - nessun filtro per tipo necessario qui, a
+ * differenza della versione precedente: gestisce per costruzione sia un
+ * elemento non-scena PRIMA della prima scena sia elementi non-scena
+ * INTERCALATI tra scene esistenti, senza bisogno di un caso speciale per
+ * l'uno o per l'altro. `sceneNodeIds` resta invariata e ancora usata altrove
+ * (motore di navigazione) - non più da questa funzione, che ora non ha
+ * bisogno di sapere "cos'è una scena" per il proprio calcolo.
  */
 export function nextSceneOrigin(
   document: Document,
   pageId: PageId,
   activeBreakpoint: BreakpointName,
 ): { readonly x: number; readonly y: number } {
+  const page = getPage(document, pageId);
+  if (!page) return { x: 0, y: 0 };
+  const root = document.nodes.get(page.rootNodeId);
+  if (!root) return { x: 0, y: 0 };
+
   let y = 0;
-  for (const nodeId of sceneNodeIds(document, pageId)) {
+  for (const nodeId of root.childrenIds) {
     const node = document.nodes.get(nodeId);
     if (!node) continue;
     const resolvedHeight = resolveNode(node, { breakpoint: activeBreakpoint }).resolvedProps.height;
-    y += asFiniteNumber(resolvedHeight) ?? FALLBACK_SCENE_HEIGHT;
+    y += asFiniteNumber(resolvedHeight) ?? FALLBACK_CHILD_HEIGHT;
   }
   return { x: 0, y };
 }

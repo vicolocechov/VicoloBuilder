@@ -16,9 +16,11 @@ import { computeDropTarget, EDGE_ZONE_MAX_PX, type DropTarget } from "./dropTarg
 import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
 import {
   computeResizedGeometry,
+  contentFitGeometry,
   cornerScaleFactor,
   isCornerEdges,
   resizeHandles,
+  type ContentFitAxes,
   type ResizeEdges,
   type ResizeStart,
 } from "./resizeGeometry.js";
@@ -86,6 +88,17 @@ interface ResizeDrag {
   // esplicitamente, vedi `isCornerEdges`/`isTextBearingType` nel punto di
   // cattura).
   readonly initialFontSizePx: number | null;
+  // Bug segnalato ("la scatola non segue l'ingombro reale del testo dopo
+  // lo scaling"): catturato NELLO STESSO momento/con la STESSA condizione
+  // di `initialFontSizePx` sopra (sempre entrambi null o entrambi
+  // valorizzati insieme) - decide QUALI assi della scatola si adattano
+  // all'ingombro reale misurato al termine del gesto (`onUp`, vedi
+  // `contentFitGeometry` in resizeGeometry.ts): "both" per text/h1/h2/h3/
+  // link (tipicamente riga singola), "heightOnly" per paragraph (può
+  // andare a capo - la larghezza resta quella scelta dall'autore, per non
+  // togliergli il controllo su dove il testo si spezza). `null` quando non
+  // applicabile, stesso significato di `initialFontSizePx`.
+  readonly contentFitAxes: ContentFitAxes | null;
 }
 
 export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: PageId }): JSX.Element {
@@ -349,7 +362,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       const rawScreenDx = e.clientX - resizeDrag!.startClientX;
       const rawScreenDy = e.clientY - resizeDrag!.startClientY;
       const doc = screenDeltaToDocument(rawScreenDx, rawScreenDy, zoom);
-      const { edges, startLocal, initialFontSizePx } = resizeDrag!;
+      const { edges, startLocal, initialFontSizePx, contentFitAxes } = resizeDrag!;
       // Ogni asse è verificato contro la soglia INDIPENDENTEMENTE (come
       // prima di questo blocco): un ridimensionamento verticale sotto
       // soglia non deve impedire un cambiamento orizzontale sopra soglia,
@@ -387,7 +400,53 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
           const resizedWidth = widthChanged ? (horizontal.width ?? startLocal.width) : startLocal.width;
           const resizedHeight = heightChanged ? (vertical.height ?? startLocal.height) : startLocal.height;
           const factor = cornerScaleFactor(startLocal.width, startLocal.height, resizedWidth, resizedHeight);
-          changed.fontSize = `${initialFontSizePx * factor}px`;
+          const newFontSizePx = initialFontSizePx * factor;
+          changed.fontSize = `${newFontSizePx}px`;
+
+          // Bug segnalato ("la scatola non segue l'ingombro reale del testo
+          // dopo lo scaling", riferimento Ctrl+T di Photoshop): la scatola
+          // (width/height, e l'ancora x/y se necessario) viene ricalcolata
+          // dall'ingombro REALE del contenuto al NUOVO fontSize, non lasciata
+          // quella geometricamente scalata sopra - altrimenti resta un
+          // divario tra bordo e testo (preesistente allo scaling, reso più
+          // visibile da esso, vedi diagnosi). Vincolo esplicito del
+          // proprietario del prodotto, dimostrato in `Canvas.contentFit.test.ts`
+          // (verifica end-to-end in browser reale, jsdom non implementa una
+          // vera geometria di testo): la misura DEVE avvenire DOPO che il
+          // nuovo fontSize è applicato al DOM - una mutazione DIRETTA e
+          // SINCRONA di `el.style.fontSize` (non lo stato React, che si
+          // aggiorna in modo asincrono al prossimo render) rende il nuovo
+          // valore immediatamente leggibile da `getBoundingClientRect()`
+          // nella stessa riga di codice, senza dover attendere alcun ciclo
+          // di render - poi ripristinato subito dopo la misura: il valore
+          // FINALE arriverà comunque dal prossimo render con le props
+          // committate dal comando sotto.
+          if (contentFitAxes !== null) {
+            const el = canvasRootRef.current?.querySelector<HTMLElement>(`[data-node-id="${resizeDrag!.nodeId}"]`);
+            if (el) {
+              const previousFontSize = el.style.fontSize;
+              el.style.fontSize = `${newFontSizePx}px`;
+              // `document` è il Document dell'Engine (shadowing intenzionale
+              // già presente in questo componente, vedi l'effect di editing
+              // testo sopra) - `window.document` è il DOM reale.
+              const range = window.document.createRange();
+              range.selectNodeContents(el);
+              const contentRect = range.getBoundingClientRect();
+              el.style.fontSize = previousFontSize;
+
+              const fit = contentFitGeometry(
+                startLocal,
+                edges,
+                contentFitAxes,
+                screenLengthToDocument(contentRect.width, zoom),
+                screenLengthToDocument(contentRect.height, zoom),
+              );
+              changed.height = fit.height;
+              if (fit.y !== undefined) changed.y = fit.y;
+              if (fit.width !== undefined) changed.width = fit.width;
+              if (fit.x !== undefined) changed.x = fit.x;
+            }
+          }
         }
         const command = buildUpdatePropsCommand(
           store.getDocument(),
@@ -864,15 +923,25 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                       // `null` altrimenti, nessuno scaling del contenuto in
                       // quei casi (deciso esplicitamente: container/
                       // griglia/scena restano fuori perimetro).
-                      const initialFontSizePx =
-                        isCornerEdges(h.edges) && isTextBearing
-                          ? (() => {
-                              const el = canvasRootRef.current?.querySelector<HTMLElement>(
-                                `[data-node-id="${entry.box.nodeId}"]`,
-                              );
-                              return el ? (asFiniteNumber(parseFloat(getComputedStyle(el).fontSize)) ?? null) : null;
-                            })()
-                          : null;
+                      const cornerContentFit = isCornerEdges(h.edges) && isTextBearing;
+                      const initialFontSizePx = cornerContentFit
+                        ? (() => {
+                            const el = canvasRootRef.current?.querySelector<HTMLElement>(
+                              `[data-node-id="${entry.box.nodeId}"]`,
+                            );
+                            return el ? (asFiniteNumber(parseFloat(getComputedStyle(el).fontSize)) ?? null) : null;
+                          })()
+                        : null;
+                      // Bug segnalato ("la scatola non segue l'ingombro reale
+                      // del testo"): decisione esplicita per tipo - solo
+                      // "paragraph" può andare a capo su più righe, quindi
+                      // resta l'unico che NON adatta la larghezza (vedi
+                      // `ContentFitAxes`/`contentFitGeometry`).
+                      const contentFitAxes: ContentFitAxes | null = cornerContentFit
+                        ? resolvedNode.type === "paragraph"
+                          ? "heightOnly"
+                          : "both"
+                        : null;
                       setResizeDrag({
                         nodeId: entry.box.nodeId,
                         startClientX: e.clientX,
@@ -885,6 +954,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                         },
                         edges: h.edges,
                         initialFontSizePx,
+                        contentFitAxes,
                       });
                     }}
                     // Fase 15 (Punto 1): prima della ristrutturazione a fratelli, un

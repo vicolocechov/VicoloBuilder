@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { computeResizedGeometry, cornerScaleFactor, isCornerEdges, resizeHandles } from "../../src/canvas/resizeGeometry.js";
+import {
+  computeResizedGeometry,
+  contentFitGeometry,
+  cornerScaleFactor,
+  isCornerEdges,
+  resizeHandles,
+} from "../../src/canvas/resizeGeometry.js";
 
 const start = { x: 10, y: 20, width: 100, height: 50 };
 
@@ -153,5 +159,51 @@ describe("cornerScaleFactor", () => {
 
     expect(lastFactor).toBe(directFactor);
     expect(lastFactor).toBe(2.5);
+  });
+});
+
+// Bug segnalato ("la scatola non segue l'ingombro reale del testo dopo lo
+// scaling", riferimento Ctrl+T di Photoshop): decisione esplicita del
+// proprietario del prodotto - text/h1/h2/h3/link adattano sia width sia
+// height al contenuto misurato ("both"); paragraph adatta solo height
+// ("heightOnly"), width resta quella scelta dall'autore.
+describe("contentFitGeometry", () => {
+  const start = { x: 10, y: 20, width: 100, height: 50 };
+
+  it("'both' su una maniglia sud-est: width e height diventano l'ingombro misurato, x/y invariati (nessun bordo ovest/nord attivo)", () => {
+    const result = contentFitGeometry(start, { south: true, east: true }, "both", 180, 90);
+    expect(result).toEqual({ width: 180, height: 90 });
+  });
+
+  it("'heightOnly' (paragraph) su una maniglia sud-est: SOLO height cambia, width non compare nel risultato", () => {
+    const result = contentFitGeometry(start, { south: true, east: true }, "heightOnly", 999 /* ignorata */, 90);
+    expect(result).toEqual({ height: 90 });
+  });
+
+  it("'both' su una maniglia NORD-EST: height adattata E l'ancora Y si sposta per tenere fermo il bordo INFERIORE", () => {
+    // Bordo inferiore attuale: start.y + start.height = 70. Nuova height 30 -> nuova y = 70 - 30 = 40.
+    const result = contentFitGeometry(start, { north: true, east: true }, "both", 120, 30);
+    expect(result).toEqual({ width: 120, height: 30, y: 40 });
+  });
+
+  it("'both' su una maniglia SUD-OVEST: width adattata E l'ancora X si sposta per tenere fermo il bordo DESTRO", () => {
+    // Bordo destro attuale: start.x + start.width = 110. Nuova width 40 -> nuova x = 110 - 40 = 70.
+    const result = contentFitGeometry(start, { south: true, west: true }, "both", 40, 90);
+    expect(result).toEqual({ width: 40, x: 70, height: 90 });
+  });
+
+  it("'both' su una maniglia NORD-OVEST: sia X sia Y si spostano per tenere fermo l'angolo opposto (sud-est)", () => {
+    // Angolo sud-est attuale: (110, 70). Nuova dimensione 40x30 -> nuova origine (110-40, 70-30) = (70, 40).
+    const result = contentFitGeometry(start, { north: true, west: true }, "both", 40, 30);
+    expect(result).toEqual({ width: 40, x: 70, height: 30, y: 40 });
+  });
+
+  it("'heightOnly' con bordo ovest attivo: X non viene toccata (nessun ancoraggio orizzontale, la larghezza è dell'autore)", () => {
+    const result = contentFitGeometry(start, { north: true, west: true }, "heightOnly", 999, 30);
+    expect(result).toEqual({ height: 30, y: 40 }); // y sì (bordo nord attivo), x/width no
+  });
+
+  it("larghezza/altezza misurate non scendono mai sotto 1px (nessun box degenerato, anche per un contenuto vuoto)", () => {
+    expect(contentFitGeometry(start, { south: true, east: true }, "both", 0, 0)).toEqual({ width: 1, height: 1 });
   });
 });

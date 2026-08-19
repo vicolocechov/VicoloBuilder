@@ -91,6 +91,59 @@ export function cornerScaleFactor(startWidth: number, startHeight: number, resiz
   return Math.min(resizedWidth / startWidth, resizedHeight / startHeight);
 }
 
+/**
+ * "both": text/h1/h2/h3/link (tipicamente riga singola) - sia width sia
+ * height si adattano al contenuto reale. "heightOnly": paragraph (può
+ * andare a capo su più righe) - SOLO height si adatta, width resta quella
+ * scelta dall'autore (mantiene il controllo su DOVE il testo va a capo:
+ * misurare l'ingombro "naturale" richiederebbe rimuovere il vincolo di
+ * larghezza, eliminando quella scelta).
+ */
+export type ContentFitAxes = "both" | "heightOnly";
+
+/**
+ * Bug segnalato ("il bordo di trasformazione dovrebbe sempre seguire
+ * esattamente il contenuto, come Ctrl+T in Photoshop"): dopo lo scaling
+ * proporzionale del font (`cornerScaleFactor` sopra), la scatola deve
+ * adattarsi all'ingombro REALE del contenuto misurato - restare quella
+ * geometricamente scalata lascia un divario tra bordo e testo (preesistente
+ * al font-scaling, un default mai stato "snug", reso più visibile da esso).
+ *
+ * Puro: riceve l'ingombro GIÀ misurato (width/height del contenuto reale,
+ * in spazio DOCUMENTO) come parametro - la misura stessa (DOM, quando
+ * leggerla rispetto al nuovo fontSize) resta responsabilità esclusiva di
+ * Canvas.tsx, mai di questo modulo, stesso confine già rispettato da
+ * `computeResizedGeometry`/`cornerScaleFactor`.
+ *
+ * Stessa logica di ancoraggio già usata in `computeResizedGeometry` per i
+ * bordi "negativi" (ovest/nord): se quel bordo è attivo per questa
+ * maniglia, l'ancora (x/y) si sposta per tenere fermo il bordo OPPOSTO -
+ * ora con la dimensione MISURATA al posto di quella geometricamente
+ * scalata, altrimenti il bordo opposto "salterebbe" quando la misura reale
+ * differisce da quella puramente geometrica. Larghezza/altezza mai sotto
+ * 1px (stesso limite già in vigore in `computeResizedGeometry`, nessun box
+ * degenerato anche per un contenuto vuoto).
+ */
+export function contentFitGeometry(
+  startLocal: ResizeStart,
+  edges: ResizeEdges,
+  axes: ContentFitAxes,
+  measuredWidth: number,
+  measuredHeight: number,
+): { readonly width?: number; readonly height: number; readonly x?: number; readonly y?: number } {
+  const height = Math.max(1, measuredHeight);
+  const result: { width?: number; height: number; x?: number; y?: number } = { height };
+  if (edges.north) result.y = startLocal.y + (startLocal.height - height);
+
+  if (axes === "both") {
+    const width = Math.max(1, measuredWidth);
+    result.width = width;
+    if (edges.west) result.x = startLocal.x + (startLocal.width - width);
+  }
+
+  return result;
+}
+
 export interface ResizeHandleDef {
   readonly key: "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
   readonly edges: ResizeEdges;
