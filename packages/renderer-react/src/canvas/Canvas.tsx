@@ -176,7 +176,29 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     () => computeLayout(model, pageId !== undefined ? { pageId, viewportWidth } : { viewportWidth }),
     [model, pageId, viewportWidth],
   );
-  const entries = useMemo(() => flattenBoxes(box), [box]);
+  // Richiesta di prodotto: l'altezza della RADICE della pagina ha un
+  // pavimento stabile pari all'altezza della fascia responsive attiva -
+  // mai "schiacciata" a `DEFAULT_LEAF_HEIGHT` (40px, il ramo "nodo senza
+  // figli" di computeLayout) quando è vuota, mai ricalcolata in modo
+  // confuso mentre si spostano elementi al suo interno (prima di questa
+  // modifica, il bersaglio "centro scena" dell'aggancio - `container` in
+  // snappedPosition sotto - seguiva l'altezza GREZZA/auto-calcolata della
+  // radice, spostandosi ad ogni gesto). `canvasHeight` esisteva già (sotto,
+  // per dimensionare il contenitore CSS del Canvas) ma non influenzava mai
+  // la geometria vera della radice stessa: qui una copia locale del Box
+  // (`stableBox`) applica lo stesso pavimento al campo `height` PRIMA di
+  // appiattire l'albero - sicuro perché l'altezza di un nodo non influenza
+  // mai il posizionamento dei propri figli (che dipende solo dall'ancora
+  // x/y del genitore, invariata), quindi sostituirla qui non altera alcuna
+  // coordinata dei discendenti. Applicato SOLO qui in Canvas.tsx (mai
+  // nell'Engine/computeLayout, mai in Preview.tsx/Exporter): è
+  // un'affordance esclusiva dell'EDITOR (uno spazio di lavoro sempre
+  // disponibile anche a pagina vuota), non una proprietà della pagina
+  // reale - una pagina esportata/in anteprima deve continuare ad avere
+  // l'altezza REALE del proprio contenuto, come un sito vero.
+  const canvasHeight = Math.max(box.height, previewSize.height);
+  const stableBox = useMemo(() => (box.height === canvasHeight ? box : { ...box, height: canvasHeight }), [box, canvasHeight]);
+  const entries = useMemo(() => flattenBoxes(stableBox), [stableBox]);
 
   // Decisione D2: il gesto intero vive in stato locale del Canvas (mai in
   // Document/History) e produce un solo comando UPDATE_PROPS al rilascio
@@ -516,23 +538,20 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       border = isContainerLike ? "1px dashed rgba(37,99,235,0.7)" : "1px solid rgba(37,99,235,0.4)";
     } else if (hasAuthorBorder) {
       border = `${authorBorderWidth}px ${authorBorderStyle ?? "solid"} ${authorBorderColor ?? "#000000"}`;
-    } else if (isContainerLike) {
-      // Blocco 7 (audit Builder UI/UX, Punto 2): valori del Blocco 1
-      // (rgba(0,0,0,0.2)/rgba(37,99,235,0.03)) verificati troppo tenui su
-      // sfondo bianco - un contenitore senza stile scelto dall'autore
-      // risultava visivamente indistinguibile dallo sfondo del Canvas
-      // (confermato via screenshot durante la diagnosi del Punto 2
-      // dell'audit). Resta un indicatore ESCLUSIVO dell'editor (calcolato
-      // qui, non scritto in `props`, non letto da Preview.tsx né
-      // dall'Exporter - verificato: nessuno dei due applica alcun fallback
-      // di bordo/sfondo per un container senza `color`/`borderWidth`
-      // dell'autore) - solo l'intensità è cambiata, non la natura del
-      // segnale né dove vive.
-      border = "1px dashed rgba(0,0,0,0.35)";
     } else {
+      // Richiesta di prodotto (dopo Blocco Z4): l'indicatore SEMPRE VISIBILE
+      // per un contenitore senza stile (bordo tratteggiato + sfondo celeste
+      // tenue, introdotto nel Blocco 1, attenuato nel Blocco 7) è stato
+      // RIMOSSO DEL TUTTO, non solo attenuato - un contenitore/la radice
+      // della pagina senza colore scelto dall'autore appaiono come spazio
+      // vuoto/trasparente, mai come un rettangolo colorato che "segue"
+      // l'autore nel Canvas. Selezione (sopra) e hover (sopra, invariato)
+      // restano l'unico feedback visivo dei bordi di un contenitore - a
+      // riposo (non selezionato, non in hover) non c'è più alcun indicatore
+      // permanente.
       border = "none";
     }
-    const background = backgroundColor ?? (isContainerLike ? "rgba(37,99,235,0.07)" : "transparent");
+    const background = backgroundColor ?? "transparent";
     // Proprietà visive pure (Blocco 4): non toccano geometria/posizione,
     // solo pittura dentro il box già calcolato dall'Engine - stesso
     // principio già rispettato dal bordo di editing sopra.
@@ -813,15 +832,14 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
   // usate per il rendering di quell'entry.
   const dropTargetEntry = dropTarget ? entries.find((e) => e.box.nodeId === dropTarget.targetNodeId) : undefined;
 
-  // Blocco Z1: altezza REALE del Canvas in coordinate DOCUMENTO (invariata
-  // rispetto a prima di questo blocco - lo stesso valore che la radice del
-  // Canvas usava già come propria `height`). `scaledWidth`/`scaledHeight`
-  // sono SOLO dimensioni CSS del contenitore di dimensionamento (vedi sotto,
-  // mai lette da `computeLayout`/passate a un comando) - la distinzione tra
-  // "quanto è grande la pagina" (canvasHeight, documento) e "quanto spazio
-  // occupa sullo schermo" (scaledWidth/Height, vista) è esattamente il
-  // confine che questo blocco introduce.
-  const canvasHeight = Math.max(box.height, previewSize.height);
+  // Blocco Z1: `canvasHeight` (calcolato sopra, insieme a `stableBox`) è
+  // l'altezza REALE del Canvas in coordinate DOCUMENTO. `scaledWidth`/
+  // `scaledHeight` sono SOLO dimensioni CSS del contenitore di
+  // dimensionamento (vedi sotto, mai lette da `computeLayout`/passate a un
+  // comando) - la distinzione tra "quanto è grande la pagina"
+  // (canvasHeight, documento) e "quanto spazio occupa sullo schermo"
+  // (scaledWidth/Height, vista) è esattamente il confine che questo blocco
+  // introduce.
   const scaledWidth = viewportWidth * zoom;
   const scaledHeight = canvasHeight * zoom;
 
