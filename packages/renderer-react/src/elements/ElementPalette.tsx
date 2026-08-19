@@ -12,6 +12,7 @@ import {
   type ElementType,
 } from "./createElementCommand.js";
 import { isContainerLikeType } from "./textBearingTypes.js";
+import { nextSceneOrigin } from "../preview/scenes.js";
 
 // Blocco 6 (rifinitura UI/UX, Punto 5 dell'audit): raggruppamento visivo
 // nella STESSA riga (nessun pannello/livello aggiuntivo, fuori perimetro) -
@@ -48,17 +49,36 @@ export function ElementPalette({ store, activePageId }: { readonly store: Reacti
     const parentId =
       elementType === "scene" ? page.rootNodeId : resolveNewElementParent(document, page.rootNodeId, selection, activeBreakpoint);
 
-    // Blocco 6, Punto 8 (audit Builder UI/UX): se una selezione CONTENITORE
-    // esisteva ma il nuovo elemento non è finito dentro di essa, è perché
-    // quel contenitore non è (più) in modalità "libero" - senza questo
-    // avviso l'utente vede l'elemento comparire altrove senza spiegazione
-    // (trovato verificando in browser: cambiare layoutMode di un
-    // contenitore selezionato a "pila" reindirizza silenziosamente i nuovi
-    // elementi alla radice pagina). Ristretto ai casi in cui la selezione
-    // era un CONTENITORE (isContainerLikeType): su una foglia (testo/
-    // immagine) annidare non è mai stato possibile con nessun layoutMode,
-    // quindi non c'è alcuna aspettativa violata da spiegare.
-    if (elementType !== "scene" && selection !== null && parentId !== selection) {
+    // Bug segnalato dal proprietario del prodotto (una nuova scena non si
+    // impilava sotto l'ultima, appariva sovrapposta): le scene vanno sempre
+    // alla radice pagina (sopra), a differenza di un contenitore/testo/ecc.
+    // che seguono `resolveNewElementParent` - questo caso era quindi escluso
+    // esplicitamente dall'avviso di "redirect" del Blocco 6 Punto 8
+    // (ragionamento originale: per una scena non è un redirect INATTESO, è
+    // il comportamento SEMPRE valido). In pratica, però, un utente che
+    // seleziona una scena/un contenitore e poi crea una nuova scena
+    // aspettandosi che segua quella selezione resta senza alcun indizio -
+    // corretto qui con un avviso dedicato, stesso meccanismo/stile del
+    // Blocco 6 Punto 8, quando la selezione corrente non è già la radice
+    // (in quel caso `parentId === selection` comunque, nessuna sorpresa da
+    // spiegare).
+    if (elementType === "scene") {
+      setNotice(
+        selection !== null && selection !== parentId
+          ? `Le scene vanno sempre in sequenza sotto l'ultima scena della pagina, indipendentemente dalla selezione corrente ("${selection}"). La nuova scena è stata aggiunta in fondo, non dentro l'elemento selezionato.`
+          : null,
+      );
+    } else if (selection !== null && parentId !== selection) {
+      // Blocco 6, Punto 8 (audit Builder UI/UX): se una selezione CONTENITORE
+      // esisteva ma il nuovo elemento non è finito dentro di essa, è perché
+      // quel contenitore non è (più) in modalità "libero" - senza questo
+      // avviso l'utente vede l'elemento comparire altrove senza spiegazione
+      // (trovato verificando in browser: cambiare layoutMode di un
+      // contenitore selezionato a "pila" reindirizza silenziosamente i nuovi
+      // elementi alla radice pagina). Ristretto ai casi in cui la selezione
+      // era un CONTENITORE (isContainerLikeType): su una foglia (testo/
+      // immagine) annidare non è mai stato possibile con nessun layoutMode,
+      // quindi non c'è alcuna aspettativa violata da spiegare.
       const selectedNode = getNode(document, selection);
       setNotice(
         selectedNode && isContainerLikeType(selectedNode.type)
@@ -70,7 +90,19 @@ export function ElementPalette({ store, activePageId }: { readonly store: Reacti
     }
 
     const nodeId = uniqueId(elementIdBase(elementType), new Set(document.nodes.keys()));
-    const command = applyCreationOffset(document, parentId, activeBreakpoint, buildCreateElementCommand(elementType, nodeId, parentId));
+    const baseCommand = buildCreateElementCommand(elementType, nodeId, parentId);
+    // Bug segnalato: le scene si impilano SEMPRE verticalmente tra loro
+    // (stessa X, Y = somma delle altezze delle scene precedenti,
+    // `nextSceneOrigin` - preview/scenes.ts, riusa `sceneNodeIds` già
+    // esistente), indipendentemente dal `layoutMode` della radice pagina -
+    // `applyCreationOffset` (il piccolo offset diagonale generico usato per
+    // ogni altro tipo) è quindi bypassato qui: quel meccanismo dipende dal
+    // genitore essere "libero" e produce solo una nudge di pochi pixel, non
+    // un vero impilamento, e non deve MAI applicarsi a una scena.
+    const command =
+      elementType === "scene"
+        ? { ...baseCommand, props: { ...baseCommand.props, ...nextSceneOrigin(document, activePageId, activeBreakpoint) } }
+        : applyCreationOffset(document, parentId, activeBreakpoint, baseCommand);
     store.execute(command);
     // Approvato: il nuovo elemento diventa la selezione attiva, stesso
     // pattern già usato per una pagina appena creata (PageManager.tsx).
