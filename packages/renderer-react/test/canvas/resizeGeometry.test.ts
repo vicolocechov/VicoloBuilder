@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeResizedGeometry, resizeHandles } from "../../src/canvas/resizeGeometry.js";
+import { computeResizedGeometry, cornerScaleFactor, isCornerEdges, resizeHandles } from "../../src/canvas/resizeGeometry.js";
 
 const start = { x: 10, y: 20, width: 100, height: 50 };
 
@@ -69,5 +69,89 @@ describe("resizeHandles", () => {
   it("nessuna capacità -> nessuna maniglia visibile", () => {
     const handles = resizeHandles({ canMoveXY: false, canResizeWidth: false, canResizeHeight: false });
     expect(handles.every((h) => !h.visible)).toBe(true);
+  });
+});
+
+// Richiesta di prodotto ("scala l'elemento, non solo la scatola"): il
+// contenuto scalabile (oggi solo fontSize, sui tipi text-bearing) segue
+// SOLO le maniglie D'ANGOLO - `isCornerEdges` è il segnale unico condiviso
+// tra l'anteprima dal vivo e il comando finale in Canvas.tsx.
+describe("isCornerEdges", () => {
+  it("le 4 maniglie di lato singolo (un solo edge ciascuna) NON sono d'angolo", () => {
+    expect(isCornerEdges({ north: true })).toBe(false);
+    expect(isCornerEdges({ south: true })).toBe(false);
+    expect(isCornerEdges({ east: true })).toBe(false);
+    expect(isCornerEdges({ west: true })).toBe(false);
+  });
+
+  it("le 4 maniglie d'angolo (nord/sud + est/ovest insieme) SONO d'angolo", () => {
+    expect(isCornerEdges({ north: true, east: true })).toBe(true);
+    expect(isCornerEdges({ north: true, west: true })).toBe(true);
+    expect(isCornerEdges({ south: true, east: true })).toBe(true);
+    expect(isCornerEdges({ south: true, west: true })).toBe(true);
+  });
+
+  it("nessun edge attivo -> non d'angolo", () => {
+    expect(isCornerEdges({})).toBe(false);
+  });
+});
+
+describe("cornerScaleFactor", () => {
+  it("nessun ridimensionamento (stessa dimensione) -> fattore 1", () => {
+    expect(cornerScaleFactor(100, 50, 100, 50)).toBe(1);
+  });
+
+  it("ingrandimento UNIFORME (stesso rapporto sui due assi) -> quel rapporto", () => {
+    expect(cornerScaleFactor(100, 50, 200, 100)).toBe(2);
+  });
+
+  it("decisione esplicita del proprietario del prodotto: usa il MINIMO tra i due rapporti, non la media", () => {
+    // Larghezza raddoppiata (rapporto 2), altezza invariata (rapporto 1) -
+    // il fattore deve essere 1 (il minimo), non 1.5 (la media).
+    expect(cornerScaleFactor(100, 50, 200, 50)).toBe(1);
+  });
+
+  it("un asse ridotto e l'altro ingrandito -> vince il rapporto più piccolo (quello che riduce)", () => {
+    // Larghezza dimezzata (rapporto 0.5), altezza raddoppiata (rapporto 2) - il minimo è 0.5.
+    expect(cornerScaleFactor(100, 50, 50, 100)).toBe(0.5);
+  });
+
+  // Vincolo esplicito del proprietario del prodotto, da verificare con un
+  // test dedicato: il fattore di scala deve dipendere SOLO dal punto di
+  // PARTENZA e da quello di ARRIVO, mai da valori intermedi - altrimenti lo
+  // scaling diventerebbe cumulativo (il font crescerebbe in modo scorretto/
+  // esponenziale durante un trascinamento prolungato). Verificato qui a
+  // livello di formula pura: un trascinamento con MOLTI passaggi intermedi
+  // (che in Canvas.tsx corrisponderebbero a più eventi `pointermove`, ognuno
+  // dei quali ricalcola `cornerScaleFactor` da zero usando SEMPRE le stesse
+  // dimensioni di partenza - mai un valore "già scalato" dal passaggio
+  // precedente) produce lo STESSO risultato finale di un trascinamento
+  // diretto dallo stesso punto di partenza allo stesso punto di arrivo.
+  it("un trascinamento con più passaggi intermedi produce lo STESSO fattore finale di un trascinamento diretto (nessuna crescita cumulativa)", () => {
+    const startWidth = 100;
+    const startHeight = 50;
+    const finalWidth = 250; // rapporto finale: 2.5
+    const finalHeight = 150; // rapporto finale: 3.0 -> il minimo (2.5) vince
+
+    // Simulazione "con passaggi intermedi": ogni chiamata usa SEMPRE
+    // (startWidth, startHeight) come base - mai il risultato del passaggio
+    // precedente - esattamente come fa Canvas.tsx (startLocal è immutabile
+    // per la durata del gesto, resizeDelta è sempre relativo al punto di
+    // partenza, mai incrementale).
+    const intermediateSteps = [
+      { width: 120, height: 60 },
+      { width: 180, height: 200 }, // passaggio "rumoroso": un rapporto verticale alto, ignorato al passaggio successivo
+      { width: 90, height: 40 }, // il gesto può anche tornare indietro momentaneamente
+      { width: finalWidth, height: finalHeight },
+    ];
+    let lastFactor = NaN;
+    for (const step of intermediateSteps) {
+      lastFactor = cornerScaleFactor(startWidth, startHeight, step.width, step.height);
+    }
+
+    const directFactor = cornerScaleFactor(startWidth, startHeight, finalWidth, finalHeight);
+
+    expect(lastFactor).toBe(directFactor);
+    expect(lastFactor).toBe(2.5);
   });
 });

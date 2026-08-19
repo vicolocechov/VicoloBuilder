@@ -61,6 +61,36 @@ export function computeResizedGeometry(start: ResizeStart, edges: ResizeEdges, d
   return result;
 }
 
+/**
+ * Richiesta di prodotto ("scala l'elemento, non solo la scatola"): il
+ * contenuto scalabile di un nodo (oggi: `fontSize`, sui tipi text-bearing)
+ * segue SOLO le maniglie D'ANGOLO - un lato singolo cambia una sola
+ * dimensione della scatola, mai un "resize proporzionale" in nessun editor
+ * visivo di riferimento. Vero se ENTRAMBI gli assi sono attivi (nord/sud E
+ * est/ovest) - esattamente le 4 maniglie d'angolo (ne/nw/se/sw) restituite
+ * da `resizeHandles` sopra, mai le 4 di lato singolo (n/s/e/w, un solo edge
+ * ciascuna). Riusa la stessa struttura `edges` già usata per il calcolo
+ * geometrico - nessuna nuova enumerazione parallela di "quali maniglie sono
+ * d'angolo".
+ */
+export function isCornerEdges(edges: ResizeEdges): boolean {
+  return (edges.north === true || edges.south === true) && (edges.east === true || edges.west === true);
+}
+
+/**
+ * Fattore di scala per il contenuto scalabile di un nodo durante un
+ * ridimensionamento d'angolo (decisione esplicita del proprietario del
+ * prodotto): il MINIMO tra il rapporto orizzontale e quello verticale, non
+ * la media - più prevedibile per l'autore, il contenuto non cresce mai più
+ * di quanto l'asse "tirato di meno" giustifichi (es. un trascinamento
+ * puramente orizzontale, con l'asse verticale invariato, non fa crescere
+ * affatto il font - `resizedHeight === startHeight` produce un rapporto
+ * verticale di 1, che vince come minimo).
+ */
+export function cornerScaleFactor(startWidth: number, startHeight: number, resizedWidth: number, resizedHeight: number): number {
+  return Math.min(resizedWidth / startWidth, resizedHeight / startHeight);
+}
+
 export interface ResizeHandleDef {
   readonly key: "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
   readonly edges: ResizeEdges;

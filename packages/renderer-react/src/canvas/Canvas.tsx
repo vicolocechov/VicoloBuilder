@@ -14,7 +14,14 @@ import { dragCapabilities, flattenBoxes, type FlatBoxEntry } from "./flattenBoxe
 import { computeAlignmentSnap, SNAP_THRESHOLD_PX, type AxisGuide } from "./alignmentGuides.js";
 import { computeDropTarget, EDGE_ZONE_MAX_PX, type DropTarget } from "./dropTarget.js";
 import { buildStructuralMoveCommand } from "./buildStructuralMoveCommand.js";
-import { computeResizedGeometry, resizeHandles, type ResizeEdges, type ResizeStart } from "./resizeGeometry.js";
+import {
+  computeResizedGeometry,
+  cornerScaleFactor,
+  isCornerEdges,
+  resizeHandles,
+  type ResizeEdges,
+  type ResizeStart,
+} from "./resizeGeometry.js";
 import { screenDeltaToDocument, screenLengthToDocument, screenPointToDocument } from "./zoomCoordinates.js";
 import { buildUpdatePropsCommand } from "../write/buildUpdatePropsCommand.js";
 import { asFiniteNumber } from "../asFiniteNumber.js";
@@ -64,6 +71,21 @@ interface ResizeDrag {
   // al comando finale (`buildUpdatePropsCommand` scrive props locali).
   readonly startLocal: ResizeStart;
   readonly edges: ResizeEdges;
+  // Richiesta di prodotto ("scala l'elemento, non solo la scatola"): il
+  // valore RISOLTO (getComputedStyle) di `fontSize` all'AVVIO del gesto
+  // (pointerdown), catturato UNA SOLA VOLTA - mai riletto durante
+  // `pointermove`/`pointerup`. Vincolo esplicito del proprietario del
+  // prodotto: il calcolo dev'essere sempre "font iniziale × fattore di
+  // scala corrente rispetto al punto di partenza", mai "font già
+  // modificato × nuovo incremento" (altrimenti lo scaling diventa
+  // cumulativo) - catturarlo qui, in uno stato immutabile per la durata
+  // del gesto, è ciò che garantisce questa proprietà per costruzione,
+  // stesso principio già usato da `startLocal` per width/height/x/y.
+  // `null` quando non applicabile (maniglia di lato singolo, o nodo non
+  // text-bearing) - nessuno scaling del contenuto in quei casi (deciso
+  // esplicitamente, vedi `isCornerEdges`/`isTextBearingType` nel punto di
+  // cattura).
+  readonly initialFontSizePx: number | null;
 }
 
 export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: PageId }): JSX.Element {
@@ -327,24 +349,46 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
       const rawScreenDx = e.clientX - resizeDrag!.startClientX;
       const rawScreenDy = e.clientY - resizeDrag!.startClientY;
       const doc = screenDeltaToDocument(rawScreenDx, rawScreenDy, zoom);
-      const { edges, startLocal } = resizeDrag!;
+      const { edges, startLocal, initialFontSizePx } = resizeDrag!;
       // Ogni asse è verificato contro la soglia INDIPENDENTEMENTE (come
       // prima di questo blocco): un ridimensionamento verticale sotto
       // soglia non deve impedire un cambiamento orizzontale sopra soglia,
-      // e viceversa - passare 0 sull'asse "spento" a `computeResizedGeometry`
-      // isola i due calcoli senza duplicarne la logica.
+      // e viceversa. `horizontal`/`vertical` sono calcolati SEMPRE (non solo
+      // quando la rispettiva soglia è superata): per una maniglia d'angolo
+      // servono entrambi per il fattore di scala del contenuto sotto, anche
+      // quando un solo asse ha effettivamente superato la propria soglia.
+      const horizontal = computeResizedGeometry(startLocal, edges, doc.dx, 0);
+      const vertical = computeResizedGeometry(startLocal, edges, 0, doc.dy);
+      const widthChanged = (edges.east || edges.west) && Math.abs(rawScreenDx) >= DRAG_THRESHOLD_PX;
+      const heightChanged = (edges.north || edges.south) && Math.abs(rawScreenDy) >= DRAG_THRESHOLD_PX;
       const changed: Record<string, unknown> = {};
-      if ((edges.east || edges.west) && Math.abs(rawScreenDx) >= DRAG_THRESHOLD_PX) {
-        const horizontal = computeResizedGeometry(startLocal, edges, doc.dx, 0);
+      if (widthChanged) {
         changed.width = horizontal.width;
         if (horizontal.x !== undefined) changed.x = horizontal.x;
       }
-      if ((edges.north || edges.south) && Math.abs(rawScreenDy) >= DRAG_THRESHOLD_PX) {
-        const vertical = computeResizedGeometry(startLocal, edges, 0, doc.dy);
+      if (heightChanged) {
         changed.height = vertical.height;
         if (vertical.y !== undefined) changed.y = vertical.y;
       }
       if (Object.keys(changed).length > 0) {
+        // Richiesta di prodotto ("scala l'elemento, non solo la scatola"):
+        // solo maniglie D'ANGOLO (`isCornerEdges`), solo se un `fontSize`
+        // iniziale è stato catturato al pointerdown (nodo text-bearing).
+        // Un asse che non ha superato la propria soglia contribuisce un
+        // rapporto di 1 (invariato) al fattore di scala - coerente con "il
+        // contenuto non cresce mai più di quanto l'asse tirato di meno
+        // giustifichi" (decisione esplicita): un trascinamento praticamente
+        // solo orizzontale non deve far crescere il font per una frazione
+        // di pixel verticale sotto soglia. Il fattore usa SEMPRE
+        // `startLocal` (catturato al pointerdown) come base, mai un valore
+        // già scalato in un giro precedente - stessa garanzia "nessuna
+        // crescita cumulativa" già rispettata da `width`/`height` sopra.
+        if (isCornerEdges(edges) && initialFontSizePx !== null) {
+          const resizedWidth = widthChanged ? (horizontal.width ?? startLocal.width) : startLocal.width;
+          const resizedHeight = heightChanged ? (vertical.height ?? startLocal.height) : startLocal.height;
+          const factor = cornerScaleFactor(startLocal.width, startLocal.height, resizedWidth, resizedHeight);
+          changed.fontSize = `${initialFontSizePx * factor}px`;
+        }
         const command = buildUpdatePropsCommand(
           store.getDocument(),
           resizeDrag!.nodeId,
@@ -469,7 +513,21 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
     // interpretazione qui, solo passata a `style.fontSize` così com'è
     // (stesso trattamento di `color`). Fallback al valore fisso preesistente
     // se il nodo non ha il prop (documenti creati prima di questa fase).
-    const fontSize = typeof resolvedNode.resolvedProps.fontSize === "string" ? resolvedNode.resolvedProps.fontSize : 12;
+    let fontSize: string | number = typeof resolvedNode.resolvedProps.fontSize === "string" ? resolvedNode.resolvedProps.fontSize : 12;
+    // Richiesta di prodotto ("scala l'elemento, non solo la scatola"):
+    // anteprima dal vivo dello scaling del font durante un trascinamento
+    // d'angolo - riusa `width`/`height` GIÀ scalati dal blocco sopra (mai
+    // ricalcolati qui), confrontati con `entry.box.width`/`height` (la
+    // geometria di PARTENZA, il Document non cambia durante il gesto):
+    // stessa fonte di verità del comando finale in `onUp` (l'effect sopra),
+    // nessuna soglia qui - coerente con `width`/`height`, che già si
+    // muovono dal vivo senza soglia durante il trascinamento (la soglia
+    // vale solo per decidere COSA committare al rilascio, mai per
+    // l'anteprima).
+    if (resizeDrag && resizeDrag.nodeId === entry.box.nodeId && resizeDrag.initialFontSizePx !== null && isCornerEdges(resizeDrag.edges)) {
+      const factor = cornerScaleFactor(entry.box.width, entry.box.height, width, height);
+      fontSize = `${resizeDrag.initialFontSizePx * factor}px`;
+    }
     // Fase 9, Punto 4: tag HTML reale in base a `type` (h1/h2/h3/p/a),
     // fallback a "div" per ogni altro tipo (comportamento invariato).
     // Fase 15: "image" -> "img", primo tag void di questo elenco.
@@ -795,6 +853,26 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                       // del Blocco Z1 è stato RIMOSSO - il resize è
                       // convertito in questo blocco, funziona a qualunque
                       // zoom.
+                      // Richiesta di prodotto ("scala l'elemento, non solo
+                      // la scatola"): il valore RISOLTO di `fontSize`
+                      // (getComputedStyle, già risolve sia un px fisso sia
+                      // un clamp() in un numero concreto) viene letto QUI,
+                      // UNA SOLA VOLTA all'avvio del gesto - mai più tardi
+                      // (vedi il commento su `initialFontSizePx` in
+                      // `ResizeDrag` sopra). Solo su maniglie D'ANGOLO
+                      // (`isCornerEdges`) e solo su nodi text-bearing -
+                      // `null` altrimenti, nessuno scaling del contenuto in
+                      // quei casi (deciso esplicitamente: container/
+                      // griglia/scena restano fuori perimetro).
+                      const initialFontSizePx =
+                        isCornerEdges(h.edges) && isTextBearing
+                          ? (() => {
+                              const el = canvasRootRef.current?.querySelector<HTMLElement>(
+                                `[data-node-id="${entry.box.nodeId}"]`,
+                              );
+                              return el ? (asFiniteNumber(parseFloat(getComputedStyle(el).fontSize)) ?? null) : null;
+                            })()
+                          : null;
                       setResizeDrag({
                         nodeId: entry.box.nodeId,
                         startClientX: e.clientX,
@@ -806,6 +884,7 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
                           height: asFiniteNumber(resolvedNode.resolvedProps.height) ?? entry.box.height,
                         },
                         edges: h.edges,
+                        initialFontSizePx,
                       });
                     }}
                     // Fase 15 (Punto 1): prima della ristrutturazione a fratelli, un
