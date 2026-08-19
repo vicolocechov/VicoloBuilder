@@ -35,23 +35,40 @@ export function sceneNodeIds(document: Document, pageId: PageId): readonly NodeI
 const FALLBACK_CHILD_HEIGHT = 400;
 
 /**
- * Bug segnalato (diagnosi precedente): la versione originale sommava SOLO
- * le altezze delle altre SCENE esistenti (`sceneNodeIds`), ignorando
- * qualunque elemento non-scena che le precedesse alla radice pagina - una
- * nuova scena poteva sovrapporsi a un testo/contenitore già presente.
- * Corretto (Opzione B, decisione esplicita del proprietario del prodotto):
- * la Y della prossima scena è la somma delle altezze RISOLTE (alla fascia
- * attiva, non solo il prop base) di TUTTI i figli diretti della radice
- * pagina, nell'ordine di `childrenIds` - scena o no. Dato che una nuova
- * scena nasce sempre come ULTIMO figlio (nessun comando di inserimento a
- * metà lista), "tutti i figli attuali" coincide esattamente con "tutti i
- * figli che la precederanno" - nessun filtro per tipo necessario qui, a
- * differenza della versione precedente: gestisce per costruzione sia un
- * elemento non-scena PRIMA della prima scena sia elementi non-scena
- * INTERCALATI tra scene esistenti, senza bisogno di un caso speciale per
- * l'uno o per l'altro. `sceneNodeIds` resta invariata e ancora usata altrove
- * (motore di navigazione) - non più da questa funzione, che ora non ha
- * bisogno di sapere "cos'è una scena" per il proprio calcolo.
+ * Bug segnalato (primo giro): la versione originale sommava SOLO le
+ * altezze delle altre SCENE esistenti, ignorando qualunque elemento
+ * non-scena che le precedesse - corretto sommando le altezze di TUTTI i
+ * figli diretti della radice (Opzione B, D-068).
+ *
+ * Bug segnalato (secondo giro, diagnosi + fix): `sum(height)` presuppone
+ * implicitamente che i figli precedenti siano impilati in sequenza SENZA
+ * sovrapposizioni né spazi vuoti - vero per le scene (impilate per
+ * costruzione da questa stessa funzione), FALSO per elementi in modalità
+ * "libero" (posizione Y propria e indipendente, possono sovrapporsi o
+ * essere sparsi ovunque). Riprodotto: un testo (y:50,h:60) e un'immagine
+ * (y:500,h:120, deliberatamente lontana) come unici figli - `sum` produceva
+ * Y:180 per la scena successiva, sovrapposta interamente all'immagine (che
+ * arriva fino a Y:620) - una sovrapposizione reale confermata sia
+ * numericamente sia visivamente in browser.
+ *
+ * Corretto (decisione esplicita del proprietario del prodotto, verificata
+ * empiricamente su tre scenari prima di implementare - vedi DECISIONS.md):
+ * la Y della prossima scena è il MASSIMO tra i bordi inferiori (`y +
+ * height`, RISOLTI alla fascia attiva) di TUTTI i figli diretti della
+ * radice pagina, nell'ordine di `childrenIds` - stessa formula UNICA per
+ * scena e non-scena, nessuna logica differenziata per tipo: `max` è la
+ * generalizzazione corretta di `sum`, che ne è il caso degenere quando gli
+ * elementi sono già impilati senza sovrapposizioni/vuoti (esattamente il
+ * caso "scena dopo scena" - stesso risultato di prima, nessuna
+ * regressione). Corregge anche un limite già noto (D-064/D-068): una
+ * scena riposizionata manualmente dopo la creazione ora viene tracciata
+ * correttamente (si legge la sua Y REALE, non solo la somma delle
+ * altezze) - prima quel riposizionamento veniva ignorato dal calcolo.
+ *
+ * Per un figlio diretto della radice, `resolvedProps.y` coincide
+ * esattamente con la Y assoluta (l'ancora della radice è sempre (0,0)) -
+ * nessuna conversione necessaria. `sceneNodeIds` resta invariata e in uso
+ * altrove (motore di navigazione) - non più da questa funzione.
  */
 export function nextSceneOrigin(
   document: Document,
@@ -67,8 +84,10 @@ export function nextSceneOrigin(
   for (const nodeId of root.childrenIds) {
     const node = document.nodes.get(nodeId);
     if (!node) continue;
-    const resolvedHeight = resolveNode(node, { breakpoint: activeBreakpoint }).resolvedProps.height;
-    y += asFiniteNumber(resolvedHeight) ?? FALLBACK_CHILD_HEIGHT;
+    const resolved = resolveNode(node, { breakpoint: activeBreakpoint }).resolvedProps;
+    const childY = asFiniteNumber(resolved.y) ?? 0;
+    const childHeight = asFiniteNumber(resolved.height) ?? FALLBACK_CHILD_HEIGHT;
+    y = Math.max(y, childY + childHeight);
   }
   return { x: 0, y };
 }
