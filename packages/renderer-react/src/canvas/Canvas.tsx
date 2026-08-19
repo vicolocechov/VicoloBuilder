@@ -598,7 +598,23 @@ export function Canvas({ store, pageId }: { store: ReactiveHistory; pageId?: Pag
             // ogni altro tag (nessun comportamento di default da prevenire).
             e.preventDefault();
             e.stopPropagation();
-            store.select(entry.box.nodeId);
+            // Richiesta di prodotto (dopo l'altezza stabile della radice,
+            // sopra): la radice della pagina è sempre alta quanto l'intera
+            // fascia attiva, quindi copre l'INTERA area cliccabile del
+            // Canvas - un click su un punto "vuoto" (nessun altro elemento
+            // sotto) ricade sempre sulla radice stessa, mai su un'area
+            // realmente priva di elementi. `entry.parentBox === null`
+            // identifica la radice (stesso segnale già usato altrove in
+            // questo file, es. la visibilità della maniglia ⠿) - un click lì
+            // deve DESELEZIONARE tutto (esattamente come cliccare "sul
+            // vuoto" ha sempre fatto), mai selezionare la radice come fosse
+            // un contenitore qualunque. La radice resta selezionabile SOLO
+            // dal pannello "Struttura" (Outline), non da un click nel Canvas.
+            if (entry.parentBox === null) {
+              store.deselect();
+            } else {
+              store.select(entry.box.nodeId);
+            }
           }}
           onDoubleClick={(e: MouseEvent<HTMLElement>) => {
             // Blocco 4: editing testo diretto - solo sui tipi che portano
