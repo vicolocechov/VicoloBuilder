@@ -465,8 +465,10 @@ body{overflow:hidden}
 .porta-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;font-size:clamp(20px,1.7vw,30px);line-height:1;letter-spacing:1px;margin:0}
 .porta-testo{font-family:'Montserrat',sans-serif;font-size:14px;line-height:1.5;color:#555;margin:0 0 6px}
 .porta-btn{font-family:'Poppins',sans-serif;font-weight:500;font-size:13px;background:var(--sede);color:#1b1b1b;border:2px solid var(--sede);text-decoration:none;padding:9px 15px;border-radius:8px;text-align:center;margin-top:4px;transition:transform .2s,background .2s,color .2s}
+/* Pulsanti card: stessa dimensione e allineamento al fondo della riga. */
+.porta-btn{margin-top:auto;height:38px;min-height:38px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;white-space:normal;}
 .porta-btn:hover{transform:translateY(-2px);background:transparent;color:#1b1b1b}
-/* MASCHERINO — HOME · Slide 5 (Le porte di Vicolo) · Ogni singola card (1 "Voglio provare" · 2 "Uno spettacolo" · 3 "Per mio figlio" · 4 "Un'esperienza") -> --s1-slide5-card{N}-{num|tit|testo|btn}-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — HOME · Slide 5 (Le porte di Vicolo) · Ogni singola card (1 "Voglio provare" · 2 "Spettacoli" · 3 "Per mio figlio" · 4 "Esperienze") -> --s1-slide5-card{N}-{num|tit|testo|btn}-{scale|x|y|lh|ls|color} */
 .s1-slide5-card1-num{font-size:calc(var(--s1-slide5-cards-num-fs-base,12px) * var(--s1-slide5-card1-num-scale,1));line-height:var(--s1-slide5-card1-num-lh,1);letter-spacing:var(--s1-slide5-card1-num-ls,1px);color:var(--s1-slide5-card1-num-color,var(--sede));transform:translate(var(--s1-slide5-card1-num-x,0px),var(--s1-slide5-card1-num-y,0px))}
 .s1-slide5-card1-tit{font-size:calc(var(--s1-slide5-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s1-slide5-card1-tit-scale,1));line-height:var(--s1-slide5-card1-tit-lh,1);letter-spacing:var(--s1-slide5-card1-tit-ls,1px);color:var(--s1-slide5-card1-tit-color,#1b1b1b);transform:translate(var(--s1-slide5-card1-tit-x,0px),var(--s1-slide5-card1-tit-y,0px))}
 .s1-slide5-card1-testo{font-size:calc(var(--s1-slide5-cards-testo-fs-base,14px) * var(--s1-slide5-card1-testo-scale,1));line-height:var(--s1-slide5-card1-testo-lh,1.5);letter-spacing:var(--s1-slide5-card1-testo-ls,0px);color:var(--s1-slide5-card1-testo-color,#555);transform:translate(var(--s1-slide5-card1-testo-x,0px),var(--s1-slide5-card1-testo-y,0px))}
@@ -476,6 +478,8 @@ body{overflow:hidden}
 .s1-slide5-card2-testo{font-size:calc(var(--s1-slide5-cards-testo-fs-base,14px) * var(--s1-slide5-card2-testo-scale,1));line-height:var(--s1-slide5-card2-testo-lh,1.5);letter-spacing:var(--s1-slide5-card2-testo-ls,0px);color:var(--s1-slide5-card2-testo-color,#555);transform:translate(var(--s1-slide5-card2-testo-x,0px),var(--s1-slide5-card2-testo-y,0px))}
 .s1-slide5-card2-btn{font-size:calc(var(--s1-slide5-cards-btn-fs-base,13px) * var(--s1-slide5-card2-btn-scale,1));padding:calc(var(--s1-slide5-cards-btn-pad-v-base,9px) * var(--s1-slide5-card2-btn-scale,1)) calc(var(--s1-slide5-cards-btn-pad-h-base,15px) * var(--s1-slide5-card2-btn-scale,1));line-height:var(--s1-slide5-card2-btn-lh,1);letter-spacing:var(--s1-slide5-card2-btn-ls,0px);color:var(--s1-slide5-card2-btn-color,#1b1b1b);transform:translate(var(--s1-slide5-card2-btn-x,0px),var(--s1-slide5-card2-btn-y,0px))}
 .s1-slide5-card3-num{font-size:calc(var(--s1-slide5-cards-num-fs-base,12px) * var(--s1-slide5-card3-num-scale,1));line-height:var(--s1-slide5-card3-num-lh,1);letter-spacing:var(--s1-slide5-card3-num-ls,1px);color:var(--s1-slide5-card3-num-color,var(--sede));transform:translate(var(--s1-slide5-card3-num-x,0px),var(--s1-slide5-card3-num-y,0px))}
+
+.tit-genere{font-size:.42em;line-height:0;position:relative;top:-.30em;letter-spacing:0}
 .s1-slide5-card3-tit{font-size:calc(var(--s1-slide5-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s1-slide5-card3-tit-scale,1));line-height:var(--s1-slide5-card3-tit-lh,1);letter-spacing:var(--s1-slide5-card3-tit-ls,1px);color:var(--s1-slide5-card3-tit-color,#1b1b1b);transform:translate(var(--s1-slide5-card3-tit-x,0px),var(--s1-slide5-card3-tit-y,0px))}
 .s1-slide5-card3-testo{font-size:calc(var(--s1-slide5-cards-testo-fs-base,14px) * var(--s1-slide5-card3-testo-scale,1));line-height:var(--s1-slide5-card3-testo-lh,1.5);letter-spacing:var(--s1-slide5-card3-testo-ls,0px);color:var(--s1-slide5-card3-testo-color,#555);transform:translate(var(--s1-slide5-card3-testo-x,0px),var(--s1-slide5-card3-testo-y,0px))}
 .s1-slide5-card3-btn{font-size:calc(var(--s1-slide5-cards-btn-fs-base,13px) * var(--s1-slide5-card3-btn-scale,1));padding:calc(var(--s1-slide5-cards-btn-pad-v-base,9px) * var(--s1-slide5-card3-btn-scale,1)) calc(var(--s1-slide5-cards-btn-pad-h-base,15px) * var(--s1-slide5-card3-btn-scale,1));line-height:var(--s1-slide5-card3-btn-lh,1);letter-spacing:var(--s1-slide5-card3-btn-ls,0px);color:var(--s1-slide5-card3-btn-color,#1b1b1b);transform:translate(var(--s1-slide5-card3-btn-x,0px),var(--s1-slide5-card3-btn-y,0px))}
@@ -587,10 +591,11 @@ body{overflow:hidden}
   /* SLIDE 4 perfetto */ :root{--s1-slide4-titolo-fs-base:clamp(24px,6.5vw,40px)}
   /* SLIDE 5 porte — 2×2, tutto a vista */
   .porte-eyebrow{margin-bottom:10px}
-  :root{--s1-slide5-titolo-fs-base:clamp(28px,8vw,44px)}
+  :root{--s1-slide5-titolo-fs-base:clamp(44px,12vw,72px)}
   .porte-titolo{margin-bottom:16px}
   .porte-cards{grid-template-columns:1fr 1fr;gap:10px}
   .porta{padding:12px 11px;gap:5px;border-radius:10px;min-height:0}
+  .porta-btn{height:36px;min-height:36px;padding:0 10px;margin-top:auto}
   :root{
     --s1-slide5-cards-tit-fs-base:clamp(15px,4.6vw,20px);
     --s1-slide5-cards-testo-fs-base:clamp(10px,2.9vw,12px);
@@ -599,6 +604,11 @@ body{overflow:hidden}
   }
   .porta-testo{line-height:1.35}
   .scena-porte{padding-left:34px;padding-right:34px}   /* spazio per non toccare i pallini a destra */
+}
+
+
+@media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
+  :root{--s1-slide5-titolo-fs-base:clamp(58px,11.5vw,108px)}
 }
 
 /* ===== MOBILE ORIZZONTALE — orizzontale · h<=550 (ultima fra le generiche) ===== */
@@ -629,6 +639,29 @@ body{overflow:hidden}
   :root{--s1-slide2-titolo-fs-base:clamp(20px,7vw,54px);--s1-slide2-corpo-fs-base:clamp(10px,2vw,13px)}
   /* SLIDE 3 paure */
   :root{--s1-slide3-frase-fs-base:clamp(40px,5vw,80px)} .paure{gap:8px} .paure-eyebrow{margin-bottom:16px;margin-top:-70px}
+
+  /* SLIDE 5 porte — mobile landscape: tutto il blocco sale per lasciare le card interamente visibili */
+  .scena-porte{
+    justify-content:flex-start;
+    padding-top:calc(60px + 5vh);
+    padding-bottom:10px;
+    overflow:hidden;
+  }
+  .porte-eyebrow{margin-bottom:6px;transform:translateY(-2px)}
+  .porte-titolo{margin-bottom:10px;transform:translateY(-6px)}
+  .porte-cards{gap:8px;transform:translateY(-8px);width:100%;max-width:900px}
+  .porta{padding:9px 10px 10px;gap:4px;border-radius:9px}
+  .porta-btn{height:32px;min-height:32px;margin-top:auto;padding:0 8px}
+  :root{
+    --s1-slide5-titolo-fs-base:clamp(34px,8vw,58px);
+    --s1-slide5-cards-tit-fs-base:clamp(14px,3.6vw,18px);
+    --s1-slide5-cards-testo-fs-base:clamp(9px,2.2vw,11px);
+    --s1-slide5-cards-num-fs-base:9px;
+    --s1-slide5-cards-btn-fs-base:10px;
+    --s1-slide5-cards-btn-pad-v-base:6px;
+    --s1-slide5-cards-btn-pad-h-base:8px;
+  }
+  .porta-testo{line-height:1.25;margin-bottom:2px}
 }
 
 /* ===== DESKTOP/LAPTOP ORIZZONTALE >=1200 — solo paure ===== */
@@ -648,6 +681,33 @@ body{overflow:hidden}
 @media (width:1024px) and (orientation:landscape) and (max-height:768px){ /* iPad classico · ORIZZONTALE (1024×768) */ }
 @media (width:390px) and (orientation:portrait){ /* iPhone 12 Pro · VERTICALE (390×844) */ }
 @media (width:844px) and (orientation:landscape) and (max-height:390px){ /* iPhone 12 Pro · ORIZZONTALE (844×390) */ }
+@media (width:844px) and (orientation:landscape) and (max-height:390px){
+  /* iPhone 12 Pro landscape: la slide 6 deve mantenere tutte e 3 le testimonianze in una riga, come il layout compatto del 14 Pro Max. */
+  #s1-slide6 .voci-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+    width:100%;
+  }
+  #s1-slide6 .voce{
+    min-width:0;
+    padding:12px;
+    gap:9px;
+  }
+  #s1-slide6 .voce-foto{
+    width:40px;
+    height:40px;
+  }
+  #s1-slide6 .voce-testo{
+    font-size:11px;
+    line-height:1.35;
+  }
+  /* Slide 6 mobile landscape: alza testo e card del 10% complessivo rispetto alla posizione iniziale. */
+  #s1-slide6 .s1-slide6-titolo,
+  #s1-slide6 .s1-slide6-corpo,
+  #s1-slide6 .voci-grid{
+    transform:translateY(-10vh);
+  }
+}
 
 
 /* ======================================================================
@@ -862,6 +922,37 @@ body{overflow:hidden}
 @media (max-width:767px) and (orientation:portrait){
   .card-grid.g3,.card-grid.g4{grid-template-columns:1fr;gap:14px}
 }
+
+/* ===== SLIDE 6 — RITOCCHI MOBILE PORTRAIT / TABLET PORTRAIT ===== */
+@media (max-width:767px) and (orientation:portrait){
+  #s1-slide6 .s1-slide6-titolo{
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.10);
+    max-width:310px;
+    text-wrap:balance;
+  }
+}
+
+@media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
+  #s1-slide6 .s1-slide6-titolo{
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.15);
+  }
+}
+
+/* ===== SLIDE 6 — SCALE SPECIFICO TABLET PORTRAIT ===== */
+@media (width:768px) and (orientation:portrait),
+       (width:820px) and (orientation:portrait),
+       (width:1024px) and (orientation:portrait) and (min-height:1300px){
+  #s1-slide6 .s1-slide6-titolo{
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * 1.15 * 1.15 * 1.10);
+  }
+}
+
+
+/* Slide 6 — mobile: evita che la “e” resti orfana a fine riga. La coppia “e rimangono” resta insieme. */
+@media (max-width: 767px) {
+  .s1-slide6-mobile-keep { white-space: nowrap; }
+}
+
 </style>
 </head>
 <body>
@@ -976,19 +1067,19 @@ body{overflow:hidden}
     <!-- ===== SLIDE 5 — "LE PORTE DI VICOLO" (fondo bianco) ===== -->
     <section class="scena-porte vc-scena" id="s1-slide5" aria-label="Le porte di Vicolo">
       <div class="porte-eyebrow">Da dove vuoi iniziare?</div>
-      <h2 class="porte-titolo">Le porte di Vicolo<span class="porte-punto">.</span></h2>
+      <h2 class="porte-titolo">Le porte del Vicolo<span class="porte-punto">.</span></h2>
       <div class="porte-cards">
-        <div class="porta"><span class="porta-num s1-slide5-card1-num">Porta .01</span><h3 class="porta-tit s1-slide5-card1-tit">Voglio provare</h3><p class="porta-testo s1-slide5-card1-testo">Corsi adulti di improvvisazione e teatro. La prima lezione si guarda, si ride, si prova.</p><a class="porta-btn s1-slide5-card1-btn" href="#corsi-panoramica">Vieni a provare</a></div>
-        <div class="porta"><span class="porta-num s1-slide5-card2-num">Porta .02</span><h3 class="porta-tit s1-slide5-card2-tit">Uno spettacolo</h3><p class="porta-testo s1-slide5-card2-testo">Il cartellone Vicolo Off: la stagione, le serate, i biglietti in dieci secondi.</p><a class="porta-btn s1-slide5-card2-btn" href="#vicolo-off-slide1">Guarda il cartellone</a></div>
-        <div class="porta"><span class="porta-num s1-slide5-card3-num">Porta .03</span><h3 class="porta-tit s1-slide5-card3-tit">Per mio figlio</h3><p class="porta-testo s1-slide5-card3-testo">Kinder, Kids e Young: dove la fantasia diventa una superpotenza.</p><a class="porta-btn s1-slide5-card3-btn" href="#corsi-panoramica">Scopri i percorsi</a></div>
-        <div class="porta"><span class="porta-num s1-slide5-card4-num">Porta .04</span><h3 class="porta-tit s1-slide5-card4-tit">Un'esperienza</h3><p class="porta-testo s1-slide5-card4-testo">Workshop, eventi e Tolfama: il teatro che esce dal teatro.</p><a class="porta-btn s1-slide5-card4-btn" href="#tolfama-slide1">Vivi l'esperienza</a></div>
+        <div class="porta"><span class="porta-num s1-slide5-card1-num">Porta .01</span><h3 class="porta-tit s1-slide5-card1-tit">Voglio provare</h3><p class="porta-testo s1-slide5-card1-testo">Corsi per adulti di improvvisazione e teatro. La prima lezione si guarda, si ride, si prova.</p><a class="porta-btn s1-slide5-card1-btn" href="#corsi-panoramica">Vieni a provare</a></div>
+        <div class="porta"><span class="porta-num s1-slide5-card2-num">Porta .02</span><h3 class="porta-tit s1-slide5-card2-tit">Spettacoli</h3><p class="porta-testo s1-slide5-card2-testo">Il cartellone del Vicolo Off: la stagione, gli spettacoli da vedere con chi vuoi, scegli e prenoti in dieci secondi.</p><a class="porta-btn s1-slide5-card2-btn" href="#vicolo-off-slide1">Guarda il cartellone</a></div>
+        <div class="porta"><span class="porta-num s1-slide5-card3-num">Porta .03</span><h3 class="porta-tit s1-slide5-card3-tit">PER MI<sup class="tit-genere"> (O/A)</sup> FIGLI<sup class="tit-genere"> (O/A)</sup></h3><p class="porta-testo s1-slide5-card3-testo">Kinder, Kids, Young e Teen: dove scatenare la fantasia insieme agli altri diventa una superpotenza.</p><a class="porta-btn s1-slide5-card3-btn" href="#corsi-panoramica">Scopri i percorsi</a></div>
+        <div class="porta"><span class="porta-num s1-slide5-card4-num">Porta .04</span><h3 class="porta-tit s1-slide5-card4-tit">Esperienze</h3><p class="porta-testo s1-slide5-card4-testo">Workshop, Laboratori creativi, eventi culturali, il nostro festival: il teatro che esce dal teatro.</p><a class="porta-btn s1-slide5-card4-btn" href="#tolfama-slide1">Vivi l'esperienza</a></div>
       </div>
     </section>
 
     <!-- ===== SLIDE 6 — "LA COMUNITÀ" ===== -->
     <section class="vc-scena" id="s1-slide6" aria-label="La comunità">
-      <h2 class="titolone s1-slide6-titolo">Non sei un numero<span class="punto">.</span></h2>
-      <p class="corpo s1-slide6-corpo">Qui le persone arrivano per fare teatro e spesso rimangono perché trovano una comunità.</p>
+      <h2 class="titolone s1-slide6-titolo">Qui non fai numero. Fai i numeri<span class="punto">.</span></h2>
+      <p class="corpo s1-slide6-corpo">Le persone arrivano al Vicolo per fare teatro <span class="s1-slide6-mobile-keep">e&nbsp;rimangono</span> perché trovano una comunità.</p>
       <div class="voci-grid">
         <div class="voce"><span class="voce-foto"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&amp;w=300&amp;auto=format&amp;fit=crop" alt="Giulia, 34"></span><span><span class="voce-nome s1-slide6-voce1-nome">Giulia, 34</span><p class="voce-testo s1-slide6-voce1-testo">Pensavo di essere troppo timida. Poi ho scoperto che il palco poteva essere casa.</p></span></div>
         <div class="voce"><span class="voce-foto"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&amp;w=300&amp;auto=format&amp;fit=crop" alt="Marco, 41"></span><span><span class="voce-nome s1-slide6-voce2-nome">Marco, 41</span><p class="voce-testo s1-slide6-voce2-testo">Sono venuto per una prova. Sono rimasto per le persone.</p></span></div>
@@ -998,7 +1089,7 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 7 — FASCIA GIALLA ===== -->
     <section class="vc-scena giallo-pieno" id="s1-slide7" aria-label="La prima volta può iniziare qui">
-      <h2 class="titolone s1-slide7-titolo">La prima volta<br>può iniziare qui.</h2>
+      <h2 class="titolone s1-slide7-titolo">La tua nuova prima volta<br>può iniziare qui.</h2>
       <div class="spazio-btn"><a class="s1-slide7-btn" href="#corsi-prova">Vieni a provare</a></div>
     </section>
 
