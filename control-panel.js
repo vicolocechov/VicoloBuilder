@@ -175,13 +175,22 @@
 
   /* ====== ESTENSIONI: header, sfondo bottoni, centratura, testi ====== */
   var TXT_KEY='vc-admin-text-v1', WORD_KEY='vc-admin-words-v1';
-  var textOverrides = {};   // disattivato: non tocchiamo mai il testo/HTML originale
-  var wordSplits    = {};   // disattivato
+  var textOverrides = {};   // disattivato: non tocchiamo mai il testo del blocco intero
+  // Parole spezzate a runtime (OPZIONE 1): il DOM viene ri-avvolto in memoria ad ogni
+  // caricamento, MAI persistito come HTML crudo. Solo testo+colore catturati sono salvati.
   function jload(k){ try{ var r=localStorage.getItem(k); if(r) return JSON.parse(r);}catch(e){} return {}; }
   function jsave(k,o){ try{ localStorage.setItem(k, JSON.stringify(o)); }catch(e){} }
+  var wordSplits = jload(WORD_KEY);
+  // Cache SOLO in memoria (mai in localStorage) dell'HTML pristino pre-split, per poter
+  // "Unisci" tornando ESATTAMENTE alla struttura originale (id/classi comprese), non a un
+  // testo semplice ricostruito che perderebbe markup significativo (es. #sedeCitta).
+  var originalHtmlCache = {};
 
   var baseEl=document.createElement('style'); baseEl.id='vc-admin-base'; document.head.appendChild(baseEl);
   var BASECSS='';
+  var wordsEl=document.createElement('style'); wordsEl.id='vc-admin-words'; document.head.appendChild(wordsEl);
+  function wordsCssText(){ var css=''; Object.keys(wordSplits).forEach(function(fk){ var w=wordSplits[fk]; if(w&&w.css) css+=w.css; }); return css; }
+  function rebuildWordsCss(){ wordsEl.textContent=wordsCssText(); }
 
   var HEADER_ITEMS = [
     { fam:'logo', sel:'.brand',       origin:'left center'  },
@@ -201,9 +210,31 @@
         defRaw:(p==='scale'?'1':(p==='lh'?'1.3':(p==='color'?toHexSafe(cstyle(sel,'color')):'0px')))};
     });
   }
+  // Parole GIA' presenti nell'HTML (classe wrapper "dw"/"pw" + identificativo tipo .d1/.p1,
+  // es. slide 2 "La domanda" e slide 4 "Sei nel posto giusto"): le espone come famiglie
+  // sintetiche per-parola, ZERO mutazioni al DOM -- usa solo le classi che ci sono gia'.
+  function registerTaggedWords(){
+    var keys=Object.keys(SELMAP);
+    keys.forEach(function(fk){
+      var sels=SELMAP[fk]; if(!sels||!sels.length) return;
+      var p=fk.split('/'); var sec=+p[0].replace('s',''), slide=+p[1], family=p[2];
+      if(sec===0 || /-w\d+$/.test(family)) return;
+      var block; try{ block=document.querySelector(sels[0]); }catch(e){ return; }
+      if(!block) return;
+      var words=block.querySelectorAll('.dw, .pw'); if(!words.length) return;
+      Array.prototype.forEach.call(words, function(w,i){
+        var idClass=null;
+        Array.prototype.forEach.call(w.classList, function(c){ if(c!=='dw' && c!=='pw') idClass=c; });
+        if(!idClass) return;
+        regSynthFamily(sec, slide, family+'-w'+(i+1), '.'+idClass);
+      });
+    });
+  }
+
   function addSynthetic(){
     // Header e voci menu: registrati come SYNTH -> si applicano SOLO se li tocchi (nessuna regola base)
     HEADER_ITEMS.forEach(function(it){ regSynthFamily(0,0,it.fam,it.sel); });
+    registerTaggedWords();
     var links=[]; try{ links=document.querySelectorAll('.main-nav a'); }catch(e){}
     for(var k=1;k<=links.length;k++){ regSynthFamily(0,0,'menu-'+k, '.main-nav a:nth-of-type('+k+')'); }
     // Bottoni: solo variabile sfondo (il picker); si applica come regola SOLO quando la cambi
@@ -214,6 +245,17 @@
     fillSynthetic();
   }
   function selFor(sec,slide,family){ var s=SELMAP[famKeyOf(sec,slide,family)]; return (s&&s[0])||null; }
+
+  // Puo' offrire "Spezza in parole"? No per header/logo/menu, no per una parola gia' spezzata,
+  // no se il blocco usa gia' classi per-parola presenti nell'HTML (.dw/.pw, es. .d1..d14/.p1..p13).
+  function eligibleForWordSplit(sec,slide,family){
+    if(+sec===0 || /-w\d+$/.test(family)) return false;
+    var sel=selFor(sec,slide,family); if(!sel) return false;
+    var el; try{ el=document.querySelector(sel); }catch(e){ return false; }
+    if(!el || el.querySelector('.dw,.pw')) return false;
+    if(!wordSplits[famKeyOf(sec,slide,family)] && hasUnsupportedMarkup(el)) return false;
+    return true;
+  }
 
   // aggiunge, dove mancano, i controlli lh/ls/colore (+ scala/sposta se assenti del tutto) a QUALSIASI elemento
   function fillSynthetic(){
@@ -234,6 +276,7 @@
     var p=fk.split('/'); var sec=+p[0].replace('s',''), slide=+p[1], family=p[2];
     var base='s'+sec+'-slide'+slide+'-'+family; var css='';
     for(var i=1;i<=w.words.length;i++){
+      if(w.words[i-1] && w.words[i-1].br) continue; // i <br> non sono parole controllabili
       var wf=family+'-w'+i; var wordCol=(w.words[i-1] && w.words[i-1].color) ? w.words[i-1].color : 'inherit';
       VARS['--'+base+'-w'+i+'-scale']={sec:sec,slide:slide,family:wf,prop:'scale',defRaw:'1'};
       VARS['--'+base+'-w'+i+'-x']    ={sec:sec,slide:slide,family:wf,prop:'x',defRaw:'0px'};
@@ -389,7 +432,7 @@
   function fitStage(w,h){ var availW=window.innerWidth-360-48, availH=window.innerHeight-80; var k=Math.min(1, availW/w, availH/h); scaler.style.transform='scale('+k+')'; scaler.style.width=w+'px'; scaler.style.height=h+'px'; }
   window.addEventListener('resize', function(){ if(currentDevice!=='live'){ drawChrome(); } });
   function syncFrame(){ if(currentDevice==='live') return; try{
-    frame.contentWindow.postMessage({__vc:'css', css:(BASECSS||'')+'\n'+buildCss()}, '*');
+    frame.contentWindow.postMessage({__vc:'css', css:(BASECSS||'')+'\n'+wordsCssText()+'\n'+buildCss()}, '*');
     frame.contentWindow.postMessage({__vc:'pickmap', map:SELMAP}, '*');
     frame.contentWindow.postMessage({__vc:'textmap', text:textOverrides, words:wordSplits}, '*');
   }catch(e){} }
@@ -472,6 +515,31 @@
         eh.innerHTML='<span>'+familyLabel(family)+'</span>'+(touched?'<span class="dot"></span>':'');
         var ctrls=document.createElement('div'); ctrls.className='ctrls';
         eh.addEventListener('click', function(){ el.classList.toggle('open'); });
+
+        var fk=famKeyOf(g.sec,g.slide,family);
+        if(eligibleForWordSplit(g.sec,g.slide,family)){
+          var isSplit=!!wordSplits[fk];
+          var wbtn=document.createElement('button'); wbtn.className='wtool'; wbtn.style.marginLeft='auto';
+          wbtn.textContent=isSplit?'Unisci parole':'Spezza in parole';
+          wbtn.addEventListener('click', function(ev){
+            ev.stopPropagation();
+            if(wordSplits[fk]) unsplitWords(fk); else splitWordsAuto(fk, selFor(g.sec,g.slide,family));
+          });
+          eh.appendChild(wbtn);
+        }
+
+        var wm=family.match(/^(.*)-w(\d+)$/);
+        if(wm){
+          var parentFk=famKeyOf(g.sec,g.slide,wm[1]); var wIdx=+wm[2]-1;
+          var parentSplit=wordSplits[parentFk];
+          if(parentSplit && parentSplit.words[wIdx]){
+            var tbox=document.createElement('input'); tbox.type='text'; tbox.className='tbox'; tbox.style.marginBottom='6px';
+            var cur=parentSplit.words[wIdx]; tbox.value=(cur && cur.text!=null)?cur.text:cur;
+            tbox.addEventListener('change', function(){ setWordText(g.sec,g.slide,family, selFor(g.sec,g.slide,family), tbox.value); });
+            ctrls.appendChild(tbox);
+          }
+        }
+
         el.appendChild(eh); el.appendChild(ctrls);
         g.fams[family].sort(function(a,b){ return PROP_ORDER.indexOf(a.prop)-PROP_ORDER.indexOf(b.prop); }).forEach(function(p){ ctrls.appendChild(makeControl(p.name,p.prop)); });
         wrap.appendChild(el);
@@ -529,13 +597,13 @@
       out+='/* '+z.label+' */\n';
       out+= z.media?('@media '+z.media+'{\n'+block+'}\n\n'):(block.replace(/^  /gm,'')+'\n');
     }); return out.trim(); }
-  function openExport(){ var css=buildExportCss(); var base=BASECSS?('/* Regole base (header, centratura bottoni, parole) */\n'+BASECSS+'\n'):''; $('#mtitle').textContent='Solo le modifiche (CSS)'; $('#mhint').innerHTML='Incolla nel tuo foglio di stile. Le regole base vanno messe una volta sola; i blocchi @media nei rispettivi punti.'; $('#csv').value=(base+css)||'/* Nessuna modifica ancora. */'; $('#modal').classList.remove('hidden'); }
+  function openExport(){ var css=buildExportCss(); var base=BASECSS?('/* Regole base (header, centratura bottoni) */\n'+BASECSS+'\n'):''; var wcss=wordsCssText(); var wblock=wcss?('/* Regole per-parola (generate da "Spezza in parole") */\n'+wcss+'\n'):''; $('#mtitle').textContent='Solo le modifiche (CSS)'; $('#mhint').innerHTML='Incolla nel tuo foglio di stile. Le regole base e per-parola vanno messe una volta sola; i blocchi @media nei rispettivi punti.'; $('#csv').value=(base+wblock+css)||'/* Nessuna modifica ancora. */'; $('#modal').classList.remove('hidden'); }
 
   function downloadFullSite(){
-    var css=buildExportCss(); var base=BASECSS||'';
+    var css=buildExportCss(); var base=BASECSS||''; var wcss=wordsCssText();
     var hasText=Object.keys(textOverrides).length, hasWords=Object.keys(wordSplits).length;
-    if(!css && !base && !hasText && !hasWords){ alert('Non hai ancora fatto modifiche da esportare.'); return; }
-    var styleBlock='\n<!-- Modifiche dal pannello di controllo -->\n<style id="vc-admin-applied">\n'+(base? base+'\n':'')+css+'\n</style>\n';
+    if(!css && !base && !wcss && !hasText && !hasWords){ alert('Non hai ancora fatto modifiche da esportare.'); return; }
+    var styleBlock='\n<!-- Modifiche dal pannello di controllo -->\n<style id="vc-admin-applied">\n'+(base? base+'\n':'')+(wcss? wcss+'\n':'')+css+'\n</style>\n';
     fetch(location.href.split('#')[0]).then(function(r){ return r.text(); }).then(function(txt){
       var clean=stripPanel(txt);
       var doc;
@@ -543,10 +611,10 @@
       if(doc && (hasText||hasWords)){
         // testi
         Object.keys(textOverrides).forEach(function(fk){ var o=textOverrides[fk]; try{ var el=doc.querySelector(o.sel); if(el) el.textContent=o.text; }catch(e){} });
-        // parole spezzate
+        // parole spezzate (ricreate dal testo/colore catturato, mai da HTML persistito)
         Object.keys(wordSplits).forEach(function(fk){ var w=wordSplits[fk]; try{ var el=doc.querySelector(w.sel); if(el) el.innerHTML=wordSpans(w); }catch(e){} });
-        // inietta lo stile
-        var head=doc.querySelector('head'); if(head){ var st=doc.createElement('style'); st.id='vc-admin-applied'; st.textContent='\n'+(base?base+'\n':'')+css+'\n'; head.appendChild(st); }
+        // inietta lo stile (incluse le regole per-parola generate)
+        var head=doc.querySelector('head'); if(head){ var st=doc.createElement('style'); st.id='vc-admin-applied'; st.textContent='\n'+(base?base+'\n':'')+(wcss?wcss+'\n':'')+css+'\n'; head.appendChild(st); }
         triggerDownload('<!DOCTYPE html>\n'+doc.documentElement.outerHTML,'sito_completo.html');
       } else {
         var outHtml= clean.indexOf('</head>')!==-1 ? clean.replace('</head>', styleBlock+'</head>') : (clean+styleBlock);
@@ -555,7 +623,7 @@
     }).catch(function(){
       var clone=document.documentElement.cloneNode(true);
       Array.prototype.forEach.call(clone.querySelectorAll('#vc-admin-host,#vc-admin-overrides,#vc-admin-preview,#vc-admin-base,script[src*="control-panel.js"]'), function(n){ n.remove(); });
-      var head=clone.querySelector('head'); if(head){ var st=document.createElement('style'); st.id='vc-admin-applied'; st.textContent='\n'+(base?base+'\n':'')+css+'\n'; head.appendChild(st); }
+      var head=clone.querySelector('head'); if(head){ var st=document.createElement('style'); st.id='vc-admin-applied'; st.textContent='\n'+(base?base+'\n':'')+(wcss?wcss+'\n':'')+css+'\n'; head.appendChild(st); }
       triggerDownload('<!DOCTYPE html>\n'+clone.outerHTML,'sito_completo.html');
       $('#mtitle').textContent='Scaricato (modalita copia locale)'; $('#mhint').innerHTML='Aperto da file:// -> ho clonato la pagina (i testi modificati SONO inclusi, ma per un export pulito apri da server locale: <code>npm run dev</code>).'; $('#csv').value=''; $('#modal').classList.remove('hidden');
     });
@@ -580,12 +648,37 @@
   }
 
   /* ---- Spezza in parole AUTOMATICO, conservando i colori originali ---- */
-  function wordSpans(w){ return w.words.map(function(word,i){ var t=(word && word.text!=null)?word.text:word; return '<span class="'+w.base+'-w'+(i+1)+'">'+escapeHtml(t)+'</span>'; }).join(' '); }
+  // Ricostruisce l'HTML wrappato preservando i <br> originali (mai appiattiti in uno spazio)
+  // e senza aggiungere spazi spuri intorno ad essi.
+  function wordSpans(w){
+    var out=''; var needSpace=false;
+    w.words.forEach(function(word,i){
+      if(word && word.br){ out+='<br>'; needSpace=false; return; }
+      var t=(word && word.text!=null)?word.text:word;
+      if(needSpace) out+=' ';
+      out+='<span class="'+w.base+'-w'+(i+1)+'">'+escapeHtml(t)+'</span>';
+      needSpace=true;
+    });
+    return out;
+  }
+  // Cattura testo, colore calcolato PER PAROLA e <br> come marcatori espliciti (mai persi).
+  // Si rifiuta (ritorna null) se trova markup che non puo' ricostruire fedelmente (img, a,
+  // bottoni, form...) invece di scartarlo in silenzio.
+  var WORD_SAFE_TAGS={SPAN:1,B:1,I:1,EM:1,STRONG:1,SUP:1,SUB:1,BR:1};
+  function hasUnsupportedMarkup(el){
+    var all=el.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){ if(!WORD_SAFE_TAGS[all[i].tagName]) return true; }
+    return false;
+  }
   function captureWords(el){
+    if(hasUnsupportedMarkup(el)) return null;
     var out=[];
     (function walk(node, col){ for(var i=0;i<node.childNodes.length;i++){ var ch=node.childNodes[i];
       if(ch.nodeType===3){ var parts=(ch.textContent||'').split(/\s+/).filter(Boolean); parts.forEach(function(p){ out.push({text:p, color:col}); }); }
-      else if(ch.nodeType===1){ var c=col; try{ c=getComputedStyle(ch).color||col; }catch(e){} walk(ch, c); }
+      else if(ch.nodeType===1){
+        if(ch.tagName==='BR'){ out.push({br:true}); continue; }
+        var c=col; try{ c=getComputedStyle(ch).color||col; }catch(e){} walk(ch, c);
+      }
     } })(el, (function(){ try{ return getComputedStyle(el).color; }catch(e){ return 'inherit'; } })());
     return out;
   }
@@ -595,20 +688,29 @@
     var el=null; try{ el=document.querySelector(sel); }catch(e){}
     var words;
     if(textOverrides[fk]){ words=textOverrides[fk].text.split(/\s+/).filter(Boolean).map(function(t){ return {text:t, color:'inherit'}; }); }
-    else if(el){ words=captureWords(el); }
+    else if(el){
+      if(hasUnsupportedMarkup(el)){ alert('Questo elemento contiene markup (immagini, link, bottoni...) che non posso spezzare in parole senza rischiare di perderlo.'); return; }
+      words=captureWords(el);
+    }
     if(!words || !words.length){ alert('Non trovo il testo di questo elemento.'); return; }
+    if(el) originalHtmlCache[fk]=el.innerHTML;
     wordSplits[fk]={sel:sel, base:base, words:words}; jsave(WORD_KEY, wordSplits);
+    registerWordVars(fk, wordSplits[fk]); rebuildWordsCss();
     var html=wordSpans(wordSplits[fk]);
     try{ if(el) el.innerHTML=html; }catch(e){}
     try{ frame.contentWindow.postMessage({__vc:'sethtml', sel:sel, html:html}, '*'); }catch(e){}
     addSynthetic(); syncFrame(); renderBody();
   }
   function unsplitWords(fk){
-    var w=wordSplits[fk]; if(!w) return; var text=w.words.map(function(x){ return (x&&x.text!=null)?x.text:x; }).join(' ');
-    delete wordSplits[fk]; jsave(WORD_KEY, wordSplits);
-    try{ var el=document.querySelector(w.sel); if(el) el.textContent=text; }catch(e){}
-    try{ frame.contentWindow.postMessage({__vc:'settext', sel:w.sel, text:text}, '*'); }catch(e){}
-    refreshVars(); syncFrame(); renderBody();
+    var w=wordSplits[fk]; if(!w) return;
+    // Torna ESATTAMENTE alla struttura originale (id/classi/nested markup compresi) se
+    // l'abbiamo in cache; altrimenti (fallback difensivo) ricostruisce solo il testo piano.
+    var restoreHtml=originalHtmlCache[fk];
+    if(restoreHtml==null){ restoreHtml=w.words.map(function(x){ return x&&x.br? '<br>' : escapeHtml((x&&x.text!=null)?x.text:x); }).join(' ').replace(/ <br>/g,'<br>'); }
+    delete wordSplits[fk]; delete originalHtmlCache[fk]; jsave(WORD_KEY, wordSplits);
+    try{ var el=document.querySelector(w.sel); if(el) el.innerHTML=restoreHtml; }catch(e){}
+    try{ frame.contentWindow.postMessage({__vc:'sethtml', sel:w.sel, html:restoreHtml}, '*'); }catch(e){}
+    rebuildWordsCss(); refreshVars(); syncFrame(); renderBody();
   }
 
   function clamp(v,a,b){ v=parseFloat(v); if(isNaN(v)) return a; return Math.min(b,Math.max(a,v)); }
@@ -691,9 +793,17 @@
     '.mfoot{display:flex;align-items:center;gap:12px;margin-top:10px}.mfoot button{padding:9px 16px;border-radius:8px;border:none;background:#1b1b1b;color:#fcc454;font-weight:600;cursor:pointer}#copied{color:#2e7d32;font-size:12px}'
   ); }
 
+  // Ricrea da zero, ad ogni caricamento, il wrapping per-parola dalle sole parole/colori
+  // salvati (mai da HTML crudo persistito): parte sempre dal sorgente pristino appena
+  // caricato, quindi non puo' accumulare/corrompere struttura a ricarichi successivi.
   function applyTextLive(){
     Object.keys(textOverrides).forEach(function(fk){ var o=textOverrides[fk]; try{ var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }catch(e){} });
-    Object.keys(wordSplits).forEach(function(fk){ var w=wordSplits[fk]; try{ var el=document.querySelector(w.sel); if(el) el.innerHTML=wordSpans(w); }catch(e){} });
+    Object.keys(wordSplits).forEach(function(fk){
+      var w=wordSplits[fk];
+      try{ var el=document.querySelector(w.sel); if(el){ originalHtmlCache[fk]=el.innerHTML; el.innerHTML=wordSpans(w); } }catch(e){}
+      registerWordVars(fk, w);
+    });
+    rebuildWordsCss();
   }
   applyTextLive();
   applyLive(); renderNav(); renderBody(); setupTopObserver();
