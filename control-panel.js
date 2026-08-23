@@ -53,43 +53,52 @@
     return 'base';
   }
 
-  /* ---- Catalogo dispositivi reali (misure CSS, verticale) ---- */
+  /* ---- Catalogo dispositivi: viewport CSS reali (mai risoluzione fisica), verticale ----
+     Fonti (breakpoint generici, Statcounter/Bootstrap/Tailwind, e viewport reali dei device):
+     vedi nota nel README di sessione. dpr/physW/physH sono SOLO informativi in etichetta:
+     la simulazione usa unicamente w/h (CSS viewport), mai la risoluzione fisica o il dpr. */
   var CATS = [
     { cat:'Modifica diretta', items:[ {id:'live', label:'Sulla pagina (finestra)', w:0, h:0} ] },
-    { cat:'Desktop / Laptop', items:[
-      {id:'d1920', label:'Desktop 1920x1080', w:1920, h:1080, kind:'desktop'},
-      {id:'d1440', label:'Desktop 1440x900',  w:1440, h:900,  kind:'desktop'},
-      {id:'mba13', label:'MacBook Air 13"',   w:1280, h:832,  kind:'desktop'},
-      {id:'lap13', label:'Laptop 1366x768',   w:1366, h:768,  kind:'desktop'},
-      {id:'lap12', label:'Laptop 1280x800',   w:1280, h:800,  kind:'desktop'}
+
+    { cat:'Generico · Desktop', items:[
+      {id:'g-dstd', label:'Desktop standard (1920×1080)', w:1920, h:1080, dpr:1, kind:'desktop'},
+      {id:'g-dwide',label:'Desktop wide (2560×1440)',     w:2560, h:1440, dpr:1, kind:'desktop'}
     ]},
+    { cat:'Generico · Laptop', items:[
+      {id:'g-lstd', label:'Laptop standard (1440×900)',  w:1440, h:900, dpr:2, kind:'desktop'},
+      {id:'g-lsm',  label:'Laptop piccolo (1366×768)',   w:1366, h:768, dpr:1, kind:'desktop'}
+    ]},
+    { cat:'Generico · Tablet', items:[
+      {id:'g-tp', label:'Tablet portrait (768×1024)',  w:768,  h:1024, dpr:2, kind:'tablet'},
+      {id:'g-tl', label:'Tablet landscape (1024×768)', w:1024, h:768,  dpr:2, kind:'tablet'}
+    ]},
+    { cat:'Generico · Mobile', items:[
+      {id:'g-mp', label:'Mobile portrait (375×667)',  w:375, h:667, dpr:2, kind:'phone'},
+      {id:'g-ml', label:'Mobile landscape (667×375)', w:667, h:375, dpr:2, kind:'phone'}
+    ]},
+
     { cat:'Apple iPhone', items:[
-      {id:'ipse',  label:'iPhone SE (375x667)',        w:375, h:667, kind:'phone'},
-      {id:'ip16',  label:'iPhone 16 / 15 / 14 (390x844)', w:390, h:844, kind:'phone', island:true},
-      {id:'ip15p', label:'iPhone 15 Pro (393x852)',    w:393, h:852, kind:'phone', island:true},
-      {id:'ip16p', label:'iPhone 16 Pro (402x874)',    w:402, h:874, kind:'phone', island:true},
-      {id:'ip15pm',label:'iPhone 15 Pro Max (430x932)',w:430, h:932, kind:'phone', island:true},
-      {id:'ip16pm',label:'iPhone 16 Pro Max (440x956)',w:440, h:956, kind:'phone', island:true}
+      {id:'ip16e',  label:'iPhone 16e (390×844)',          w:390, h:844, dpr:3, physW:1170,physH:2532, diag:6.1, kind:'phone', island:true},
+      {id:'ip17',   label:'iPhone 17 (402×874)',           w:402, h:874, dpr:3, physW:1206,physH:2622, diag:6.3, kind:'phone', island:true},
+      {id:'ip17pm', label:'iPhone 17 Pro Max (440×956)',   w:440, h:956, dpr:3, physW:1320,physH:2868, diag:6.9, kind:'phone', island:true}
     ]},
     { cat:'Apple iPad', items:[
-      {id:'ipad',  label:'iPad 10.9 (820x1180)',   w:820,  h:1180, kind:'tablet'},
-      {id:'ipadm', label:'iPad mini (744x1133)',   w:744,  h:1133, kind:'tablet'},
-      {id:'ipadp11',label:'iPad Pro 11 (834x1194)',w:834,  h:1194, kind:'tablet'},
-      {id:'ipadp13',label:'iPad Pro 13 (1024x1366)',w:1024,h:1366, kind:'tablet'}
+      {id:'ipadm',   label:'iPad mini (744×1133)',    w:744,  h:1133, dpr:2, diag:8.3,  kind:'tablet'},
+      {id:'ipad',    label:'iPad 11" (820×1180)',     w:820,  h:1180, dpr:2, diag:10.9, kind:'tablet'},
+      {id:'ipadp11', label:'iPad Pro 11" (834×1210)', w:834,  h:1210, dpr:2, diag:11,   kind:'tablet'},
+      {id:'ipadp13', label:'iPad Pro 13" (1024×1366)',w:1024, h:1366, dpr:2, diag:13,   kind:'tablet'}
     ]},
+
     { cat:'Samsung Galaxy', items:[
-      {id:'s25',   label:'Galaxy S25 / S24 (360x780)', w:360, h:780, kind:'phone', hole:true},
-      {id:'s24u',  label:'Galaxy S24 Ultra (384x832)', w:384, h:832, kind:'phone', hole:true},
-      {id:'sa',    label:'Galaxy A / medio (360x800)', w:360, h:800, kind:'phone', hole:true}
+      {id:'s25',  label:'Galaxy S25 (360×780)',       w:360, h:780, dpr:3,    diag:6.2, kind:'phone', hole:true},
+      {id:'s25u', label:'Galaxy S25 Ultra (384×824)', w:384, h:824, dpr:3.75, diag:6.9, kind:'phone', hole:true},
+      {id:'sa',   label:'Galaxy A / fascia media (360×800)', w:360, h:800, dpr:2.6, kind:'phone', hole:true}
     ]},
-    { cat:'Google Pixel', items:[
-      {id:'px9',   label:'Pixel 9 (412x916)',      w:412, h:916, kind:'phone', hole:true},
-      {id:'px9p',  label:'Pixel 9 Pro (427x952)',  w:427, h:952, kind:'phone', hole:true},
-      {id:'px8',   label:'Pixel 8 (412x915)',      w:412, h:915, kind:'phone', hole:true}
-    ]},
-    { cat:'Android generico', items:[
-      {id:'a360',  label:'Android 360x800', w:360, h:800, kind:'phone', hole:true},
-      {id:'a412',  label:'Android 412x915', w:412, h:915, kind:'phone', hole:true}
+    { cat:'Android', items:[
+      {id:'and384', label:'Android generico (384×832)',  w:384, h:832, dpr:2.75, kind:'phone', hole:true},
+      {id:'and360', label:'Android compatto (360×800)',  w:360, h:800, dpr:2,    kind:'phone', hole:true},
+      {id:'px9',    label:'Google Pixel 9 (412×915)',    w:412, h:915, dpr:2.6,  diag:6.3, kind:'phone', hole:true},
+      {id:'px9p',   label:'Google Pixel 9 Pro (427×952)',w:427, h:952, dpr:3,    diag:6.3, kind:'phone', hole:true}
     ]}
   ];
   function findDevice(id){ for(var i=0;i<CATS.length;i++){ for(var j=0;j<CATS[i].items.length;j++){ if(CATS[i].items[j].id===id) return CATS[i].items[j]; } } return null; }
@@ -369,8 +378,11 @@
     if(frame.getAttribute('data-src')!==src){ frame.setAttribute('data-src',src); frame.src=src; }
     scaler.dataset.w=w; scaler.dataset.h=h; scaler.dataset.kind=d.kind||''; scaler.dataset.island=d.island?'1':''; scaler.dataset.hole=d.hole?'1':'';
     drawChrome();
+    var swapped=(w===d.h && h===d.w && d.w!==d.h);
+    var pw=swapped?d.physH:d.physW, ph=swapped?d.physW:d.physH;
+    var info='Viewport CSS '+w+'×'+h+(d.dpr?('  ·  @'+d.dpr+'x'):'')+(pw?('  ·  '+pw+'×'+ph+' px fisici'):'')+(d.diag?('  ·  '+d.diag+'"'):'');
     $('#stagelabel').textContent=d.label+'  -  '+zoneLabel(currentZone);
-    $('#zonechip').textContent='Modifichi: '+zoneLabel(currentZone);
+    $('#zonechip').innerHTML='Modifichi: '+zoneLabel(currentZone)+'<br><span style="opacity:.75;font-size:10px">'+info+'</span>';
     frame.onload=function(){ syncFrame(); };
   }
   function closeStage(){ stage.classList.add('hidden'); $('#zonechip').textContent=''; }
