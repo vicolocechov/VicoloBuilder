@@ -542,13 +542,13 @@
       }
     }).catch(function(){
       var clone=document.documentElement.cloneNode(true);
-      Array.prototype.forEach.call(clone.querySelectorAll('#vc-admin-host,#vc-admin-overrides,#vc-admin-preview,#vc-admin-base,script[src*="vc-admin-panel"]'), function(n){ n.remove(); });
+      Array.prototype.forEach.call(clone.querySelectorAll('#vc-admin-host,#vc-admin-overrides,#vc-admin-preview,#vc-admin-base,script[src*="control-panel.js"]'), function(n){ n.remove(); });
       var head=clone.querySelector('head'); if(head){ var st=document.createElement('style'); st.id='vc-admin-applied'; st.textContent='\n'+(base?base+'\n':'')+css+'\n'; head.appendChild(st); }
       triggerDownload('<!DOCTYPE html>\n'+clone.outerHTML,'sito_completo.html');
       $('#mtitle').textContent='Scaricato (modalita copia locale)'; $('#mhint').innerHTML='Aperto da file:// -> ho clonato la pagina (i testi modificati SONO inclusi, ma per un export pulito apri da server locale: <code>npm run dev</code>).'; $('#csv').value=''; $('#modal').classList.remove('hidden');
     });
   }
-  function stripPanel(txt){ return txt.replace(/<script[^>]*src=["'][^"']*vc-admin-panel[^"']*["'][^>]*>\s*<\/script>\s*/gi,''); }
+  function stripPanel(txt){ return txt.replace(/<script[^>]*src=["'][^"']*control-panel\.js[^"']*["'][^>]*>\s*<\/script>\s*/gi,''); }
   function triggerDownload(text,filename){ var blob=new Blob([text],{type:'text/html;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500); }
 
   /* ---- Testo del blocco: leggi/scrivi dal vivo (top + anteprima) ---- */
