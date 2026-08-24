@@ -926,7 +926,7 @@ body{overflow:hidden}
 /* ===== SLIDE 6 — RITOCCHI MOBILE PORTRAIT / TABLET PORTRAIT ===== */
 @media (max-width:767px) and (orientation:portrait){
   #s1-slide6 .s1-slide6-titolo{
-    font-size:calc(clamp(36px,5.5vw,76px) * 1.10);
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.10 * var(--s1-slide6-titolo-scale,1));
     max-width:310px;
     text-wrap:balance;
   }
@@ -934,7 +934,7 @@ body{overflow:hidden}
 
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
   #s1-slide6 .s1-slide6-titolo{
-    font-size:calc(clamp(36px,5.5vw,76px) * 1.15);
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * var(--s1-slide6-titolo-scale,1));
   }
 }
 
@@ -943,7 +943,7 @@ body{overflow:hidden}
        (width:820px) and (orientation:portrait),
        (width:1024px) and (orientation:portrait) and (min-height:1300px){
   #s1-slide6 .s1-slide6-titolo{
-    font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * 1.15 * 1.15 * 1.10);
+    font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * 1.15 * 1.15 * 1.10 * var(--s1-slide6-titolo-scale,1));
   }
 }
 
