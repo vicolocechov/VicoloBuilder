@@ -230,7 +230,7 @@ body{overflow:hidden}
 .vc-stage.trascina{transition:none}
 .vc-panel{width:100vw;flex-shrink:0;height:100svh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .vc-panel::-webkit-scrollbar{display:none}
-.vc-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:110;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.vc-dots{position:fixed;right:calc(16px + env(safe-area-inset-right));top:50%;transform:translateY(-50%);z-index:110;display:flex;flex-direction:column;gap:10px;pointer-events:none}
 .vc-dots i{width:7px;height:7px;border-radius:50%;background:#e2e0da;transition:background .25s,transform .25s}
 .vc-dots i.on{background:var(--sede);transform:scale(1.5)}
 
