@@ -175,7 +175,7 @@
 
   /* ====== ESTENSIONI: header, sfondo bottoni, centratura, testi ====== */
   var TXT_KEY='vc-admin-text-v1', WORD_KEY='vc-admin-words-v1';
-  var textOverrides = {};   // disattivato: non tocchiamo mai il testo del blocco intero
+  var textOverrides = jload(TXT_KEY);   // override testo del blocco intero, mai sul sorgente
   // Parole spezzate a runtime (OPZIONE 1): il DOM viene ri-avvolto in memoria ad ogni
   // caricamento, MAI persistito come HTML crudo. Solo testo+colore catturati sono salvati.
   function jload(k){ try{ var r=localStorage.getItem(k); if(r) return JSON.parse(r);}catch(e){} return {}; }
@@ -185,6 +185,7 @@
   // "Unisci" tornando ESATTAMENTE alla struttura originale (id/classi comprese), non a un
   // testo semplice ricostruito che perderebbe markup significativo (es. #sedeCitta).
   var originalHtmlCache = {};
+  var originalTextCache = {}; // fk -> testo originale, SOLO in memoria (per il tasto "ripristina")
 
   var baseEl=document.createElement('style'); baseEl.id='vc-admin-base'; document.head.appendChild(baseEl);
   var BASECSS='';
@@ -511,12 +512,27 @@
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
         var eh=document.createElement('div'); eh.className='elemhead';
-        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; });
+        var fk=famKeyOf(g.sec,g.slide,family);
+        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; }) || !!textOverrides[fk];
         eh.innerHTML='<span>'+familyLabel(family)+'</span>'+(touched?'<span class="dot"></span>':'');
         var ctrls=document.createElement('div'); ctrls.className='ctrls';
         eh.addEventListener('click', function(){ el.classList.toggle('open'); });
 
-        var fk=famKeyOf(g.sec,g.slide,family);
+        if(eligibleForTextEdit(g.sec,g.slide,family)){
+          var sel0=selFor(g.sec,g.slide,family);
+          var tlab=document.createElement('div'); tlab.className='clab'; tlab.innerHTML='<span>Testo</span>';
+          if(textOverrides[fk]){
+            var treset=document.createElement('button'); treset.className='x'; treset.textContent='↺'; treset.title='Ripristina il testo originale';
+            treset.addEventListener('click', function(){ clearTextOverride(fk, sel0); renderBody(); });
+            tlab.appendChild(treset);
+          }
+          ctrls.appendChild(tlab);
+          var tarea=document.createElement('textarea'); tarea.className='tbox'; tarea.rows=2; tarea.style.marginBottom='8px';
+          tarea.value=textOverrides[fk]? textOverrides[fk].text : readText(sel0);
+          tarea.addEventListener('change', function(){ setText(fk, sel0, tarea.value); renderBody(); });
+          ctrls.appendChild(tarea);
+        }
+
         if(eligibleForWordSplit(g.sec,g.slide,family)){
           var isSplit=!!wordSplits[fk];
           var wbtn=document.createElement('button'); wbtn.className='wtool'; wbtn.style.marginLeft='auto';
@@ -634,9 +650,29 @@
   /* ---- Testo del blocco: leggi/scrivi dal vivo (top + anteprima) ---- */
   function readText(sel){ try{ var el=document.querySelector(sel); return el? el.textContent.trim() : ''; }catch(e){ return ''; } }
   function setText(fk, sel, text){
+    if(!(fk in originalTextCache)) originalTextCache[fk]=readText(sel);
     textOverrides[fk]={sel:sel, text:text}; jsave(TXT_KEY, textOverrides);
     try{ var el=document.querySelector(sel); if(el) el.textContent=text; }catch(e){}
     try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:text}, '*'); }catch(e){}
+  }
+  function clearTextOverride(fk, sel){
+    var orig=originalTextCache[fk]; delete originalTextCache[fk];
+    delete textOverrides[fk]; jsave(TXT_KEY, textOverrides);
+    if(orig==null) return; // non l'abbiamo mai toccato in questa sessione: niente da ripristinare a mano
+    try{ var el=document.querySelector(sel); if(el) el.textContent=orig; }catch(e){}
+    try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:orig}, '*'); }catch(e){}
+  }
+  // Elemento di solo testo (nessun figlio elemento): l'unico caso in cui sovrascrivere
+  // textContent e' sicuro al 100% -- non puo' perdere <br>, span o altro markup perche' non
+  // ce n'e'. Per gli elementi con markup annidato si passa dallo split-per-parola gia' fatto.
+  function isPlainTextElement(el){ return !!el && !el.querySelector('*') && el.textContent.trim().length>0; }
+  function eligibleForTextEdit(sec,slide,family){
+    if(/-w\d+$/.test(family)) return false; // le singole parole si editano dal loro riquadro
+    var fk=famKeyOf(sec,slide,family);
+    if(wordSplits[fk]) return false; // gia' spezzata in parole: si edita parola per parola
+    var sel=selFor(sec,slide,family); if(!sel) return false;
+    var el; try{ el=document.querySelector(sel); }catch(e){ return false; }
+    return isPlainTextElement(el);
   }
   function setWordText(sec, slide, wfamily, sel, text){
     var m=wfamily.match(/^(.*)-w(\d+)$/); if(!m) return; var parentFk=famKeyOf(sec,slide,m[1]); var idx=+m[2]-1;
@@ -797,7 +833,10 @@
   // salvati (mai da HTML crudo persistito): parte sempre dal sorgente pristino appena
   // caricato, quindi non puo' accumulare/corrompere struttura a ricarichi successivi.
   function applyTextLive(){
-    Object.keys(textOverrides).forEach(function(fk){ var o=textOverrides[fk]; try{ var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }catch(e){} });
+    Object.keys(textOverrides).forEach(function(fk){
+      var o=textOverrides[fk];
+      try{ var el=document.querySelector(o.sel); if(el){ originalTextCache[fk]=el.textContent.trim(); el.textContent=o.text; } }catch(e){}
+    });
     Object.keys(wordSplits).forEach(function(fk){
       var w=wordSplits[fk];
       try{ var el=document.querySelector(w.sel); if(el){ originalHtmlCache[fk]=el.innerHTML; el.innerHTML=wordSpans(w); } }catch(e){}
