@@ -522,7 +522,7 @@ body{overflow:hidden}
   .main-nav a{font-size:clamp(15px,2.3vw,22px);letter-spacing:.6px}
   .nav-indicatore{bottom:-9px;height:3px}
   /* SLIDE 1 hero */
-  .hero-sub{line-height:1;letter-spacing:-.5px;white-space:nowrap}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.5px);white-space:nowrap}
   :root{--s1-slide1-sub-fs-base:clamp(20px,3.9vw,34px);--s1-slide1-titolo-fs-base:clamp(60px,21vw,180px)}
   /* SLIDE 2 domanda */
   .domanda-titolo .blocco{display:block}
@@ -546,7 +546,7 @@ body{overflow:hidden}
   :root{--logo-h:38px}
   .sede-btn{font-size:12px;padding:6px 13px}
   /* SLIDE 1 hero */ :root{--s1-slide1-titolo-fs-base:clamp(48px,15vw,200px);--s1-slide1-sub-fs-base:clamp(14px,2.2vw,26px)}
-  .hero-sub{line-height:1;white-space:nowrap}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);white-space:nowrap}
   /* SLIDE 2 domanda */ :root{--s1-slide2-titolo-fs-base:clamp(28px,4.4vw,56px)} .domanda-titolo .blocco{display:block}
   /* SLIDE 3 paure */
 }
@@ -565,7 +565,7 @@ body{overflow:hidden}
   /* SLIDE 1 hero */
   .hero{--header-h:118px;justify-content:flex-start;padding:calc(var(--header-h) + 8px) 18px calc(22px + env(safe-area-inset-bottom))}
   .hero-inner{align-items:center;width:100%}
-  .hero-title{line-height:.76;text-align:center;width:100%}
+  .hero-title{line-height:var(--s1-slide1-titolo-lh,.76);text-align:center;width:100%}
   :root{--s1-slide1-titolo-fs-base:clamp(60px,37vw,230px)}
   .hero-l1,.hero-l2{display:contents}
   .tw{display:block}
@@ -573,13 +573,13 @@ body{overflow:hidden}
   .hero-l1 .tw:last-child{margin-top:6px}
   .virgola{font-size:.55em}
   .br-body{display:none}
-  .hero-sub{line-height:1;letter-spacing:-.2px;white-space:nowrap;margin-top:4px;text-align:center;width:100%}
-  .hero-body{line-height:1.5;max-width:100%;margin-top:16px;text-align:center}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;margin-top:4px;text-align:center;width:100%}
+  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.5);max-width:100%;margin-top:16px;text-align:center}
   :root{--s1-slide1-sub-fs-base:clamp(12px,3.6vw,20px);--s1-slide1-corpo-fs-base:clamp(10px,3vw,14px)}
   .hero-btn{margin-top:18px;align-self:center}
   :root{--s1-slide1-btn-fs-base:14px;--s1-slide1-btn-pad-v-base:11px;--s1-slide1-btn-pad-h-base:20px}
   /* SLIDE 2 domanda */
-  .domanda-titolo{line-height:1.05;transform:translateY(-30px)} .domanda-titolo .blocco{display:block} .domanda-testo{margin-top:22px}
+  .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05);transform:translate(var(--s1-slide2-titolo-x,0px),calc(-30px + var(--s1-slide2-titolo-y,0px)))} .domanda-titolo .blocco{display:block} .domanda-testo{margin-top:22px}
   :root{--s1-slide2-titolo-fs-base:clamp(30px,39vw,65px);--s1-slide2-corpo-fs-base:clamp(12px,2.6vw,15px)}
   .bA{font-size:1.15em}
   .bB{font-size:1.24em;margin-top:-10px}
@@ -622,20 +622,20 @@ body{overflow:hidden}
   /* SLIDE 1 hero (titolo su UNA riga) */
   .hero{--header-h:46px;justify-content:center;padding:calc(var(--header-h) + 6px) 18px 12px}
   .hero-inner{flex-direction:column;align-items:center;width:100%}
-  .hero-title{display:block;white-space:nowrap;text-align:center;width:100%;line-height:1}
+  .hero-title{display:block;white-space:nowrap;text-align:center;width:100%;line-height:var(--s1-slide1-titolo-lh,1)}
   :root{--s1-slide1-titolo-fs-base:8.5vw}
   .hero-l1,.hero-l2{display:inline}
   .hero-l1{font-size:1em}
   .tw{display:inline-block}
   .hero-testo{display:contents}
-  .hero-sub{line-height:1;letter-spacing:-.2px;white-space:nowrap;text-align:center;margin:5px 0 0}
-  .hero-body{line-height:1.45;text-align:center;max-width:720px;margin:8px auto 0}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;text-align:center;margin:5px 0 0}
+  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.45);text-align:center;max-width:720px;margin:8px auto 0}
   :root{--s1-slide1-sub-fs-base:clamp(11px,2.2vw,18px);--s1-slide1-corpo-fs-base:clamp(16px,1.7vw,8px)}
   .br-body{display:none}
   .hero-btn{margin-top:10px;align-self:center}
   :root{--s1-slide1-btn-fs-base:12px;--s1-slide1-btn-pad-v-base:8px;--s1-slide1-btn-pad-h-base:18px}
   /* SLIDE 2 domanda */
-  .domanda-titolo{line-height:1.05} .domanda-titolo .blocco{display:inline} .domanda-testo{margin-top:8px} .scena-domanda{padding:calc(var(--header-h,46px) + 8px) 6vw 14px}
+  .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05)} .domanda-titolo .blocco{display:inline} .domanda-testo{margin-top:8px} .scena-domanda{padding:calc(var(--header-h,46px) + 8px) 6vw 14px}
   :root{--s1-slide2-titolo-fs-base:clamp(20px,7vw,54px);--s1-slide2-corpo-fs-base:clamp(10px,2vw,13px)}
   /* SLIDE 3 paure */
   :root{--s1-slide3-frase-fs-base:clamp(40px,5vw,80px)} .paure{gap:8px} .paure-eyebrow{margin-bottom:16px;margin-top:-70px}
@@ -647,8 +647,8 @@ body{overflow:hidden}
     padding-bottom:10px;
     overflow:hidden;
   }
-  .porte-eyebrow{margin-bottom:6px;transform:translateY(-2px)}
-  .porte-titolo{margin-bottom:10px;transform:translateY(-6px)}
+  .porte-eyebrow{margin-bottom:6px;transform:translate(var(--s1-slide5-eyebrow-x,0px),calc(-2px + var(--s1-slide5-eyebrow-y,0px)))}
+  .porte-titolo{margin-bottom:10px;transform:translate(var(--s1-slide5-titolo-x,0px),calc(-6px + var(--s1-slide5-titolo-y,0px)))}
   .porte-cards{gap:8px;transform:translateY(-8px);width:100%;max-width:900px}
   .porta{padding:9px 10px 10px;gap:4px;border-radius:9px}
   .porta-btn{height:32px;min-height:32px;margin-top:auto;padding:0 8px}
@@ -702,8 +702,12 @@ body{overflow:hidden}
     line-height:1.35;
   }
   /* Slide 6 mobile landscape: alza testo e card del 10% complessivo rispetto alla posizione iniziale. */
-  #s1-slide6 .s1-slide6-titolo,
-  #s1-slide6 .s1-slide6-corpo,
+  #s1-slide6 .s1-slide6-titolo{
+    transform:translate(var(--s1-slide6-titolo-x,0px),calc(-10vh + var(--s1-slide6-titolo-y,0px)));
+  }
+  #s1-slide6 .s1-slide6-corpo{
+    transform:translate(var(--s1-slide6-corpo-x,0px),calc(-10vh + var(--s1-slide6-corpo-y,0px)));
+  }
   #s1-slide6 .voci-grid{
     transform:translateY(-10vh);
   }
