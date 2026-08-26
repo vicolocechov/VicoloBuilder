@@ -34,11 +34,11 @@
 
   /* ---- Breakpoint (media = quelle del tuo CSS; label = standard) ---- */
   var ZONES = [
-    { id:'base', label:'Desktop (>=1200)',                 media:null },
+    { id:'base', label:'Desktop (>=1400)',                 media:'(min-width:1400px)' },
     { id:'lg',   label:'Desktop largo (1200-1399)',        media:'(min-width:1200px) and (max-width:1399px)' },
     { id:'lap',  label:'Laptop / compatto (1025-1199)',    media:'(min-width:1025px) and (max-width:1199px)' },
     { id:'tabV', label:'Tablet verticale (768-1024)',      media:'(min-width:768px) and (max-width:1024px) and (orientation:portrait)' },
-    { id:'tabO', label:'Tablet orizzontale (768-1199)',    media:'(min-width:768px) and (max-width:1199px) and (orientation:landscape) and (min-height:551px)' },
+    { id:'tabO', label:'Orizzontale compatta (fino a 1199, h>=551)', media:'(max-width:1199px) and (orientation:landscape) and (min-height:551px)' },
     { id:'mobV', label:'Mobile verticale (<=767)',         media:'(max-width:767px) and (orientation:portrait)' },
     { id:'mobO', label:'Mobile orizzontale (alt.<=550)',   media:'(orientation:landscape) and (max-height:550px)' }
   ];
@@ -47,7 +47,7 @@
     if (landscape && h<=550) return 'mobO';
     if (w<=767 && !landscape) return 'mobV';
     if (w>=768 && w<=1024 && !landscape) return 'tabV';
-    if (w>=768 && w<=1199 && landscape && h>=551) return 'tabO';
+    if (w<=1199 && landscape && h>=551) return 'tabO';
     if (w>=1025 && w<=1199) return 'lap';
     if (w>=1200 && w<=1399) return 'lg';
     return 'base';
@@ -324,6 +324,28 @@
 
   function loadOverrides(){ try{ var raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); }catch(e){} var o={}; ZONES.forEach(function(z){o[z.id]={};}); return o; }
   function saveOverrides(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }catch(e){} }
+
+  /* Migrazione una tantum: prima del fix "zona base confinata" (min-width:1400px),
+     'base' era globale e i suoi override erano visibili anche su laptop/tablet/mobile.
+     Per non far sparire modifiche esistenti, li ricopiamo (solo dove la zona di
+     destinazione non ha gia' un proprio valore) nelle altre zone, una volta sola. */
+  function migrateBaseZoneIfNeeded(){
+    var FLAG='vc-admin-basezone-migrated-v1';
+    try{
+      if(localStorage.getItem(FLAG)) return;
+      var baseOv=overrides.base||{};
+      var baseKeys=Object.keys(baseOv);
+      if(baseKeys.length){
+        ['lg','lap','tabV','tabO','mobV','mobO'].forEach(function(zid){
+          if(!overrides[zid]) overrides[zid]={};
+          baseKeys.forEach(function(k){ if(!(k in overrides[zid])) overrides[zid][k]=baseOv[k]; });
+        });
+        saveOverrides();
+      }
+      localStorage.setItem(FLAG,'1');
+    }catch(e){}
+  }
+  migrateBaseZoneIfNeeded();
 
   var styleEl=document.createElement('style'); styleEl.id='vc-admin-overrides'; document.head.appendChild(styleEl);
   var previewEl=document.createElement('style'); previewEl.id='vc-admin-preview'; document.head.appendChild(previewEl);
