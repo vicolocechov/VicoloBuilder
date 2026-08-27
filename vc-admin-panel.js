@@ -259,7 +259,7 @@
     var groups={}; // 'sec/slide' -> {sec,slide}
     Object.keys(VARS).forEach(function(nm){ var v=VARS[nm]; if(+v.sec===0) return; groups[v.sec+'/'+v.slide]={sec:v.sec,slide:v.slide}; });
     Object.keys(groups).forEach(function(gk){
-      var G=groups[gk]; var sel='#s'+G.sec+'-slide'+G.slide; var el=null; try{ el=document.querySelector(sel); }catch(e){}
+      var G=groups[gk]; var sel='#s'+G.sec+'-slide'+G.slide+' > *'; var el=null; try{ el=document.querySelector(sel); }catch(e){}
       if(el) regSynthProps(G.sec,G.slide,'paginablocco', sel, ['scale','x','y']);
     });
     // Header intero (logo+menu+pillola insieme)
