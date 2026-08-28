@@ -241,6 +241,9 @@ body{overflow:hidden}
   display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:calc(var(--header-h,104px) + 12px) 6vw 40px;text-align:center;
 }
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (sopra) resta invariata, continua a
+   centrare quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
+#s1-slide2 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 2 (La domanda) · Titolo "Quand'è stata l'ultima volta…" -> --s1-slide2-titolo-{scale|x|y|lh|ls|color} (font-size base per-zona: --s1-slide2-titolo-fs-base) */
 .domanda-titolo{
   font-family:'Akkordeon',sans-serif;font-weight:400;text-transform:uppercase;
@@ -1021,11 +1024,13 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 2 — "LA DOMANDA" (fondo scuro) ===== -->
     <section class="scena-domanda vc-scena sezione-scura" id="s1-slide2" aria-labelledby="domanda-titolo">
+      <div class="scena-inner">
       <h2 class="domanda-titolo" id="domanda-titolo">
         <span class="d-riga"><span class="blocco bA"><span class="dw d1">Quando</span> <span class="dw d2">è</span> <span class="dw d3">stata</span></span> <span class="evid blocco bB"><span class="dw d4">l'ultima</span> <span class="dw d5">volta</span></span></span>
         <span class="d-riga"><span class="blocco bC"><span class="dw d6">che</span> <span class="dw d7">hai</span> <span class="dw d8">fatto</span> <span class="dw d9">una</span> <span class="dw d10">cosa</span></span> <span class="evid blocco bD"><span class="dw d11">per</span> <span class="dw d12">la</span> <span class="dw d13">prima</span> <span class="dw d14">volta?</span></span></span>
       </h2>
       <p class="domanda-testo"hidden>Non serve esperienza. Non serve essere estroversi. <br class="br-mobile">Non serve essere &quot;portati&quot;.</p>
+      </div>
     </section>
 
     <!-- ===== SLIDE 3 — "LE PAURE": tre frasi che si accendono a rotazione, da sole ===== -->
