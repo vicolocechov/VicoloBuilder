@@ -353,6 +353,12 @@
   function splitZoneKeys(ov){
     var rootDecls=[], rules=[], synthBySel={};
     Object.keys(ov).forEach(function(k){
+      var hm=k.match(/^--vchide-(\d+)-(\d+)-(.+)$/);
+      if(hm){
+        var hsel=selFor(+hm[1],+hm[2],hm[3]);
+        if(hsel) rules.push(hsel+'{'+(ov[k]==='none'?'display:none':'visibility:hidden')+'}');
+        return;
+      }
       var v=VARS[k];
       if(v && v.synth && v.__sel){
         var g=synthBySel[v.__sel]=synthBySel[v.__sel]||{tx:{},decls:[]};
@@ -394,6 +400,16 @@
   function currentNumeric(name){ var raw=currentValue(name), v=VARS[name], info=PROP_INFO[v.prop]||{}; if(raw!=null){ var m=String(raw).match(/(-?\d+(?:\.\d+)?)/); if(m) return parseFloat(m[1]); } var d=defaultFor(name); return (d==null)?(info.min!=null?info.min:0):d; }
   function setOverride(name,val){ if(!overrides[currentZone]) overrides[currentZone]={}; overrides[currentZone][name]=val; saveOverrides(); applyLive(); }
   function clearOverride(name){ if(overrides[currentZone]) delete overrides[currentZone][name]; saveOverrides(); applyLive(); }
+
+  /* ---- Nascondi elemento: per zona, 'none' (rimuove spazio) | 'hidden' (mantiene spazio) | assente = visibile ---- */
+  function hideKeyFor(sec,slide,family){ return '--vchide-'+sec+'-'+slide+'-'+family; }
+  function currentHideMode(sec,slide,family){ var k=hideKeyFor(sec,slide,family); var v=(overrides[currentZone]||{})[k]; return (v==='none'||v==='hidden')?v:'visible'; }
+  function setHideMode(sec,slide,family,mode){
+    var k=hideKeyFor(sec,slide,family);
+    if(!overrides[currentZone]) overrides[currentZone]={};
+    if(mode==='visible') delete overrides[currentZone][k]; else overrides[currentZone][k]=mode;
+    saveOverrides(); applyLive();
+  }
 
   /* ===================== UI ===================== */
   var host=document.createElement('div'); host.id='vc-admin-host';
@@ -569,7 +585,7 @@
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
         var eh=document.createElement('div'); eh.className='elemhead';
-        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; });
+        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; }) || currentHideMode(g.sec,g.slide,family)!=='visible';
         eh.innerHTML='<span>'+familyLabel(family)+'</span>'+(touched?'<span class="dot"></span>':'');
         var ctrls=document.createElement('div'); ctrls.className='ctrls';
         eh.addEventListener('click', function(){ el.classList.toggle('open'); });
@@ -587,6 +603,23 @@
           ta.value=(btnText[bfk]?btnText[bfk].text:(bel.textContent||'').trim());
           (function(fkk,sll){ ta.addEventListener('input', function(){ setBtnText(fkk, sll, ta.value); }); })(bfk,bsel);
           te.appendChild(lbl); te.appendChild(ta); el.appendChild(te);
+        }
+        // --- Nascondi: per zona, su qualsiasi elemento che il pannello riconosce (usa il selettore gia' in SELMAP) ---
+        if(bsel && bel){
+          var hrow=document.createElement('div'); hrow.className='ctrl';
+          var hlab=document.createElement('div'); hlab.className='clab'; hlab.innerHTML='<span>Visibilita\'</span>';
+          var hreset=document.createElement('button'); hreset.className='x'; hreset.textContent='↺'; hreset.title='Ripristina in questa zona';
+          hreset.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,'visible'); renderBody(); }); hlab.appendChild(hreset);
+          hrow.appendChild(hlab);
+          var hseg=document.createElement('div'); hseg.className='seg';
+          var hmodes=[['visible','Visibile','Nessuna modifica'],['none','No spazio','display:none - l\'elemento sparisce e il layout si ricompatta'],['hidden','Con spazio','visibility:hidden - invisibile ma lo spazio resta occupato']];
+          var hcur=currentHideMode(g.sec,g.slide,family);
+          hmodes.forEach(function(hm){
+            var hb=document.createElement('button'); hb.textContent=hm[1]; hb.title=hm[2]; if(hm[0]===hcur) hb.classList.add('on');
+            hb.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,hm[0]); renderBody(); });
+            hseg.appendChild(hb);
+          });
+          hrow.appendChild(hseg); el.appendChild(hrow);
         }
         wrap.appendChild(el);
       });
