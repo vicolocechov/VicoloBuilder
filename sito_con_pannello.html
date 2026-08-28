@@ -326,6 +326,10 @@ body{overflow:hidden}
   display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:calc(var(--header-h,104px) + 12px) 6vw 40px;text-align:center;
 }
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (sopra, con le sue @media - incluso
+   l'override mobile justify-content:flex-start) resta invariata, continua a centrare/ancorare
+   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
+#s1-slide4 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 4 (Sei nel posto giusto) · Titolo "Perfetto. Se ti sei riconosciuto…" -> --s1-slide4-titolo-{scale|x|y|lh|ls|color} (font-size base per-zona: --s1-slide4-titolo-fs-base) */
 .posto-titolo{
   font-family:'Akkordeon',sans-serif;font-weight:400;text-transform:uppercase;
@@ -1050,6 +1054,7 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 4 — "PERFETTO / SEI NEL POSTO GIUSTO" (fondo scuro) ===== -->
     <section class="scena-posto vc-scena sezione-scura" id="s1-slide4" aria-label="Sei nel posto giusto">
+      <div class="scena-inner">
       <h2 class="posto-titolo">
 
   <span class="blocco postoA">
@@ -1084,6 +1089,7 @@ body{overflow:hidden}
       <div class="posto-btn">
         <a class="btn-primario" href="#corsi">Prenota la tua lezione di prova</a>
         <a class="btn-outline" href="#corsi">Scopri i corsi</a>
+      </div>
       </div>
     </section>
 
