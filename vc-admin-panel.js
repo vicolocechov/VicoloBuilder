@@ -173,6 +173,67 @@
   var BTXT_KEY='vc-btn-text-v1';
   var btnText = jload_btn();   // solo testo dei bottoni: { famKey: {sel, text} }
   function jload_btn(){ try{ var r=localStorage.getItem(BTXT_KEY); if(r) return JSON.parse(r);}catch(e){} return {}; }
+
+  /* ---- Editing "per pezzo" per testi con struttura interna (span colorati, <br>, immagini) ----
+     Non tocca mai l'elemento intero: ogni frammento (nodo di testo o span-foglia) si modifica da
+     solo, via textContent, mai innerHTML sul contenitore. <br>/img restano segnaposto non editabili;
+     .sede-nome e' escluso perche' riscritto a runtime dal toggle sede del sito. */
+  var FRAG_KEY='vc-frag-text-v1';
+  var fragText = jload_frag();  // { "sel#path": {sel, path:[...], text} }
+  function jload_frag(){ try{ var r=localStorage.getItem(FRAG_KEY); if(r) return JSON.parse(r);}catch(e){} return {}; }
+  function collectFragments(el){
+    var frags=[];
+    function walk(node){
+      if(node.nodeType===3){ if((node.textContent||'').trim().length) frags.push({kind:'text', node:node}); return; }
+      if(node.nodeType!==1) return;
+      var tag=node.tagName;
+      if(tag==='BR'){ frags.push({kind:'marker', node:node, label:'↵ interruzione riga'}); return; }
+      if(tag==='IMG'){ frags.push({kind:'marker', node:node, label:'🖼️ immagine'}); return; }
+      if(node.classList && node.classList.contains('sede-nome')){ frags.push({kind:'locked', node:node, label:'📍 nome sede (dinamico, non modificabile qui)'}); return; }
+      if(node.children.length===0){
+        var t=(node.textContent||'').trim();
+        if(t.length) frags.push({kind:'leaf', node:node});
+        return;
+      }
+      Array.prototype.forEach.call(node.childNodes, walk);
+    }
+    Array.prototype.forEach.call(el.childNodes, walk);
+    return frags;
+  }
+  function pathOf(root, node){
+    var path=[], cur=node;
+    while(cur && cur!==root){
+      var parent=cur.parentNode; if(!parent) return null;
+      var idx=Array.prototype.indexOf.call(parent.childNodes, cur);
+      path.unshift(idx); cur=parent;
+    }
+    return cur===root ? path : null;
+  }
+  function resolveFragPath(root, path){
+    var cur=root;
+    for(var i=0;i<path.length;i++){ if(!cur) return null; cur=cur.childNodes[path[i]]; }
+    return cur||null;
+  }
+  function writeFragNode(node, text){
+    if(!node) return;
+    if(node.nodeType===3){ node.textContent=text; }
+    else if(node.nodeType===1 && node.children.length===0){ node.textContent=text; }
+  }
+  function applyFragText(){
+    Object.keys(fragText).forEach(function(k){
+      var o=fragText[k]; try{
+        var root=document.querySelector(o.sel); if(!root) return;
+        writeFragNode(resolveFragPath(root,o.path), o.text);
+      }catch(e){}
+    });
+  }
+  function setFragText(sel, path, text){
+    var k=sel+'#'+path.join('.');
+    fragText[k]={sel:sel, path:path, text:text};
+    try{ localStorage.setItem(FRAG_KEY, JSON.stringify(fragText)); }catch(e){}
+    try{ var root=document.querySelector(sel); writeFragNode(resolveFragPath(root,path), text); }catch(e){}
+    try{ frame.contentWindow.postMessage({__vc:'setfrag', sel:sel, path:path, text:text}, '*'); }catch(e){}
+  }
   var textOverrides = {};   // disattivato: non tocchiamo mai il testo/HTML originale
   var wordSplits    = {};   // disattivato
   function jload(k){ try{ var r=localStorage.getItem(k); if(r) return JSON.parse(r);}catch(e){} return {}; }
@@ -507,6 +568,7 @@
     frame.contentWindow.postMessage({__vc:'pickmap', map:SELMAP}, '*');
     frame.contentWindow.postMessage({__vc:'textmap', text:textOverrides, words:wordSplits}, '*');
     Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; frame.contentWindow.postMessage({__vc:'settext', sel:o.sel, text:o.text}, '*'); });
+    Object.keys(fragText).forEach(function(fk){ var o=fragText[fk]; frame.contentWindow.postMessage({__vc:'setfrag', sel:o.sel, path:o.path, text:o.text}, '*'); });
   }catch(e){} }
 
   /* ---- Anteprima: schermo INTERO del device alla misura reale, senza barre ---- */
@@ -592,17 +654,19 @@
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
         var eh=document.createElement('div'); eh.className='elemhead';
-        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; }) || currentHideMode(g.sec,g.slide,family)!=='visible';
+        // --- Testo: elemento-foglia -> textarea unica (btnText); elemento con struttura -> un campo per frammento ---
+        var bfk=famKeyOf(g.sec,g.slide,family);
+        var bsel=(SELMAP[bfk]||[])[0];
+        var bel=null; try{ bel=bsel?document.querySelector(bsel):null; }catch(e){}
+        var isLeafText = bel && bel.children.length===0 && (bel.textContent||'').trim().length>0;
+        var frags = (bel && bel.children.length>0) ? collectFragments(bel) : [];
+        var fragTouched = bsel ? Object.keys(fragText).some(function(k){ return fragText[k].sel===bsel; }) : false;
+        var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; }) || currentHideMode(g.sec,g.slide,family)!=='visible' || fragTouched;
         eh.innerHTML='<span>'+familyLabel(family)+'</span>'+(touched?'<span class="dot"></span>':'');
         var ctrls=document.createElement('div'); ctrls.className='ctrls';
         eh.addEventListener('click', function(){ el.classList.toggle('open'); });
         el.appendChild(eh); el.appendChild(ctrls);
         g.fams[family].sort(function(a,b){ return PROP_ORDER.indexOf(a.prop)-PROP_ORDER.indexOf(b.prop); }).forEach(function(p){ ctrls.appendChild(makeControl(p.name,p.prop)); });
-        // --- Testo: modificabile su QUALSIASI elemento-foglia (niente contenitori con struttura interna) ---
-        var bfk=famKeyOf(g.sec,g.slide,family);
-        var bsel=(SELMAP[bfk]||[])[0];
-        var bel=null; try{ bel=bsel?document.querySelector(bsel):null; }catch(e){}
-        var isLeafText = bel && bel.children.length===0 && (bel.textContent||'').trim().length>0;
         if(isLeafText){
           var te=document.createElement('div'); te.className='texted';
           var lbl=document.createElement('div'); lbl.className='clab'; lbl.innerHTML='<span>Testo</span>';
@@ -610,6 +674,23 @@
           ta.value=(btnText[bfk]?btnText[bfk].text:(bel.textContent||'').trim());
           (function(fkk,sll){ ta.addEventListener('input', function(){ setBtnText(fkk, sll, ta.value); }); })(bfk,bsel);
           te.appendChild(lbl); te.appendChild(ta); el.appendChild(te);
+        } else if(frags.some(function(f){ return f.kind==='text'||f.kind==='leaf'; })){
+          var tf=document.createElement('div'); tf.className='texted';
+          var lblf=document.createElement('div'); lblf.className='clab'; lblf.innerHTML='<span>Testo (un campo per pezzo - colori/'+'&lt;br&gt;'+'/immagini restano intatti)</span>';
+          tf.appendChild(lblf);
+          frags.forEach(function(f){
+            if(f.kind==='marker' || f.kind==='locked'){
+              var mrow=document.createElement('div'); mrow.className='fragmarker'; mrow.textContent=f.label;
+              tf.appendChild(mrow);
+              return;
+            }
+            var path=pathOf(bel, f.node); if(!path) return;
+            var inp=document.createElement('input'); inp.type='text'; inp.className='fraginput';
+            inp.value=(f.node.nodeType===3?f.node.textContent:f.node.textContent);
+            (function(sll,pp,input){ input.addEventListener('input', function(){ setFragText(sll, pp, input.value); }); })(bsel, path, inp);
+            tf.appendChild(inp);
+          });
+          el.appendChild(tf);
         }
         // --- Nascondi: per zona, su qualsiasi elemento che il pannello riconosce (usa il selettore gia' in SELMAP) ---
         if(bsel && bel){
@@ -689,18 +770,20 @@
 
   function downloadFullSite(){
     var css=buildExportCss(); var base=BASECSS||'';
-    var hasText=Object.keys(textOverrides).length, hasWords=Object.keys(wordSplits).length, hasBtn=Object.keys(btnText).length;
-    if(!css && !base && !hasText && !hasWords && !hasBtn){ alert('Non hai ancora fatto modifiche da esportare.'); return; }
+    var hasText=Object.keys(textOverrides).length, hasWords=Object.keys(wordSplits).length, hasBtn=Object.keys(btnText).length, hasFrag=Object.keys(fragText).length;
+    if(!css && !base && !hasText && !hasWords && !hasBtn && !hasFrag){ alert('Non hai ancora fatto modifiche da esportare.'); return; }
     var styleBlock='\n<!-- Modifiche dal pannello di controllo -->\n<style id="vc-admin-applied">\n'+(base? base+'\n':'')+css+'\n</style>\n';
     fetch(location.href.split('#')[0]).then(function(r){ return r.text(); }).then(function(txt){
       var clean=stripPanel(txt);
       var doc;
       try{ doc=new DOMParser().parseFromString(clean,'text/html'); }catch(e){ doc=null; }
-      if(doc && (hasText||hasWords||hasBtn)){
+      if(doc && (hasText||hasWords||hasBtn||hasFrag)){
         // testi
         Object.keys(textOverrides).forEach(function(fk){ var o=textOverrides[fk]; try{ var el=doc.querySelector(o.sel); if(el) el.textContent=o.text; }catch(e){} });
         // testo bottoni
         Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=doc.querySelector(o.sel); if(el && el.children.length===0) el.textContent=o.text; }catch(e){} });
+        // testo per frammento (elementi con struttura interna: span colorati, <br>, immagini restano intatti)
+        Object.keys(fragText).forEach(function(fk){ var o=fragText[fk]; try{ var root=doc.querySelector(o.sel); if(!root) return; writeFragNode(resolveFragPath(root,o.path), o.text); }catch(e){} });
         // parole spezzate
         Object.keys(wordSplits).forEach(function(fk){ var w=wordSplits[fk]; try{ var el=doc.querySelector(w.sel); if(el) el.innerHTML=wordSpans(w); }catch(e){} });
         // inietta lo stile
@@ -810,6 +893,8 @@
     '.wtool{border:1px dashed #cbb26a;background:#fdf7e6;color:#7a5c12;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer}'+
     '.texted{padding:8px 6px 4px;border-top:1px dashed #eee}.elem.open .texted{display:block}.texted{display:none}'+
     '.tbox{width:100%;border:1px solid #d5d3c9;border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;resize:vertical;background:#fffdf7}'+
+    '.fraginput{display:block;width:100%;border:1px solid #d5d3c9;border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;background:#fffdf7;margin-bottom:6px}'+
+    '.fragmarker{font-size:11px;color:#999;font-style:italic;padding:3px 2px;margin-bottom:4px}'+
     '.eltools2{margin-top:6px}'+
     '.ctrl{padding:7px 0;border-top:1px dashed #eee}'+
     '.clab{display:flex;justify-content:space-between;align-items:center;color:#444;margin-bottom:5px;font-size:12px}'+
@@ -856,7 +941,7 @@
   // Testo dei bottoni (elementi foglia, sicuri): applica dal vivo e nell'anteprima
   function applyBtnText(){ Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=document.querySelector(o.sel); if(el && el.children.length===0) el.textContent=o.text; }catch(e){} }); }
   function setBtnText(fk, sel, text){ btnText[fk]={sel:sel, text:text}; try{ localStorage.setItem(BTXT_KEY, JSON.stringify(btnText)); }catch(e){} try{ var el=document.querySelector(sel); if(el && el.children.length===0) el.textContent=text; }catch(e){} try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:text}, '*'); }catch(e){} }
-  applyTextLive(); applyBtnText();
+  applyTextLive(); applyBtnText(); applyFragText();
   applyLive(); renderNav(); renderBody(); setupTopObserver();
   console.log('[VC Admin v3] pronto - '+Object.keys(VARS).length+' variabili, '+Object.keys(SELMAP).length+' mappe selettore');
 
@@ -900,6 +985,7 @@
       if(m.__vc==='pickmap'){ SMAP=m.map||{}; buildScenes(); }
       if(m.__vc==='startpick'){ picking=true; }
       if(m.__vc==='settext'){ try{ var el=document.querySelector(m.sel); if(el) el.textContent=m.text; }catch(e2){} }
+      if(m.__vc==='setfrag'){ try{ var rootN=document.querySelector(m.sel); var nodeN=rootN; for(var pi=0;pi<m.path.length;pi++){ nodeN=nodeN&&nodeN.childNodes[m.path[pi]]; } if(nodeN){ if(nodeN.nodeType===3) nodeN.textContent=m.text; else if(nodeN.nodeType===1 && nodeN.children.length===0) nodeN.textContent=m.text; } }catch(e7){} }
       if(m.__vc==='sethtml'){ try{ var el2=document.querySelector(m.sel); if(el2) el2.innerHTML=m.html; }catch(e3){} }
       if(m.__vc==='textmap'){
         try{ var T=m.text||{}; Object.keys(T).forEach(function(k){ var o=T[k]; var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }); }catch(e4){}
