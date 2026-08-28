@@ -827,6 +827,10 @@ body{overflow:hidden}
 .s2-slide1-btn:hover{background:transparent;color:var(--sede)}
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 2 — Persone, non curriculum ===== */
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s2-slide2, layout .vc-scena generico,
+   nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
+   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
+#s2-slide2 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Titolo "Persone, non curriculum" -> --s2-slide2-titolo-{scale|x|y|lh|ls|color} */
 .s2-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s2-slide2-titolo-scale,1));line-height:var(--s2-slide2-titolo-lh,1.05);letter-spacing:var(--s2-slide2-titolo-ls,0px);color:var(--s2-slide2-titolo-color,#1b1b1b);transform:translate(var(--s2-slide2-titolo-x,0px),var(--s2-slide2-titolo-y,0px));position:relative;z-index:3;margin-top:14px}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Paragrafo "I nostri coach salgono sul palco…" -> --s2-slide2-corpo-{scale|x|y|lh|ls|color} */
@@ -1166,8 +1170,10 @@ body{overflow:hidden}
 
     <!-- ===== SEZIONE 2 — CHI SIAMO — SLIDE 2 ===== -->
     <section class="vc-scena" id="s2-slide2" aria-label="Persone, non curriculum">
+      <div class="scena-inner">
       <h2 class="titolone s2-slide2-titolo">Persone, non curriculum<span class="punto">.</span></h2>
       <p class="corpo s2-slide2-corpo">I nostri coach salgono sul palco con te. Ognuno ha una storia, una frase, un modo di farti sentire a casa.</p>
+      </div>
     </section>
 
   </section><!-- /vc-panel chi-siamo -->
