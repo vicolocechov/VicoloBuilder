@@ -812,6 +812,10 @@ body{overflow:hidden}
 .s1-slide8-corpo2{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(12px * var(--s1-slide8-corpo2-scale,1));line-height:var(--s1-slide8-corpo2-lh,1.6);letter-spacing:var(--s1-slide8-corpo2-ls,0px);color:var(--s1-slide8-corpo2-color,#8a8a8a);transform:translate(var(--s1-slide8-corpo2-x,0px),var(--s1-slide8-corpo2-y,0px));margin-top:22px}
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Perché il Vicolo ===== */
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s2-slide1, layout .vc-scena generico,
+   nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
+   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 4 figli originali. */
+#s2-slide1 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — CHI SIAMO · Slide 1 · Occhiello "Chi siamo" -> --s2-slide1-eyebrow-{scale|x|y|lh|ls|color} */
 .s2-slide1-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s2-slide1-eyebrow-scale,1));line-height:var(--s2-slide1-eyebrow-lh,1);letter-spacing:var(--s2-slide1-eyebrow-ls,2px);color:var(--s2-slide1-eyebrow-color,#8a8a8a);transform:translate(var(--s2-slide1-eyebrow-x,0px),var(--s2-slide1-eyebrow-y,0px));}
 /* MASCHERINO — CHI SIAMO · Slide 1 · Titolo "Perché il Vicolo" -> --s2-slide1-titolo-{scale|x|y|lh|ls|color} */
@@ -1152,10 +1156,12 @@ body{overflow:hidden}
 
     <!-- ===== SEZIONE 2 — CHI SIAMO — SLIDE 1 ===== -->
     <section class="vc-scena" id="s2-slide1" aria-label="Perché il Vicolo">
+      <div class="scena-inner">
       <div class="eyebrow s2-slide1-eyebrow">Chi siamo</div>
       <h2 class="titolone s2-slide1-titolo">Perché il Vicolo<span class="punto">.</span></h2>
       <p class="corpo s2-slide1-corpo">Due sedi, un solo Vicolo: la stessa energia a <b class="sede-nome">Civitavecchia</b> e Montegiorgio. Non una scuola dove "si impara a recitare", ma un posto dove ci si allena a stare al mondo: ascolto, coraggio, gioco.</p>
       <div class="spazio-btn"><a class="s2-slide1-btn" href="#corsi">Vieni a conoscerci</a></div>
+      </div>
     </section>
 
     <!-- ===== SEZIONE 2 — CHI SIAMO — SLIDE 2 ===== -->
