@@ -282,6 +282,9 @@ body{overflow:hidden}
   display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:calc(var(--header-h,104px) + 12px) 6vw 40px;text-align:center;
 }
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (sopra) resta invariata, continua a
+   centrare quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
+#s1-slide3 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 3 (Le paure) · Occhiello "Magari stai pensando…" -> --s1-slide3-eyebrow-{scale|x|y|lh|ls|color} */
 .paure-eyebrow{
   font-family:'Poppins',sans-serif;font-weight:600;text-transform:uppercase;
@@ -1035,11 +1038,13 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 3 — "LE PAURE": tre frasi che si accendono a rotazione, da sole ===== -->
     <section class="scena-paure vc-scena" id="s1-slide3" aria-label="Le paure più comuni">
+      <div class="scena-inner">
       <div class="paure-eyebrow">Magari stai pensando…</div>
       <div class="paure" id="paure">
         <p class="paura s1-slide3-frase1 viva">"Non ho fantasia."</p>
         <p class="paura s1-slide3-frase2">"Mi vergogno."</p>
         <p class="paura s1-slide3-frase3">"Non conosco nessuno."</p>
+      </div>
       </div>
     </section>
 
