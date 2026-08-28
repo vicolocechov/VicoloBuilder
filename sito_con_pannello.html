@@ -744,6 +744,10 @@ body{overflow:hidden}
 .voce-nome{font-family:'Poppins',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;display:block}
 .voce-testo{font-family:'Montserrat',sans-serif;font-size:13px;line-height:1.55;color:#6f6f6f;margin-top:6px}
 .voci-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;width:min(980px,100%);margin-top:30px;position:relative;z-index:3}
+/* Wrapper per "Tutta la pagina" dal pannello: #s1-slide6 (sezione) resta invariata - eredita
+   il layout generico .vc-scena (flex column centrata) e continua a centrare quest'unico figlio.
+   Qui ricreiamo lo stesso arrangiamento a colonna centrata dei 3 figli originali. */
+#s1-slide6 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 
 /* banda scura riutilizzabile (già usata da domanda/posto): sezione-scura serve all'header per invertirsi */
 .banda{background:var(--scuro,#1b1b1b);color:#fff}
@@ -1089,12 +1093,14 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 6 — "LA COMUNITÀ" ===== -->
     <section class="vc-scena" id="s1-slide6" aria-label="La comunità">
+      <div class="scena-inner">
       <h2 class="titolone s1-slide6-titolo">Qui non fai numero. Fai i numeri<span class="punto">.</span></h2>
       <p class="corpo s1-slide6-corpo">Le persone arrivano al Vicolo per fare teatro <span class="s1-slide6-mobile-keep">e&nbsp;rimangono</span> perché trovano una comunità.</p>
       <div class="voci-grid">
         <div class="voce"><span class="voce-foto"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&amp;w=300&amp;auto=format&amp;fit=crop" alt="Giulia, 34"></span><span><span class="voce-nome s1-slide6-voce1-nome">Giulia, 34</span><p class="voce-testo s1-slide6-voce1-testo">Pensavo di essere troppo timida. Poi ho scoperto che il palco poteva essere casa.</p></span></div>
         <div class="voce"><span class="voce-foto"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&amp;w=300&amp;auto=format&amp;fit=crop" alt="Marco, 41"></span><span><span class="voce-nome s1-slide6-voce2-nome">Marco, 41</span><p class="voce-testo s1-slide6-voce2-testo">Sono venuto per una prova. Sono rimasto per le persone.</p></span></div>
         <div class="voce"><span class="voce-foto"><img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&amp;w=300&amp;auto=format&amp;fit=crop" alt="Sara, 27"></span><span><span class="voce-nome s1-slide6-voce3-nome">Sara, 27</span><p class="voce-testo s1-slide6-voce3-testo">L'improvvisazione mi ha insegnato ad ascoltare. Anche fuori dal palco.</p></span></div>
+      </div>
       </div>
     </section>
 
