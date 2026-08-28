@@ -259,7 +259,14 @@
     var groups={}; // 'sec/slide' -> {sec,slide}
     Object.keys(VARS).forEach(function(nm){ var v=VARS[nm]; if(+v.sec===0) return; groups[v.sec+'/'+v.slide]={sec:v.sec,slide:v.slide}; });
     Object.keys(groups).forEach(function(gk){
-      var G=groups[gk]; var sel='#s'+G.sec+'-slide'+G.slide+' > *'; var el=null; try{ el=document.querySelector(sel); }catch(e){}
+      var G=groups[gk];
+      // Se la slide e' gia' avvolta in .scena-inner (wrapper dedicato), il blocco intero
+      // scala/si sposta in un pezzo unico, sfondo fermo, proporzioni interne intatte.
+      // Finche' una slide non e' avvolta, fallback sui figli diretti (> *): sfondo comunque
+      // fermo, ma ogni figlio scala attorno al proprio centro (limite noto, comunicato).
+      var wsel='#s'+G.sec+'-slide'+G.slide+' .scena-inner';
+      var sel=null; try{ sel = document.querySelector(wsel) ? wsel : ('#s'+G.sec+'-slide'+G.slide+' > *'); }catch(e){ sel='#s'+G.sec+'-slide'+G.slide+' > *'; }
+      var el=null; try{ el=document.querySelector(sel); }catch(e){}
       if(el) regSynthProps(G.sec,G.slide,'paginablocco', sel, ['scale','x','y']);
     });
     // Header intero (logo+menu+pillola insieme)

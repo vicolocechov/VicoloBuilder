@@ -438,6 +438,11 @@ body{overflow:hidden}
 
 /* ======================= SLIDE 5 — "LE PORTE DI VICOLO" (fondo bianco) ======================= */
 .scena-porte{min-height:100svh;background:#fff;color:#1b1b1b;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:calc(var(--header-h,104px) + 12px) 5vw 40px;text-align:center}
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (sopra) resta il contenitore flex invariato
+   (stessa regola base + tutte le sue @media, mai toccate) e centra quest'unico figlio; qui dentro
+   ricreiamo lo stesso arrangiamento a colonna centrata che i 3 figli avevano come flex-item diretti,
+   cosi' a riposo la resa e' identica. */
+#s1-slide5 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 5 (Le porte di Vicolo) · Occhiello "Da dove vuoi iniziare?" -> --s1-slide5-eyebrow-{scale|x|y|lh|ls|color} */
 .porte-eyebrow{
   font-family:'Poppins',sans-serif;font-weight:600;text-transform:uppercase;
@@ -1070,6 +1075,7 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 5 — "LE PORTE DI VICOLO" (fondo bianco) ===== -->
     <section class="scena-porte vc-scena" id="s1-slide5" aria-label="Le porte di Vicolo">
+      <div class="scena-inner">
       <div class="porte-eyebrow">Da dove vuoi iniziare?</div>
       <h2 class="porte-titolo">Le porte del Vicolo<span class="porte-punto">.</span></h2>
       <div class="porte-cards">
@@ -1077,6 +1083,7 @@ body{overflow:hidden}
         <div class="porta"><span class="porta-num s1-slide5-card2-num">Porta .02</span><h3 class="porta-tit s1-slide5-card2-tit">Spettacoli</h3><p class="porta-testo s1-slide5-card2-testo">Il cartellone del Vicolo Off: la stagione, gli spettacoli da vedere con chi vuoi, scegli e prenoti in dieci secondi.</p><a class="porta-btn s1-slide5-card2-btn" href="#vicolo-off-slide1">Guarda il cartellone</a></div>
         <div class="porta"><span class="porta-num s1-slide5-card3-num">Porta .03</span><h3 class="porta-tit s1-slide5-card3-tit">PER MI<sup class="tit-genere"> (O/A)</sup> FIGLI<sup class="tit-genere"> (O/A)</sup></h3><p class="porta-testo s1-slide5-card3-testo">Kinder, Kids, Young e Teen: dove scatenare la fantasia insieme agli altri diventa una superpotenza.</p><a class="porta-btn s1-slide5-card3-btn" href="#corsi-panoramica">Scopri i percorsi</a></div>
         <div class="porta"><span class="porta-num s1-slide5-card4-num">Porta .04</span><h3 class="porta-tit s1-slide5-card4-tit">Esperienze</h3><p class="porta-testo s1-slide5-card4-testo">Workshop, Laboratori creativi, eventi culturali, il nostro festival: il teatro che esce dal teatro.</p><a class="porta-btn s1-slide5-card4-btn" href="#tolfama-slide1">Vivi l'esperienza</a></div>
+      </div>
       </div>
     </section>
 
