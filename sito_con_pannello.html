@@ -800,6 +800,10 @@ body{overflow:hidden}
 .s1-slide7-immagine{transform:translate(var(--s1-slide7-immagine-x,0px),var(--s1-slide7-immagine-y,0px)) scale(var(--s1-slide7-immagine-scale,1));}
 
 /* ===== SEZIONE 1 HOME · SLIDE 8 — Footer ===== */
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s1-slide8, layout .vc-scena generico,
+   nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
+   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 3 figli originali. */
+#s1-slide8 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 8 (Footer) · Titolo "Vicolo Cechov" -> --s1-slide8-titolo-{scale|x|y|lh|ls|color} */
 .s1-slide8-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(22px,3vw,40px) * var(--s1-slide8-titolo-scale,1));line-height:var(--s1-slide8-titolo-lh,1.05);letter-spacing:var(--s1-slide8-titolo-ls,0px);color:var(--s1-slide8-titolo-color,#fff);transform:translate(var(--s1-slide8-titolo-x,0px),var(--s1-slide8-titolo-y,0px));}
 /* MASCHERINO — HOME · Slide 8 (Footer) · Riga sedi + email -> --s1-slide8-corpo1-{scale|x|y|lh|ls|color} */
@@ -1134,9 +1138,11 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 8 — FOOTER ===== -->
     <section class="vc-scena banda sezione-scura" id="s1-slide8" aria-label="Footer">
+      <div class="scena-inner">
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-corpo1">Civitavecchia · Montegiorgio<br><a href="mailto:info@vicolocechov.it" style="color:#fff">info@vicolocechov.it</a></p>
       <p class="corpo s1-slide8-corpo2">Instagram · Facebook · Privacy</p>
+      </div>
     </section>
 
   </section><!-- /vc-panel home -->
