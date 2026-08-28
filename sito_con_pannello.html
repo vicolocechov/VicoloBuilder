@@ -787,6 +787,10 @@ body{overflow:hidden}
 .s1-slide6-voce3-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13px * var(--s1-slide6-voce3-testo-scale,1));line-height:var(--s1-slide6-voce3-testo-lh,1.55);letter-spacing:var(--s1-slide6-voce3-testo-ls,0px);color:var(--s1-slide6-voce3-testo-color,#6f6f6f);transform:translate(var(--s1-slide6-voce3-testo-x,0px),var(--s1-slide6-voce3-testo-y,0px));}
 
 /* ===== SEZIONE 1 HOME · SLIDE 7 — Fascia gialla ===== */
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s1-slide7, layout .vc-scena generico,
+   nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
+   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
+#s1-slide7 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Titolo "La prima volta può iniziare qui" -> --s1-slide7-titolo-{scale|x|y|lh|ls|color} */
 .s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(44px,8vw,120px) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#1b1b1b);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Bottone "Vieni a provare" -> --s1-slide7-btn-{scale(dimensione)|x|y|lh|ls|color} */
@@ -1122,8 +1126,10 @@ body{overflow:hidden}
 
     <!-- ===== SLIDE 7 — FASCIA GIALLA ===== -->
     <section class="vc-scena giallo-pieno" id="s1-slide7" aria-label="La prima volta può iniziare qui">
+      <div class="scena-inner">
       <h2 class="titolone s1-slide7-titolo">La tua nuova prima volta<br>può iniziare qui.</h2>
       <div class="spazio-btn"><a class="s1-slide7-btn" href="#corsi-prova">Vieni a provare</a></div>
+      </div>
     </section>
 
     <!-- ===== SLIDE 8 — FOOTER ===== -->
