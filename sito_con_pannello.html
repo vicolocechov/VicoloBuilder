@@ -743,6 +743,7 @@ body{overflow:hidden}
 
 /* card: riusa lo stile già presente di .porta (slide "Le porte") anche per Corsi */
 .card-grid{display:grid;gap:20px;max-width:1060px;width:100%;position:relative;z-index:3}
+.card-grid.g2{grid-template-columns:repeat(2,minmax(0,1fr));max-width:760px}
 .card-grid.g3{grid-template-columns:repeat(3,1fr)}
 .card-grid.g4{grid-template-columns:repeat(4,1fr)}
 .card-meta{font-family:'Poppins',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.5px;color:#999;text-transform:uppercase;display:block;margin-bottom:6px}
@@ -860,44 +861,32 @@ body{overflow:hidden}
 html.sede-monte #s3-slide1{display:none}
 @media (max-width:640px){.s3-slide1-card-grid{grid-template-columns:1fr;gap:14px;max-width:460px}.s3-slide1-card{padding:26px 22px 22px}}
 
-/* ===== SEZIONE 3 CORSI · SLIDE 2 — Panoramica corsi (3 card) ===== */
-/* MASCHERINO — CORSI · Slide 2 (Panoramica) · Occhiello "I percorsi · [Sede]" -> --s3-slide2-eyebrow-{scale|x|y|lh|ls|color} */
+/* ===== SEZIONE 3 CORSI · SLIDE 2 — Improvvisazione (2 card) ===== */
+/* Wrapper per "Tutta la pagina" dal pannello: la sezione resta invariata (display:flex generico
+   di .vc-scena), continua a centrare quest'unico figlio; qui ricreiamo la stessa colonna centrata. */
+#s3-slide2 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
+/* MASCHERINO — CORSI · Slide 2 (Improvvisazione) · Occhiello "I nostri percorsi" -> --s3-slide2-eyebrow-{scale|x|y|lh|ls|color} */
 .s3-slide2-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s3-slide2-eyebrow-scale,1));line-height:var(--s3-slide2-eyebrow-lh,1);letter-spacing:var(--s3-slide2-eyebrow-ls,2px);color:var(--s3-slide2-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide2-eyebrow-x,0px),var(--s3-slide2-eyebrow-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 (Panoramica) · Titolo "Corsi" -> --s3-slide2-titolo-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 (Improvvisazione) · Titolo "Improvvisazione" -> --s3-slide2-titolo-{scale|x|y|lh|ls|color} */
 .s3-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s3-slide2-titolo-scale,1));line-height:var(--s3-slide2-titolo-lh,1.05);letter-spacing:var(--s3-slide2-titolo-ls,0px);color:var(--s3-slide2-titolo-color,#1b1b1b);transform:translate(var(--s3-slide2-titolo-x,0px),var(--s3-slide2-titolo-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Impro Adulti" — etichetta "Adulti" -> --s3-slide2-card1-num-{scale|x|y|lh|ls|color} */
-.s3-slide2-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(12px * var(--s3-slide2-card1-num-scale,1));line-height:var(--s3-slide2-card1-num-lh,1);letter-spacing:var(--s3-slide2-card1-num-ls,1px);color:var(--s3-slide2-card1-num-color,var(--sede));transform:translate(var(--s3-slide2-card1-num-x,0px),var(--s3-slide2-card1-num-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Impro Adulti" — titolo -> --s3-slide2-card1-tit-{scale|x|y|lh|ls|color} */
-.s3-slide2-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card1-tit-scale,1));line-height:var(--s3-slide2-card1-tit-lh,1);letter-spacing:var(--s3-slide2-card1-tit-ls,1px);color:var(--s3-slide2-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card1-tit-x,0px),var(--s3-slide2-card1-tit-y,0px));margin-top:8px}
-/* MASCHERINO — CORSI · Slide 2 · Card "Impro Adulti" — fascia età "18–99 anni" -> --s3-slide2-card1-meta-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — titolo -> --s3-slide2-card1-tit-{scale|x|y|lh|ls|color} */
+.s3-slide2-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card1-tit-scale,1));line-height:var(--s3-slide2-card1-tit-lh,1);letter-spacing:var(--s3-slide2-card1-tit-ls,1px);color:var(--s3-slide2-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card1-tit-x,0px),var(--s3-slide2-card1-tit-y,0px));}
+/* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — fascia età "18+ anni" -> --s3-slide2-card1-meta-{scale|x|y|lh|ls|color} */
 .s3-slide2-card1-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide2-card1-meta-scale,1));line-height:var(--s3-slide2-card1-meta-lh,1);letter-spacing:var(--s3-slide2-card1-meta-ls,0.5px);color:var(--s3-slide2-card1-meta-color,#999);transform:translate(var(--s3-slide2-card1-meta-x,0px),var(--s3-slide2-card1-meta-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Impro Adulti" — testo -> --s3-slide2-card1-testo-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — testo -> --s3-slide2-card1-testo-{scale|x|y|lh|ls|color} */
 .s3-slide2-card1-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13.5px * var(--s3-slide2-card1-testo-scale,1));line-height:var(--s3-slide2-card1-testo-lh,1.6);letter-spacing:var(--s3-slide2-card1-testo-ls,0px);color:var(--s3-slide2-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card1-testo-x,0px),var(--s3-slide2-card1-testo-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Impro Adulti" — bottone "Vedi le info" -> --s3-slide2-card1-btn-{scale(dimensione)|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — bottone "Scopri il corso" -> --s3-slide2-card1-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s3-slide2-card1-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(13px * var(--s3-slide2-card1-btn-scale,1));padding:calc(9px * var(--s3-slide2-card1-btn-scale,1)) calc(15px * var(--s3-slide2-card1-btn-scale,1));line-height:var(--s3-slide2-card1-btn-lh,1);letter-spacing:var(--s3-slide2-card1-btn-ls,0px);color:var(--s3-slide2-card1-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px));}.s3-slide2-card1-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px))}
 .s3-slide2-card1-btn:hover{background:transparent;color:#1b1b1b}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Kids" — etichetta "Bambini" -> --s3-slide2-card2-num-{scale|x|y|lh|ls|color} */
-.s3-slide2-card2-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(12px * var(--s3-slide2-card2-num-scale,1));line-height:var(--s3-slide2-card2-num-lh,1);letter-spacing:var(--s3-slide2-card2-num-ls,1px);color:var(--s3-slide2-card2-num-color,var(--sede));transform:translate(var(--s3-slide2-card2-num-x,0px),var(--s3-slide2-card2-num-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Kids" — titolo -> --s3-slide2-card2-tit-{scale|x|y|lh|ls|color} */
-.s3-slide2-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card2-tit-scale,1));line-height:var(--s3-slide2-card2-tit-lh,1);letter-spacing:var(--s3-slide2-card2-tit-ls,1px);color:var(--s3-slide2-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card2-tit-x,0px),var(--s3-slide2-card2-tit-y,0px));margin-top:8px}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Kids" — fascia età "6–8 anni" -> --s3-slide2-card2-meta-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — titolo -> --s3-slide2-card2-tit-{scale|x|y|lh|ls|color} */
+.s3-slide2-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card2-tit-scale,1));line-height:var(--s3-slide2-card2-tit-lh,1);letter-spacing:var(--s3-slide2-card2-tit-ls,1px);color:var(--s3-slide2-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card2-tit-x,0px),var(--s3-slide2-card2-tit-y,0px));}
+/* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — fascia età "4–17 anni" -> --s3-slide2-card2-meta-{scale|x|y|lh|ls|color} */
 .s3-slide2-card2-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide2-card2-meta-scale,1));line-height:var(--s3-slide2-card2-meta-lh,1);letter-spacing:var(--s3-slide2-card2-meta-ls,0.5px);color:var(--s3-slide2-card2-meta-color,#999);transform:translate(var(--s3-slide2-card2-meta-x,0px),var(--s3-slide2-card2-meta-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Kids" — testo -> --s3-slide2-card2-testo-{scale|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — testo -> --s3-slide2-card2-testo-{scale|x|y|lh|ls|color} */
 .s3-slide2-card2-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13.5px * var(--s3-slide2-card2-testo-scale,1));line-height:var(--s3-slide2-card2-testo-lh,1.6);letter-spacing:var(--s3-slide2-card2-testo-ls,0px);color:var(--s3-slide2-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card2-testo-x,0px),var(--s3-slide2-card2-testo-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Kids" — bottone "Vedi le info" -> --s3-slide2-card2-btn-{scale(dimensione)|x|y|lh|ls|color} */
+/* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — bottone "Scopri il corso" -> --s3-slide2-card2-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s3-slide2-card2-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(13px * var(--s3-slide2-card2-btn-scale,1));padding:calc(9px * var(--s3-slide2-card2-btn-scale,1)) calc(15px * var(--s3-slide2-card2-btn-scale,1));line-height:var(--s3-slide2-card2-btn-lh,1);letter-spacing:var(--s3-slide2-card2-btn-ls,0px);color:var(--s3-slide2-card2-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px));}.s3-slide2-card2-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px))}
 .s3-slide2-card2-btn:hover{background:transparent;color:#1b1b1b}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Young" — etichetta "Ragazzi" -> --s3-slide2-card3-num-{scale|x|y|lh|ls|color} */
-.s3-slide2-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(12px * var(--s3-slide2-card3-num-scale,1));line-height:var(--s3-slide2-card3-num-lh,1);letter-spacing:var(--s3-slide2-card3-num-ls,1px);color:var(--s3-slide2-card3-num-color,var(--sede));transform:translate(var(--s3-slide2-card3-num-x,0px),var(--s3-slide2-card3-num-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Young" — titolo -> --s3-slide2-card3-tit-{scale|x|y|lh|ls|color} */
-.s3-slide2-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card3-tit-scale,1));line-height:var(--s3-slide2-card3-tit-lh,1);letter-spacing:var(--s3-slide2-card3-tit-ls,1px);color:var(--s3-slide2-card3-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card3-tit-x,0px),var(--s3-slide2-card3-tit-y,0px));margin-top:8px}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Young" — fascia età "14–18 anni" -> --s3-slide2-card3-meta-{scale|x|y|lh|ls|color} */
-.s3-slide2-card3-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide2-card3-meta-scale,1));line-height:var(--s3-slide2-card3-meta-lh,1);letter-spacing:var(--s3-slide2-card3-meta-ls,0.5px);color:var(--s3-slide2-card3-meta-color,#999);transform:translate(var(--s3-slide2-card3-meta-x,0px),var(--s3-slide2-card3-meta-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Young" — testo -> --s3-slide2-card3-testo-{scale|x|y|lh|ls|color} */
-.s3-slide2-card3-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13.5px * var(--s3-slide2-card3-testo-scale,1));line-height:var(--s3-slide2-card3-testo-lh,1.6);letter-spacing:var(--s3-slide2-card3-testo-ls,0px);color:var(--s3-slide2-card3-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card3-testo-x,0px),var(--s3-slide2-card3-testo-y,0px));}
-/* MASCHERINO — CORSI · Slide 2 · Card "Vicolo Young" — bottone "Vedi le info" -> --s3-slide2-card3-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s3-slide2-card3-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(13px * var(--s3-slide2-card3-btn-scale,1));padding:calc(9px * var(--s3-slide2-card3-btn-scale,1)) calc(15px * var(--s3-slide2-card3-btn-scale,1));line-height:var(--s3-slide2-card3-btn-lh,1);letter-spacing:var(--s3-slide2-card3-btn-ls,0px);color:var(--s3-slide2-card3-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card3-btn-x,0px),var(--s3-slide2-card3-btn-y,0px));}.s3-slide2-card3-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card3-btn-x,0px),var(--s3-slide2-card3-btn-y,0px))}
-.s3-slide2-card3-btn:hover{background:transparent;color:#1b1b1b}
 
 /* ===== SEZIONE 3 CORSI · SLIDE 3 — Impro Adulti ===== */
 /* MASCHERINO — CORSI · Slide 3 (Impro Adulti) · Occhiello "Impro Adulti · 18–99 anni · [Sede]" -> --s3-slide3-eyebrow-{scale|x|y|lh|ls|color} */
@@ -983,7 +972,7 @@ html.sede-monte #s3-slide1{display:none}
   .card-grid.g3,.card-grid.g4{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:767px) and (orientation:portrait){
-  .card-grid.g3,.card-grid.g4{grid-template-columns:1fr;gap:14px}
+  .card-grid.g2,.card-grid.g3,.card-grid.g4{grid-template-columns:1fr;gap:14px}
 }
 
 /* ===== SLIDE 6 — RITOCCHI MOBILE PORTRAIT / TABLET PORTRAIT ===== */
@@ -1230,12 +1219,13 @@ html.sede-monte #s3-slide1{display:none}
 
     <!-- ===== SEZIONE 3 — CORSI — SLIDE 2 (panoramica) ===== -->
     <section class="vc-scena" id="s3-slide2" aria-label="Corsi">
-      <div class="eyebrow s3-slide2-eyebrow">I percorsi · <span class="sede-nome">Civitavecchia</span></div>
-      <h2 class="titolone s3-slide2-titolo">Corsi<span class="punto">.</span></h2>
-      <div class="card-grid g3">
-        <div class="porta"><span class="porta-num card-meta s3-slide2-card1-num">Adulti</span><h3 class="porta-tit s3-slide2-card1-tit">Impro Adulti</h3><span class="card-meta s3-slide2-card1-meta">18–99 anni</span><p class="porta-testo s3-slide2-card1-testo">Hai sempre voluto provare? Il palco può diventare casa.</p><a class="porta-btn s3-slide2-card1-btn" href="#s3-slide3">Vedi le info ↓</a></div>
-        <div class="porta"><span class="porta-num card-meta s3-slide2-card2-num">Bambini</span><h3 class="porta-tit s3-slide2-card2-tit">Vicolo Kids</h3><span class="card-meta s3-slide2-card2-meta">6–8 anni</span><p class="porta-testo s3-slide2-card2-testo">Dove la fantasia diventa una superpotenza.</p><a class="porta-btn s3-slide2-card2-btn" href="#s3-slide4">Vedi le info ↓</a></div>
-        <div class="porta"><span class="porta-num card-meta s3-slide2-card3-num">Ragazzi</span><h3 class="porta-tit s3-slide2-card3-tit">Vicolo Young</h3><span class="card-meta s3-slide2-card3-meta">14–18 anni</span><p class="porta-testo s3-slide2-card3-testo">L'età giusta per salire sul palco è adesso.</p><a class="porta-btn s3-slide2-card3-btn" href="#s3-slide5">Vedi le info ↓</a></div>
+      <div class="scena-inner">
+      <div class="eyebrow s3-slide2-eyebrow">I nostri percorsi</div>
+      <h2 class="titolone s3-slide2-titolo">Improvvisazione<span class="punto">.</span></h2>
+      <div class="card-grid g2">
+        <div class="porta"><h3 class="porta-tit s3-slide2-card1-tit">Adulti</h3><span class="card-meta s3-slide2-card1-meta">18+ anni</span><p class="porta-testo s3-slide2-card1-testo">Il corso più divertente e dinamico che c'è. Si impara ridendo e giocando. Senza giudizio.</p><a class="porta-btn s3-slide2-card1-btn" href="#s3-slide3">Scopri il corso</a></div>
+        <div class="porta"><h3 class="porta-tit s3-slide2-card2-tit">Bambini/e · Ragazzi/e</h3><span class="card-meta s3-slide2-card2-meta">4–17 anni</span><p class="porta-testo s3-slide2-card2-testo">Il corso per scoprire le proprie potenzialità e trovare il proprio posto scatenandosi insieme agli altri.</p><a class="porta-btn s3-slide2-card2-btn" href="#s3-slide4">Scopri il corso</a></div>
+      </div>
       </div>
     </section>
 
