@@ -843,7 +843,7 @@ body{overflow:hidden}
 #s3-slide1 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — CORSI · Slide 1 (Bivio) · schema VC Admin */
 .s3-slide1-titolo{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0 0 40px;font-size:calc(clamp(34px,5vw,74px) * var(--s3-slide1-titolo-scale,1));line-height:var(--s3-slide1-titolo-lh,.95);letter-spacing:var(--s3-slide1-titolo-ls,1px);color:var(--s3-slide1-titolo-color,var(--sede));transform:translate(var(--s3-slide1-titolo-x,0px),var(--s3-slide1-titolo-y,0px));}
-.s3-slide1-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;max-width:920px;width:100%;position:relative;z-index:3}
+.s3-slide1-card-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;max-width:1120px;width:100%;position:relative;z-index:3}
 .s3-slide1-card{display:flex;flex-direction:column;gap:12px;text-align:left;text-decoration:none;color:#fff;background:transparent;border:1.5px solid rgba(255,255,255,.16);border-radius:14px;padding:28px 30px 26px;cursor:pointer;transition:border-color .3s ease,transform .3s ease;}
 .s3-slide1-card:hover{border-color:var(--sede);transform:translateY(-6px)}
 .s3-slide1-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(12px * var(--s3-slide1-card1-num-scale,1));line-height:var(--s3-slide1-card1-num-lh,1);letter-spacing:var(--s3-slide1-card1-num-ls,1px);color:var(--s3-slide1-card1-num-color,var(--sede));transform:translate(var(--s3-slide1-card1-num-x,0px),var(--s3-slide1-card1-num-y,0px));}
@@ -858,6 +858,12 @@ body{overflow:hidden}
 .s3-slide1-card2-nota{font-family:'Montserrat',sans-serif;font-size:calc(13px * var(--s3-slide1-card2-nota-scale,1));line-height:var(--s3-slide1-card2-nota-lh,1.5);letter-spacing:var(--s3-slide1-card2-nota-ls,0px);color:var(--s3-slide1-card2-nota-color,#8f8f8f);margin:0;transform:translate(var(--s3-slide1-card2-nota-x,0px),var(--s3-slide1-card2-nota-y,0px));}
 .s3-slide1-card2-btn{margin-top:auto;align-self:flex-start;display:inline-block;font-family:'Poppins',sans-serif;font-weight:500;letter-spacing:var(--s3-slide1-card2-btn-ls,0px);font-size:calc(15px * var(--s3-slide1-card2-btn-scale,1));line-height:var(--s3-slide1-card2-btn-lh,1);color:var(--s3-slide1-card2-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);border-radius:8px;padding:calc(11px * var(--s3-slide1-card2-btn-scale,1)) calc(20px * var(--s3-slide1-card2-btn-scale,1));text-decoration:none;transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide1-card2-btn-x,0px),var(--s3-slide1-card2-btn-y,0px));}
 .s3-slide1-card2-btn:hover{background:transparent;color:var(--sede);transform:translateY(-2px) translate(var(--s3-slide1-card2-btn-x,0px),var(--s3-slide1-card2-btn-y,0px))}
+.s3-slide1-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(12px * var(--s3-slide1-card3-num-scale,1));line-height:var(--s3-slide1-card3-num-lh,1);letter-spacing:var(--s3-slide1-card3-num-ls,1px);color:var(--s3-slide1-card3-num-color,var(--sede));transform:translate(var(--s3-slide1-card3-num-x,0px),var(--s3-slide1-card3-num-y,0px));}
+.s3-slide1-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;font-size:calc(clamp(30px,3.4vw,50px) * var(--s3-slide1-card3-tit-scale,1));line-height:var(--s3-slide1-card3-tit-lh,.95);letter-spacing:var(--s3-slide1-card3-tit-ls,.5px);margin:0;color:var(--s3-slide1-card3-tit-color,#fff);transform:translate(var(--s3-slide1-card3-tit-x,0px),var(--s3-slide1-card3-tit-y,0px));}
+.s3-slide1-card3-testo{font-family:'Montserrat',sans-serif;font-size:calc(15px * var(--s3-slide1-card3-testo-scale,1));line-height:var(--s3-slide1-card3-testo-lh,1.55);letter-spacing:var(--s3-slide1-card3-testo-ls,0px);color:var(--s3-slide1-card3-testo-color,#c7c7c7);margin:0;transform:translate(var(--s3-slide1-card3-testo-x,0px),var(--s3-slide1-card3-testo-y,0px));}
+.s3-slide1-card3-nota{font-family:'Montserrat',sans-serif;font-size:calc(13px * var(--s3-slide1-card3-nota-scale,1));line-height:var(--s3-slide1-card3-nota-lh,1.5);letter-spacing:var(--s3-slide1-card3-nota-ls,0px);color:var(--s3-slide1-card3-nota-color,#8f8f8f);margin:0;transform:translate(var(--s3-slide1-card3-nota-x,0px),var(--s3-slide1-card3-nota-y,0px));}
+.s3-slide1-card3-btn{margin-top:auto;align-self:flex-start;display:inline-block;font-family:'Poppins',sans-serif;font-weight:500;letter-spacing:var(--s3-slide1-card3-btn-ls,0px);font-size:calc(15px * var(--s3-slide1-card3-btn-scale,1));line-height:var(--s3-slide1-card3-btn-lh,1);color:var(--s3-slide1-card3-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);border-radius:8px;padding:calc(11px * var(--s3-slide1-card3-btn-scale,1)) calc(20px * var(--s3-slide1-card3-btn-scale,1));text-decoration:none;transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide1-card3-btn-x,0px),var(--s3-slide1-card3-btn-y,0px));}
+.s3-slide1-card3-btn:hover{background:transparent;color:var(--sede);transform:translateY(-2px) translate(var(--s3-slide1-card3-btn-x,0px),var(--s3-slide1-card3-btn-y,0px))}
 html.sede-monte #s3-slide1{display:none}
 @media (max-width:640px){.s3-slide1-card-grid{grid-template-columns:1fr;gap:14px;max-width:460px}.s3-slide1-card{padding:26px 22px 22px}}
 
@@ -1248,16 +1254,23 @@ html.sede-monte #s3-slide1{display:none}
         <a class="s3-slide1-card" href="#s3-slide2">
           <span class="s3-slide1-card1-num" aria-hidden="true"></span>
           <h3 class="s3-slide1-card1-tit">Improvvisazione</h3>
-          <p class="s3-slide1-card1-testo">Corsi di improvvisazione teatrale per adulti, ragazzi e bambini. La prima lezione si guarda, si ride, si prova.</p>
+          <p class="s3-slide1-card1-testo">Corsi di improvvisazione teatrale per adulti, ragazzi e bambini. Si allena la reattività e si abbatte la timidezza semplicemente divertendosi.</p>
           <p class="s3-slide1-card1-nota">Un incontro a settimana.</p>
           <span class="s3-slide1-card1-btn">Vai ai corsi</span>
         </a>
         <a class="s3-slide1-card" href="#vicolo-off-slide1">
           <span class="s3-slide1-card2-num" aria-hidden="true"></span>
           <h3 class="s3-slide1-card2-tit">Teatro</h3>
-          <p class="s3-slide1-card2-testo">La OFF: la scuola professionale di teatro di testo del Vicolo. Si impara la recitazione, insieme all'improvvisazione.</p>
+          <p class="s3-slide1-card2-testo">La OFF: la scuola professionale di teatro di testo del Vicolo. Qui si impara a recitare. Sul serio.</p>
           <p class="s3-slide1-card2-nota">Due incontri a settimana: un giorno recitazione, un giorno improvvisazione.</p>
           <span class="s3-slide1-card2-btn">Scopri La OFF</span>
+        </a>
+        <a class="s3-slide1-card" href="#s3-slide2">
+          <span class="s3-slide1-card3-num" aria-hidden="true"></span>
+          <h3 class="s3-slide1-card3-tit">Lab creativi</h3>
+          <p class="s3-slide1-card3-testo">Testo di esempio da modificare. Laboratori creativi per esplorare, sperimentare e mettersi in gioco senza schemi.</p>
+          <p class="s3-slide1-card3-nota">Testo nota di esempio.</p>
+          <span class="s3-slide1-card3-btn">Vai ai lab</span>
         </a>
       </div>
       </div>
