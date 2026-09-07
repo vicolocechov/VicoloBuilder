@@ -1007,6 +1007,72 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide1-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s4-slide1-btn-scale,1));padding:calc(18px * var(--s4-slide1-btn-scale,1)) calc(22px * var(--s4-slide1-btn-scale,1));line-height:var(--s4-slide1-btn-lh,1);letter-spacing:var(--s4-slide1-btn-ls,0px);color:var(--s4-slide1-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s4-slide1-btn-x,0px),var(--s4-slide1-btn-y,0px));}.s4-slide1-btn:hover{transform:translateY(-2px) translate(var(--s4-slide1-btn-x,0px),var(--s4-slide1-btn-y,0px))}
 .s4-slide1-btn:hover{background:transparent;color:var(--sede)}
 
+/* ===== SEZIONE 4 VICOLO OFF · SLIDE 2 — Il muro degli spettacoli ===== */
+#s4-slide2 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
+#s4-slide2{overflow:hidden}
+#s4-slide2 .s4-slide2-inner{width:100%;max-width:1180px;position:relative;z-index:1}
+/* MASCHERINO — VICOLO OFF · Slide 2 · Occhiello "Gli spettacoli · Stagione 26/27" -> --s4-slide2-eyebrow-{scale|x|y|lh|ls|color} */
+.s4-slide2-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s4-slide2-eyebrow-scale,1));line-height:var(--s4-slide2-eyebrow-lh,1);letter-spacing:var(--s4-slide2-eyebrow-ls,2px);color:var(--s4-slide2-eyebrow-color,#fff);transform:translate(var(--s4-slide2-eyebrow-x,0px),var(--s4-slide2-eyebrow-y,0px));}
+/* MASCHERINO — VICOLO OFF · Slide 2 · Titolo "Succede al Vicolo Off." -> --s4-slide2-titolo-{scale|x|y|lh|ls|color} */
+.s4-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:9px 0 0;font-size:calc(clamp(40px,5vw,74px) * var(--s4-slide2-titolo-scale,1));line-height:var(--s4-slide2-titolo-lh,.9);letter-spacing:var(--s4-slide2-titolo-ls,0px);color:var(--s4-slide2-titolo-color,#fff);transform:translate(var(--s4-slide2-titolo-x,0px),var(--s4-slide2-titolo-y,0px));}
+/* MASCHERINO — VICOLO OFF · Slide 2 · Paragrafo "Scegli il mese e poi la locandina." -> --s4-slide2-corpo-{scale|x|y|lh|ls|color} */
+.s4-slide2-corpo{font-family:'Montserrat',sans-serif;margin:9px auto 0;font-size:calc(clamp(13px,1.1vw,16px) * var(--s4-slide2-corpo-scale,1));line-height:var(--s4-slide2-corpo-lh,1.35);letter-spacing:var(--s4-slide2-corpo-ls,0px);color:var(--s4-slide2-corpo-color,#cfcfcf);transform:translate(var(--s4-slide2-corpo-x,0px),var(--s4-slide2-corpo-y,0px));}
+.s4-slide2-months{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:13px auto 0}
+.s4-slide2-month{border:1px solid rgba(255,255,255,.22);background:transparent;color:#fff;border-radius:999px;padding:6px 11px;font:500 9px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+.s4-slide2-month.is-active{background:var(--sede);border-color:var(--sede);color:#1b1b1b}
+.s4-slide2-month-panels{margin-top:10px;min-height:0}
+.s4-slide2-month-panel{display:none}
+.s4-slide2-month-panel.is-active{display:block}
+.s4-slide2-pages{width:100%}
+.s4-slide2-page{display:none;width:100%;overflow:hidden}
+.s4-slide2-page.is-active{display:block}
+.s4-slide2-wall{width:min(920px,89vw);margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:center;overflow:visible;min-height:120px}
+.s4-slide2-wall-empty{grid-column:1/-1;text-align:center;color:#8f8f8f;font:13px/1.5 'Montserrat',sans-serif;padding:40px 10px}
+.s4-slide2-poster-slot{width:100%;min-width:0;position:relative;overflow:visible}
+.s4-slide2-poster{appearance:none;border:0;padding:0;background:none;width:100%;min-width:0;display:block;position:relative;cursor:pointer;text-align:left;filter:brightness(.88);transform:translate(var(--s4-slide2-poster-x,0px),var(--s4-slide2-poster-y,0px)) scale(var(--s4-slide2-poster-scale,1));transform-origin:center center;transition:filter .18s;z-index:1;will-change:transform}
+.s4-slide2-poster:hover,.s4-slide2-poster:focus{z-index:5}
+.s4-slide2-poster:hover{filter:brightness(1)}
+.s4-slide2-poster-img{display:block;width:100%;aspect-ratio:700/980;object-fit:cover;background:#26261f}
+.s4-slide2-poster-meta{position:absolute;left:7px;bottom:7px;font:8px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
+.s4-slide2-page-dots{display:flex;justify-content:center;gap:7px;margin:8px 0 0}
+.s4-slide2-page-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent;padding:0;cursor:pointer}
+.s4-slide2-page-dot.is-active{background:#fff}
+.s4-slide2-overlay{position:absolute;inset:0;background:#1b1b1b;display:grid;place-items:center;padding:clamp(24px,5vw,70px);opacity:0;visibility:hidden;pointer-events:none;z-index:20}
+.s4-slide2-overlay.open{opacity:1;visibility:visible;pointer-events:auto}
+.s4-slide2-detail{width:min(1040px,94vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column;justify-content:center;gap:22px;position:relative;padding:6px}
+.s4-slide2-detail::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-detail-head{max-width:720px;text-align:center;margin:0 auto}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Titolo -> --s4-slide2-detail-titolo-{scale|x|y|lh|ls|color} */
+.s4-slide2-detail-titolo{font-family:'AkkPorte',sans-serif;font-weight:400;text-transform:uppercase;font-size:calc(clamp(40px,5vw,76px) * var(--s4-slide2-detail-titolo-scale,1));line-height:var(--s4-slide2-detail-titolo-lh,.94);letter-spacing:var(--s4-slide2-detail-titolo-ls,0px);color:var(--s4-slide2-detail-titolo-color,#fff);margin:0 0 4px;transform:translate(var(--s4-slide2-detail-titolo-x,0px),var(--s4-slide2-detail-titolo-y,0px))}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Autore/regia -> --s4-slide2-detail-autore-{scale|x|y|lh|ls|color} */
+.s4-slide2-detail-autore{font-family:'Poppins',sans-serif;font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1));line-height:var(--s4-slide2-detail-autore-lh,1.3);letter-spacing:var(--s4-slide2-detail-autore-ls,.4px);color:var(--s4-slide2-detail-autore-color,#8f8f8f);margin:0;transform:translate(var(--s4-slide2-detail-autore-x,0px),var(--s4-slide2-detail-autore-y,0px))}
+.s4-slide2-detail-row{display:flex;gap:clamp(24px,4vw,44px);align-items:flex-start}
+.s4-slide2-detail-copy{flex:1;min-width:0;padding-top:16px;text-align:left}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Sinossi -> --s4-slide2-detail-sinossi-{scale|x|y|lh|ls|color} */
+.s4-slide2-detail-sinossi{font-family:'Montserrat',sans-serif;font-size:calc(clamp(15px,1.25vw,18px) * var(--s4-slide2-detail-sinossi-scale,1));line-height:var(--s4-slide2-detail-sinossi-lh,1.65);letter-spacing:var(--s4-slide2-detail-sinossi-ls,0px);color:var(--s4-slide2-detail-sinossi-color,#cfcfcf);max-width:640px;margin:0;transform:translate(var(--s4-slide2-detail-sinossi-x,0px),var(--s4-slide2-detail-sinossi-y,0px))}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Cast -> --s4-slide2-detail-cast-{scale|x|y|lh|ls|color} */
+.s4-slide2-detail-cast{font-family:'Montserrat',sans-serif;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));line-height:var(--s4-slide2-detail-cast-lh,1.5);letter-spacing:var(--s4-slide2-detail-cast-ls,0px);color:var(--s4-slide2-detail-cast-color,#8f8f8f);margin-top:12px;transform:translate(var(--s4-slide2-detail-cast-x,0px),var(--s4-slide2-detail-cast-y,0px))}
+.s4-slide2-detail-info{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:20px 0 24px;font:11px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff}
+.s4-slide2-detail-info span{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px}
+.s4-slide2-detail-tag{background:var(--sede);color:#1b1b1b!important;border-color:var(--sede)!important;font-weight:600}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Bottone "Prenota" -> --s4-slide2-detail-btn-{scale(dimensione)|x|y|lh|ls|color} */
+.s4-slide2-detail-btn{display:inline-block;font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;background:var(--sede);border:2px solid var(--sede);font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1));padding:calc(16px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));line-height:var(--s4-slide2-detail-btn-lh,1);letter-spacing:var(--s4-slide2-detail-btn-ls,0px);color:var(--s4-slide2-detail-btn-color,#1b1b1b);align-self:center;margin-top:4px;transform:translate(var(--s4-slide2-detail-btn-x,0px),var(--s4-slide2-detail-btn-y,0px))}
+.s4-slide2-detail-btn:hover{background:transparent;color:var(--sede)}
+.s4-slide2-detail-gallery{position:relative;overflow:hidden;flex:0 0 42%;border-radius:14px;background:#26261f}
+.s4-slide2-gallery-track{display:flex;transition:transform .25s ease}
+.s4-slide2-gallery-track img{flex:0 0 100%;display:block;width:100%;max-height:48vh;object-fit:contain;border-radius:12px}
+.s4-slide2-gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:22px;cursor:pointer}
+.s4-slide2-gallery-prev{left:7px}
+.s4-slide2-gallery-next{right:7px}
+.s4-slide2-gallery-nav{display:flex;justify-content:center;gap:7px;margin-top:7px}
+.s4-slide2-gallery-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent;padding:0;cursor:pointer}
+.s4-slide2-gallery-dot.is-active{background:#fff}
+.s4-slide2-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:1px solid rgba(255,255,255,.28);background:rgba(27,27,27,.82);color:#fff;border-radius:50%;font-size:26px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s}
+.s4-slide2-close:hover{background:var(--sede);color:#1b1b1b;transform:scale(1.06)}
+@media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
+@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(26px,8vw,40px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(10px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(10.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:7px 10px;font-size:9px}.s4-slide2-detail-btn{padding:calc(14px * var(--s4-slide2-detail-btn-scale,1)) calc(20px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12.5px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
+@media (orientation:landscape) and (max-height:550px){.s4-slide2-wall{grid-template-columns:repeat(4,minmax(0,1fr));width:min(900px,88vw);gap:10px;margin-top:16px}.s4-slide2-detail{grid-template-columns:200px 1fr;gap:24px}.s4-slide2-detail-gallery img{max-height:74vh}.s4-slide2-detail-titolo{font-size:calc(clamp(40px,5vw,68px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-sinossi{font-size:14px}}
+
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
 .s5-slide1-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s5-slide1-eyebrow-scale,1));line-height:var(--s5-slide1-eyebrow-lh,1);letter-spacing:var(--s5-slide1-eyebrow-ls,2px);color:var(--s5-slide1-eyebrow-color,#8a8a8a);transform:translate(var(--s5-slide1-eyebrow-x,0px),var(--s5-slide1-eyebrow-y,0px));}
@@ -1366,7 +1432,21 @@ html.sede-monte #s3-slide1{display:none}
       <div class="eyebrow s4-slide1-eyebrow">Stagione 26/27</div>
       <h2 class="titolone s4-slide1-titolo">Vicolo Off<span class="punto">.</span></h2>
       <p class="corpo s4-slide1-corpo">La parete di eventi: spettacoli, serate d'improvvisazione, ospiti. Prenoti in dieci secondi.</p>
-      <div class="spazio-btn"><a class="s4-slide1-btn" href="mailto:info@vicolocechov.it">Guarda gli spettacoli</a></div>
+      <div class="spazio-btn"><a class="s4-slide1-btn" href="#s4-slide2">Guarda gli spettacoli</a></div>
+    </section>
+
+    <!-- ===== SEZIONE 4 — VICOLO OFF — SLIDE 2 (Il muro degli spettacoli) ===== -->
+    <section class="vc-scena banda sezione-scura" id="s4-slide2" aria-label="Gli spettacoli del Vicolo Off">
+      <div class="scena-inner s4-slide2-inner">
+      <div class="eyebrow s4-slide2-eyebrow">Gli spettacoli · Stagione 26/27</div>
+      <h2 class="titolone s4-slide2-titolo">Succede <span class="punto">al Vicolo Off.</span></h2>
+      <p class="corpo s4-slide2-corpo">Scegli il mese e poi la locandina.</p>
+      <div class="s4-slide2-months" role="tablist" aria-label="Mesi spettacoli">
+        <button class="s4-slide2-month is-active" data-month="novembre" type="button">Novembre</button><button class="s4-slide2-month" data-month="dicembre" type="button">Dicembre</button><button class="s4-slide2-month" data-month="gennaio" type="button">Gennaio</button><button class="s4-slide2-month" data-month="febbraio" type="button">Febbraio</button><button class="s4-slide2-month" data-month="marzo" type="button">Marzo</button><button class="s4-slide2-month" data-month="aprile" type="button">Aprile</button>
+      </div>
+      <div class="s4-slide2-month-panels"><div class="s4-slide2-month-panel is-active" data-month-panel="novembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="dicembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="gennaio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="febbraio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="marzo"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="aprile"><div class="s4-slide2-pages"></div></div></div>
+      </div>
+      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
     </section>
   </section><!-- /vc-panel vicolo-off -->
 
@@ -1645,6 +1725,117 @@ requestAnimationFrame(riposiziona);
   const paure=[...document.querySelectorAll('#paure .paura')]; if(!paure.length) return;
   let pi=1;
   setInterval(()=>{ paure.forEach(x=>x.classList.remove('viva')); paure[pi%paure.length].classList.add('viva'); pi++; }, 1500);
+})();
+</script>
+<script>
+/* ===== VICOLO OFF · Muro degli spettacoli =====
+   Nessuna locandina finta: il muro parte vuoto (nessun dato inventato).
+   Mesi/pagine/scheda-sinossi seguono lo schema del pannello (variabili
+   --s4-slide2-*), pronti a essere popolati con dati reali dal tool
+   "Gestione locandine" nel pannello. */
+(function(){
+  const months=['novembre','dicembre','gennaio','febbraio','marzo','aprile'];
+  const data={}, byMonth={}; months.forEach(m=>byMonth[m]=[]);
+  let next=1, activeMonth='novembre', activePage=0, gi=0;
+  const tabs=[...document.querySelectorAll('.s4-slide2-month')], panels=[...document.querySelectorAll('.s4-slide2-month-panel')];
+  if(!tabs.length) return;
+  const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
+  const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
+
+  function pages(m){ const a=byMonth[m]||[], p=[]; for(let i=0;i<a.length;i+=4) p.push(a.slice(i,i+4)); return p.length?p:[[]]; }
+
+  function makePoster(id){
+    const d=data[id], slot=document.createElement('div'), b=document.createElement('button');
+    slot.className='s4-slide2-poster-slot';
+    b.className='s4-slide2-poster s4-slide2-poster'+id; b.type='button'; b.dataset.show=id;
+    const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
+    b.appendChild(im);
+    const sp=document.createElement('span'); sp.className='s4-slide2-poster-meta'; sp.textContent=d.meta||d.tag||''; b.appendChild(sp);
+    b.onclick=()=>openShow(id);
+    slot.appendChild(b);
+    return slot;
+  }
+
+  function render(m){
+    activeMonth=m;
+    tabs.forEach(t=>t.classList.toggle('is-active', t.dataset.month===m));
+    const panel=panels.find(p=>p.dataset.monthPanel===m);
+    panels.forEach(p=>p.classList.toggle('is-active', p===panel));
+    if(!panel) return;
+    const host=panel.querySelector('.s4-slide2-pages'), ps=pages(m);
+    if(activePage>=ps.length) activePage=0;
+    host.innerHTML='';
+    ps.forEach((ids,pi)=>{
+      const page=document.createElement('div'); page.className='s4-slide2-page'+(pi===activePage?' is-active':'');
+      const wall=document.createElement('div'); wall.className='s4-slide2-wall';
+      if(ids.length){
+        ids.forEach(id=>wall.appendChild(makePoster(id)));
+      } else {
+        const empty=document.createElement('div'); empty.className='s4-slide2-wall-empty';
+        empty.textContent='Nessuno spettacolo ancora in programma per questo mese.';
+        wall.appendChild(empty);
+      }
+      page.appendChild(wall);
+      if(ps.length>1){
+        const dots=document.createElement('div'); dots.className='s4-slide2-page-dots';
+        ps.forEach((_,k)=>{ const dd=document.createElement('button'); dd.type='button'; dd.className='s4-slide2-page-dot'+(k===activePage?' is-active':''); dd.onclick=()=>{ activePage=k; render(activeMonth); }; dots.appendChild(dd); });
+        page.appendChild(dots);
+      }
+      host.appendChild(page);
+    });
+  }
+
+  function setG(i){
+    if(!track.children.length) return;
+    gi=Math.max(0, Math.min(i, track.children.length-1));
+    track.style.transform='translateX(-'+(gi*100)+'%)';
+    [...nav.children].forEach((d,k)=>d.classList.toggle('is-active', k===gi));
+  }
+
+  function openShow(id){
+    const d=data[id]; if(!d) return;
+    track.innerHTML=''; nav.innerHTML='';
+    (d.gallery||[]).forEach((u,k)=>{
+      const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); track.appendChild(im);
+      const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
+    });
+    setG(0);
+    elTitle.textContent=d.title||''; elAutore.textContent=d.autore||''; elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
+    overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+  }
+  function closeShow(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); }
+
+  function ensurePosterCss(n){
+    const cssId='s4-poster-vars-'+n; if(document.getElementById(cssId)) return;
+    const st=document.createElement('style'); st.id=cssId;
+    st.textContent='.s4-slide2-poster'+String(n).padStart(2,'0')+'{transform:translate(var(--s4-slide2-poster'+n+'-x,0px),var(--s4-slide2-poster'+n+'-y,0px)) scale(var(--s4-slide2-poster'+n+'-scale,1));}';
+    document.head.appendChild(st);
+  }
+
+  /* addPoster non inventa nessun contenuto: chi la chiama deve passare i dati veri
+     (titolo, autore/regia, sinossi, cast, data, ora, tag, immagini caricate). */
+  function addPoster(month, info){
+    const id=String(next++).padStart(2,'0');
+    ensurePosterCss(Number(id));
+    const m=months.includes(month)?month:activeMonth;
+    data[id]=Object.assign({title:'',autore:'',synopsis:'',cast:'',date:'',time:'',tag:'',meta:'',gallery:[]}, info||{}, {month:m});
+    byMonth[m].push(id);
+    activeMonth=m; activePage=pages(m).length-1;
+    render(m);
+    return id;
+  }
+
+  tabs.forEach(t=>t.onclick=()=>{ activePage=0; render(t.dataset.month); });
+  closeBtn.onclick=closeShow;
+  overlay.onclick=e=>{ if(e.target===overlay) closeShow(); };
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.classList.contains('open')) closeShow(); });
+  document.getElementById('s4Slide2GalleryPrev').onclick=()=>setG(gi-1);
+  document.getElementById('s4Slide2GalleryNext').onclick=()=>setG(gi+1);
+
+  window.__vcWallAddPoster=addPoster;
+  window.__vcWallGetActiveMonth=()=>activeMonth;
+  window.__vcWallMonths=months.slice();
+  render(activeMonth);
 })();
 </script>
 <script src="vc-admin-panel.js"></script>
