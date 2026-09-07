@@ -14,6 +14,61 @@
    ============================================================================ */
 (function () {
   'use strict';
+
+  /* ---- A capo (<br>) nei testi editabili: helper condivisi tra pannello e slave (iframe anteprima) ----
+     vcMultilineWrite(el, text): ricostruisce i figli di un elemento da una stringa con '\n',
+     alternando nodi di testo e <br> reali. vcMultilineRead(node): operazione inversa, legge un
+     nodo (testo o elemento con eventuali <br> interni) e restituisce la stringa con '\n'. */
+  function vcMultilineWrite(el, text){
+    if(!el || el.nodeType!==1) return;
+    var doc=el.ownerDocument||document;
+    el.setAttribute('data-vcfrag','1'); // marca l'elemento come campo a righe multiple sotto il nostro controllo
+    while(el.firstChild) el.removeChild(el.firstChild);
+    var lines=String(text==null?'':text).split('\n');
+    lines.forEach(function(line,i){
+      if(i>0) el.appendChild(doc.createElement('br'));
+      el.appendChild(doc.createTextNode(line));
+    });
+  }
+  function vcMultilineRead(node){
+    if(!node) return '';
+    if(node.nodeType===3) return node.textContent||'';
+    if(node.nodeType!==1) return '';
+    var parts=[];
+    Array.prototype.forEach.call(node.childNodes, function(c){
+      if(c.nodeType===3) parts.push(c.textContent||'');
+      else if(c.nodeType===1 && c.tagName==='BR') parts.push('\n');
+    });
+    return parts.join('');
+  }
+  /* Scrive un frammento che puo' essere un nodo di testo nudo (nodeType 3, tra altri fratelli)
+     oppure un elemento-foglia (nodeType 1, es. uno span colorato). Se il testo introduce un a
+     capo su un nodo di testo nudo (che non puo' avere figli), lo sostituisce IN QUEL PUNTO con
+     uno <span data-vcfrag="1"> che contiene la sequenza testo/<br>: stessa posizione tra i
+     fratelli (replaceChild non cambia il numero di figli del genitore), quindi i percorsi
+     salvati per gli ALTRI frammenti dello stesso elemento restano validi. Ritorna il nodo che
+     ora occupa quella posizione (utile solo per chi vuole il riferimento aggiornato). */
+  function vcWriteFragNode(node, text){
+    if(!node) return node;
+    var s=String(text==null?'':text);
+    if(node.nodeType===3){
+      if(s.indexOf('\n')===-1){ node.textContent=s; return node; }
+      var wrap=(node.ownerDocument||document).createElement('span');
+      wrap.setAttribute('data-vcfrag','1');
+      vcMultilineWrite(wrap, s);
+      if(node.parentNode) node.parentNode.replaceChild(wrap, node);
+      return wrap;
+    }
+    if(node.nodeType===1){ node.setAttribute('data-vcfrag','1'); vcMultilineWrite(node, s); return node; }
+    return node;
+  }
+  /* Fa crescere una textarea del pannello col numero di righe scritte (min = minRows). */
+  function vcAutoGrow(ta, minRows){
+    if(!ta) return;
+    var n=String(ta.value||'').split('\n').length;
+    ta.rows=Math.max(minRows||1, n);
+  }
+
   var IS_PREVIEW = location.hash.indexOf('vc-preview') !== -1;
   if (IS_PREVIEW) { runSlave(); return; }
 
@@ -190,6 +245,12 @@
       if(tag==='BR'){ frags.push({kind:'marker', node:node, label:'↵ interruzione riga'}); return; }
       if(tag==='IMG'){ frags.push({kind:'marker', node:node, label:'🖼️ immagine'}); return; }
       if(node.classList && node.classList.contains('sede-nome')){ frags.push({kind:'locked', node:node, label:'📍 nome sede (dinamico, non modificabile qui)'}); return; }
+      if(node.hasAttribute && node.hasAttribute('data-vcfrag')){
+        // frammento gia' andato a capo in precedenza: e' un unico campo (testo + <br> interni),
+        // non lo riapriamo in sotto-frammenti separati.
+        if((node.textContent||'').trim().length) frags.push({kind:'leaf', node:node});
+        return;
+      }
       if(node.children.length===0){
         var t=(node.textContent||'').trim();
         if(t.length) frags.push({kind:'leaf', node:node});
@@ -215,9 +276,14 @@
     return cur||null;
   }
   function writeFragNode(node, text){
-    if(!node) return;
-    if(node.nodeType===3){ node.textContent=text; }
-    else if(node.nodeType===1 && node.children.length===0){ node.textContent=text; }
+    if(!node) return node;
+    if(node.nodeType===3) return vcWriteFragNode(node, text);
+    // elemento: riscrivi solo se era gia' un campo controllato da noi (foglia vuota in origine,
+    // o un nostro wrapper data-vcfrag da un a capo precedente) - mai su strutture non nostre.
+    if(node.nodeType===1 && (node.children.length===0 || node.hasAttribute('data-vcfrag'))){
+      return vcWriteFragNode(node, text);
+    }
+    return node;
   }
   function applyFragText(){
     Object.keys(fragText).forEach(function(k){
@@ -520,6 +586,20 @@
   var $=function(s){return root.querySelector(s);};
   var frame=$('#frame'), stage=$('#stage'), scaler=$('#frameScaler');
 
+  /* Le frecce (Left/Right/Up/Down, anche con Shift, e Home/End) devono muovere il cursore
+     nei campi di testo del pannello, non essere intercettate dal listener del sito che
+     naviga tra sezione/slide con le frecce. Fermiamo la propagazione qui, in fase di
+     cattura (prima che l'evento arrivi al listener del sito su document), cosi' il
+     comportamento nativo del campo resta intatto e il sito non riceve l'evento. */
+  document.addEventListener('keydown', function(e){
+    var path = typeof e.composedPath === 'function' ? e.composedPath() : [e.target];
+    var origin = path[0];
+    if(origin && origin.getRootNode && origin.getRootNode() === root &&
+       (origin.tagName === 'INPUT' || origin.tagName === 'TEXTAREA')){
+      e.stopPropagation();
+    }
+  }, true);
+
   $('#fab').addEventListener('click', openDrawer);
   $('#close').addEventListener('click', closeDrawer);
   function openDrawer(){ $('#drawer').classList.remove('closed'); $('#fab').style.display='none'; }
@@ -658,7 +738,7 @@
         var bfk=famKeyOf(g.sec,g.slide,family);
         var bsel=(SELMAP[bfk]||[])[0];
         var bel=null; try{ bel=bsel?document.querySelector(bsel):null; }catch(e){}
-        var isLeafText = bel && bel.children.length===0 && (bel.textContent||'').trim().length>0;
+        var isLeafText = bel && (bel.children.length===0 || bel.hasAttribute('data-vcfrag')) && (bel.textContent||'').trim().length>0;
         var frags = (bel && bel.children.length>0) ? collectFragments(bel) : [];
         var fragTouched = bsel ? Object.keys(fragText).some(function(k){ return fragText[k].sel===bsel; }) : false;
         var touched=g.fams[family].some(function(p){ return (overrides[currentZone]||{})[p.name]!=null; }) || currentHideMode(g.sec,g.slide,family)!=='visible' || fragTouched;
@@ -669,14 +749,15 @@
         g.fams[family].sort(function(a,b){ return PROP_ORDER.indexOf(a.prop)-PROP_ORDER.indexOf(b.prop); }).forEach(function(p){ ctrls.appendChild(makeControl(p.name,p.prop)); });
         if(isLeafText){
           var te=document.createElement('div'); te.className='texted';
-          var lbl=document.createElement('div'); lbl.className='clab'; lbl.innerHTML='<span>Testo</span>';
+          var lbl=document.createElement('div'); lbl.className='clab'; lbl.innerHTML='<span>Testo (Invio = a capo)</span>';
           var ta=document.createElement('textarea'); ta.className='tbox'; ta.rows=(/btn|titolo|frase|corpo|testo/.test(family)?2:1);
-          ta.value=(btnText[bfk]?btnText[bfk].text:(bel.textContent||'').trim());
-          (function(fkk,sll){ ta.addEventListener('input', function(){ setBtnText(fkk, sll, ta.value); }); })(bfk,bsel);
+          ta.value=(btnText[bfk]?btnText[bfk].text:vcMultilineRead(bel).trim());
+          vcAutoGrow(ta, ta.rows);
+          (function(fkk,sll){ ta.addEventListener('input', function(){ vcAutoGrow(ta, ta.rows); setBtnText(fkk, sll, ta.value); }); })(bfk,bsel);
           te.appendChild(lbl); te.appendChild(ta); el.appendChild(te);
         } else if(frags.some(function(f){ return f.kind==='text'||f.kind==='leaf'; })){
           var tf=document.createElement('div'); tf.className='texted';
-          var lblf=document.createElement('div'); lblf.className='clab'; lblf.innerHTML='<span>Testo (un campo per pezzo - colori/'+'&lt;br&gt;'+'/immagini restano intatti)</span>';
+          var lblf=document.createElement('div'); lblf.className='clab'; lblf.innerHTML='<span>Testo (un campo per pezzo - Invio = a capo; colori/'+'&lt;br&gt;'+'/immagini restano intatti)</span>';
           tf.appendChild(lblf);
           frags.forEach(function(f){
             if(f.kind==='marker' || f.kind==='locked'){
@@ -685,9 +766,10 @@
               return;
             }
             var path=pathOf(bel, f.node); if(!path) return;
-            var inp=document.createElement('input'); inp.type='text'; inp.className='fraginput';
-            inp.value=(f.node.nodeType===3?f.node.textContent:f.node.textContent);
-            (function(sll,pp,input){ input.addEventListener('input', function(){ setFragText(sll, pp, input.value); }); })(bsel, path, inp);
+            var inp=document.createElement('textarea'); inp.className='fraginput'; inp.rows=1;
+            inp.value=vcMultilineRead(f.node);
+            vcAutoGrow(inp, 1);
+            (function(sll,pp,input){ input.addEventListener('input', function(){ vcAutoGrow(input, 1); setFragText(sll, pp, input.value); }); })(bsel, path, inp);
             tf.appendChild(inp);
           });
           el.appendChild(tf);
@@ -781,7 +863,7 @@
         // testi
         Object.keys(textOverrides).forEach(function(fk){ var o=textOverrides[fk]; try{ var el=doc.querySelector(o.sel); if(el) el.textContent=o.text; }catch(e){} });
         // testo bottoni
-        Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=doc.querySelector(o.sel); if(el && el.children.length===0) el.textContent=o.text; }catch(e){} });
+        Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=doc.querySelector(o.sel); if(el) vcMultilineWrite(el, o.text); }catch(e){} });
         // testo per frammento (elementi con struttura interna: span colorati, <br>, immagini restano intatti)
         Object.keys(fragText).forEach(function(fk){ var o=fragText[fk]; try{ var root=doc.querySelector(o.sel); if(!root) return; writeFragNode(resolveFragPath(root,o.path), o.text); }catch(e){} });
         // parole spezzate
@@ -893,7 +975,7 @@
     '.wtool{border:1px dashed #cbb26a;background:#fdf7e6;color:#7a5c12;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer}'+
     '.texted{padding:8px 6px 4px;border-top:1px dashed #eee}.elem.open .texted{display:block}.texted{display:none}'+
     '.tbox{width:100%;border:1px solid #d5d3c9;border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;resize:vertical;background:#fffdf7}'+
-    '.fraginput{display:block;width:100%;border:1px solid #d5d3c9;border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;background:#fffdf7;margin-bottom:6px}'+
+    '.fraginput{display:block;width:100%;border:1px solid #d5d3c9;border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;background:#fffdf7;margin-bottom:6px;resize:vertical}'+
     '.fragmarker{font-size:11px;color:#999;font-style:italic;padding:3px 2px;margin-bottom:4px}'+
     '.eltools2{margin-top:6px}'+
     '.ctrl{padding:7px 0;border-top:1px dashed #eee}'+
@@ -939,8 +1021,8 @@
     Object.keys(wordSplits).forEach(function(fk){ var w=wordSplits[fk]; try{ var el=document.querySelector(w.sel); if(el) el.innerHTML=wordSpans(w); }catch(e){} });
   }
   // Testo dei bottoni (elementi foglia, sicuri): applica dal vivo e nell'anteprima
-  function applyBtnText(){ Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=document.querySelector(o.sel); if(el && el.children.length===0) el.textContent=o.text; }catch(e){} }); }
-  function setBtnText(fk, sel, text){ btnText[fk]={sel:sel, text:text}; try{ localStorage.setItem(BTXT_KEY, JSON.stringify(btnText)); }catch(e){} try{ var el=document.querySelector(sel); if(el && el.children.length===0) el.textContent=text; }catch(e){} try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:text}, '*'); }catch(e){} }
+  function applyBtnText(){ Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=document.querySelector(o.sel); if(el) vcMultilineWrite(el, o.text); }catch(e){} }); }
+  function setBtnText(fk, sel, text){ btnText[fk]={sel:sel, text:text}; try{ localStorage.setItem(BTXT_KEY, JSON.stringify(btnText)); }catch(e){} try{ var el=document.querySelector(sel); if(el) vcMultilineWrite(el, text); }catch(e){} try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:text}, '*'); }catch(e){} }
   applyTextLive(); applyBtnText(); applyFragText();
   applyLive(); renderNav(); renderBody(); setupTopObserver();
   console.log('[VC Admin v3] pronto - '+Object.keys(VARS).length+' variabili, '+Object.keys(SELMAP).length+' mappe selettore');
@@ -984,8 +1066,8 @@
       if(m.__vc==='css'){ ov.textContent=m.css||''; }
       if(m.__vc==='pickmap'){ SMAP=m.map||{}; buildScenes(); }
       if(m.__vc==='startpick'){ picking=true; }
-      if(m.__vc==='settext'){ try{ var el=document.querySelector(m.sel); if(el) el.textContent=m.text; }catch(e2){} }
-      if(m.__vc==='setfrag'){ try{ var rootN=document.querySelector(m.sel); var nodeN=rootN; for(var pi=0;pi<m.path.length;pi++){ nodeN=nodeN&&nodeN.childNodes[m.path[pi]]; } if(nodeN){ if(nodeN.nodeType===3) nodeN.textContent=m.text; else if(nodeN.nodeType===1 && nodeN.children.length===0) nodeN.textContent=m.text; } }catch(e7){} }
+      if(m.__vc==='settext'){ try{ var el=document.querySelector(m.sel); if(el) vcMultilineWrite(el, m.text); }catch(e2){} }
+      if(m.__vc==='setfrag'){ try{ var rootN=document.querySelector(m.sel); var nodeN=rootN; for(var pi=0;pi<m.path.length;pi++){ nodeN=nodeN&&nodeN.childNodes[m.path[pi]]; } if(nodeN && (nodeN.nodeType===3 || nodeN.children.length===0 || nodeN.hasAttribute('data-vcfrag'))){ vcWriteFragNode(nodeN, m.text); } }catch(e7){} }
       if(m.__vc==='sethtml'){ try{ var el2=document.querySelector(m.sel); if(el2) el2.innerHTML=m.html; }catch(e3){} }
       if(m.__vc==='textmap'){
         try{ var T=m.text||{}; Object.keys(T).forEach(function(k){ var o=T[k]; var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }); }catch(e4){}
