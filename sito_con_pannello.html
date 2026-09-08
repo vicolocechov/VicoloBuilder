@@ -1741,6 +1741,7 @@ requestAnimationFrame(riposiziona);
   if(!tabs.length) return;
   const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
   const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
+  let lastOpener=null;
 
   function pages(m){ const a=byMonth[m]||[], p=[]; for(let i=0;i<a.length;i+=4) p.push(a.slice(i,i+4)); return p.length?p:[[]]; }
 
@@ -1751,7 +1752,7 @@ requestAnimationFrame(riposiziona);
     const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
     b.appendChild(im);
     const sp=document.createElement('span'); sp.className='s4-slide2-poster-meta'; sp.textContent=d.meta||d.tag||''; b.appendChild(sp);
-    b.onclick=()=>openShow(id);
+    b.onclick=()=>{ lastOpener=b; openShow(id); };
     slot.appendChild(b);
     return slot;
   }
@@ -1803,7 +1804,16 @@ requestAnimationFrame(riposiziona);
     elTitle.textContent=d.title||''; elAutore.textContent=d.autore||''; elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
   }
-  function closeShow(){ overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); }
+  function closeShow(){
+    /* sposta il focus FUORI dalla scheda prima di nasconderla con aria-hidden,
+       altrimenti il browser blocca aria-hidden su un elemento con un discendente
+       che ha ancora il focus (es. il bottone di chiusura appena cliccato) */
+    if(overlay.contains(document.activeElement)){
+      if(lastOpener && document.body.contains(lastOpener)) lastOpener.focus();
+      else document.activeElement.blur();
+    }
+    overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
+  }
 
   function ensurePosterCss(n){
     const cssId='s4-poster-vars-'+n; if(document.getElementById(cssId)) return;
