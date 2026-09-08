@@ -847,6 +847,10 @@
         gallery:images.slice()
       };
       window.__vcWallAddPoster(monthSel.value, info);
+      // se l'anteprima e' un dispositivo (iframe separato, non "Modifica diretta"), l'aggiunta
+      // va inoltrata anche li' - altrimenti si vede aggiornare solo la pagina in background
+      // nascosta dietro l'overlay, e la locandina "sparisce" agli occhi di chi guarda l'iframe.
+      try{ frame.contentWindow.postMessage({__vc:'addposter', month:monthSel.value, info:info}, '*'); }catch(eAdd){}
       // la nuova locandina espone le proprie variabili di scala/posizione: le rileva subito
       refreshVars(); renderNav(); renderBody(); syncFrame();
     });
@@ -1236,6 +1240,10 @@
       if(m.__vc==='settext'){ try{ var el=document.querySelector(m.sel); if(el) vcMultilineWrite(el, m.text); }catch(e2){} }
       if(m.__vc==='setfrag'){ try{ var rootN=document.querySelector(m.sel); var nodeN=rootN; for(var pi=0;pi<m.path.length;pi++){ nodeN=nodeN&&nodeN.childNodes[m.path[pi]]; } if(nodeN && (nodeN.nodeType===3 || nodeN.children.length===0 || nodeN.hasAttribute('data-vcfrag'))){ vcWriteFragNode(nodeN, m.text); } }catch(e7){} }
       if(m.__vc==='sethtml'){ try{ var el2=document.querySelector(m.sel); if(el2) el2.innerHTML=m.html; }catch(e3){} }
+      /* silent:true - il salvataggio in localStorage lo fa gia' la pagina "master" che ha
+         inviato il messaggio; qui (slave nell'iframe) serve solo aggiornare cio' che si vede,
+         altrimenti la locandina finirebbe salvata due volte. */
+      if(m.__vc==='addposter'){ try{ if(window.__vcWallAddPoster) window.__vcWallAddPoster(m.month, m.info, {silent:true}); }catch(e6){} }
       if(m.__vc==='textmap'){
         try{ var T=m.text||{}; Object.keys(T).forEach(function(k){ var o=T[k]; var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }); }catch(e4){}
         try{ var W=m.words||{}; Object.keys(W).forEach(function(k){ var w=W[k]; var el=document.querySelector(w.sel); if(el) el.innerHTML=w.words.map(function(word,i){ var t=(word&&word.text!=null)?word.text:word; return '<span class="'+w.base+'-w'+(i+1)+'">'+String(t).replace(/[&<>\"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[c];})+'</span>'; }).join(' '); }); }catch(e5){}
