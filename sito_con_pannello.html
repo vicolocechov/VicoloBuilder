@@ -1753,6 +1753,10 @@ requestAnimationFrame(riposiziona);
   const months=['novembre','dicembre','gennaio','febbraio','marzo','aprile'];
   const data={}, byMonth={}; months.forEach(m=>byMonth[m]=[]);
   let next=1, activeMonth='novembre', activePage=0, gi=0;
+  const POSTER_KEY='vc-wall-posters-v1';
+  function loadSavedPosters(){ try{ const r=localStorage.getItem(POSTER_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+  function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); }catch(e){} }
+  let savedPosters=loadSavedPosters();
   const tabs=[...document.querySelectorAll('.s4-slide2-month')], panels=[...document.querySelectorAll('.s4-slide2-month-panel')];
   if(!tabs.length) return;
   const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
@@ -1839,8 +1843,13 @@ requestAnimationFrame(riposiziona);
   }
 
   /* addPoster non inventa nessun contenuto: chi la chiama deve passare i dati veri
-     (titolo, autore/regia, sinossi, cast, data, ora, tag, immagini caricate). */
-  function addPoster(month, info){
+     (titolo, autore/regia, sinossi, cast, data, ora, tag, immagini caricate).
+     Ogni locandina aggiunta viene salvata in localStorage (come le altre
+     personalizzazioni del pannello), cosi' non si perde al ricaricamento
+     della pagina; { silent:true } salta il salvataggio (usato per il
+     ripristino all'avvio, per non duplicare quanto gia' salvato). */
+  function addPoster(month, info, opts){
+    opts=opts||{};
     const id=String(next++).padStart(2,'0');
     ensurePosterCss(Number(id));
     const m=months.includes(month)?month:activeMonth;
@@ -1848,6 +1857,10 @@ requestAnimationFrame(riposiziona);
     byMonth[m].push(id);
     activeMonth=m; activePage=pages(m).length-1;
     render(m);
+    if(!opts.silent){
+      savedPosters.push(Object.assign({}, info||{}, {month:m}));
+      saveSavedPosters(savedPosters);
+    }
     return id;
   }
 
@@ -1861,6 +1874,10 @@ requestAnimationFrame(riposiziona);
   window.__vcWallAddPoster=addPoster;
   window.__vcWallGetActiveMonth=()=>activeMonth;
   window.__vcWallMonths=months.slice();
+
+  // ripristina le locandine salvate (dati reali, mai inventati) e riparte sempre da Novembre
+  savedPosters.forEach(p=>addPoster(p.month, p, {silent:true}));
+  activeMonth='novembre'; activePage=0;
   render(activeMonth);
 })();
 </script>

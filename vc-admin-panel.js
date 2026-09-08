@@ -712,6 +712,100 @@
 
   function renderNav(){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length){ $('#curSlide').textContent='-'; return; } if(!activeGroupKey || keys.indexOf(activeGroupKey)<0) activeGroupKey=keys[0]; var g=tree[activeGroupKey]; $('#curSlide').textContent=groupLabel(g.sec,g.slide); }
 
+  /* ===================== TOOL "AGGIUNGI LOCANDINA" (Vicolo Off · Muro spettacoli) =====================
+     Nessun dato/immagine inventato: tutto arriva da quello che l'admin scrive/carica qui.
+     Persistenza gestita dal sito stesso (window.__vcWallAddPoster salva in localStorage). */
+  function buildPosterTool(){
+    var box=document.createElement('div'); box.className='postertool';
+    var ttl=document.createElement('div'); ttl.className='postertool-title'; ttl.textContent='Aggiungi locandina'; box.appendChild(ttl);
+
+    function row(labelText){
+      var r=document.createElement('div'); r.className='postertool-row';
+      var lab=document.createElement('label'); lab.textContent=labelText; r.appendChild(lab);
+      box.appendChild(r);
+      return r;
+    }
+
+    var monthSel=document.createElement('select');
+    (window.__vcWallMonths||[]).forEach(function(m){
+      var o=document.createElement('option'); o.value=m; o.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+      if(window.__vcWallGetActiveMonth && m===window.__vcWallGetActiveMonth()) o.selected=true;
+      monthSel.appendChild(o);
+    });
+    row('Mese').appendChild(monthSel);
+
+    var titleInp=document.createElement('input'); titleInp.type='text'; titleInp.placeholder='Titolo dello spettacolo';
+    row('Titolo').appendChild(titleInp);
+
+    var autoreInp=document.createElement('input'); autoreInp.type='text'; autoreInp.placeholder='es. Regia di...';
+    row('Sottotitolo / Regia').appendChild(autoreInp);
+
+    var synInp=document.createElement('textarea'); synInp.rows=3; synInp.placeholder='Sinossi dello spettacolo';
+    row('Sinossi').appendChild(synInp);
+
+    var castInp=document.createElement('input'); castInp.type='text'; castInp.placeholder='Nomi separati da virgola';
+    row('Cast').appendChild(castInp);
+
+    var dateInp=document.createElement('input'); dateInp.type='text'; dateInp.placeholder='es. Sabato 6 dicembre';
+    row('Data').appendChild(dateInp);
+
+    var timeInp=document.createElement('input'); timeInp.type='text'; timeInp.placeholder='es. 21:00';
+    row('Ora').appendChild(timeInp);
+
+    var tagSel=document.createElement('select');
+    ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; tagSel.appendChild(o); });
+    row('Categoria').appendChild(tagSel);
+
+    var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.multiple=true;
+    row('Immagini').appendChild(fileInp);
+
+    var preview=document.createElement('div'); preview.className='postertool-preview'; box.appendChild(preview);
+    var errEl=document.createElement('div'); errEl.className='postertool-err'; box.appendChild(errEl);
+    var images=[];
+
+    fileInp.addEventListener('change', function(){
+      var files=Array.prototype.slice.call(fileInp.files||[]);
+      if(!files.length) return;
+      images=[]; preview.innerHTML=''; errEl.textContent='';
+      files.forEach(function(file){
+        var reader=new FileReader();
+        reader.onload=function(){
+          images.push(reader.result);
+          var im=document.createElement('img'); im.src=reader.result; preview.appendChild(im);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    var btn=document.createElement('button'); btn.type='button'; btn.className='postertool-btn'; btn.textContent='+ Aggiungi locandina';
+    btn.addEventListener('click', function(){
+      var title=(titleInp.value||'').trim();
+      if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
+      if(!images.length){ errEl.textContent='Carica almeno una immagine.'; return; }
+      var info={
+        title:title,
+        autore:(autoreInp.value||'').trim(),
+        synopsis:(synInp.value||'').trim(),
+        cast:(castInp.value||'').trim(),
+        date:(dateInp.value||'').trim(),
+        time:(timeInp.value||'').trim(),
+        tag:tagSel.value,
+        meta:tagSel.value,
+        gallery:images.slice()
+      };
+      window.__vcWallAddPoster(monthSel.value, info);
+      // la nuova locandina espone le proprie variabili di scala/posizione: le rileva subito
+      refreshVars(); renderNav(); renderBody(); syncFrame();
+    });
+    box.appendChild(btn);
+
+    var hint=document.createElement('div'); hint.className='postertool-hint';
+    hint.textContent='La locandina viene inserita nel mese scelto con i dati e le immagini caricate qui sopra - nessun contenuto viene inventato. Dopo averla aggiunta trovi i suoi controlli (scala, posizione, colore, ecc.) tra le famiglie qui sotto.';
+    box.appendChild(hint);
+
+    return box;
+  }
+
   function renderBody(){
     var body=$('#body');
     // memorizza quali elementi sono aperti e la posizione di scroll, per non richiudere/saltare
@@ -734,6 +828,7 @@
       var sec=document.createElement('div'); sec.className='grp open'; sec.dataset.gk=gk;
       if(q){ var h=document.createElement('div'); h.className='grphead'; h.innerHTML='<span>'+groupLabel(g.sec,g.slide)+'</span>'; sec.appendChild(h); }
       var wrap=document.createElement('div'); wrap.className='grpbody'; sec.appendChild(wrap);
+      if(!q && gk===groupKey(4,2)){ wrap.appendChild(buildPosterTool()); }
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
         var eh=document.createElement('div'); eh.className='elemhead';
@@ -990,6 +1085,18 @@
     '.colorwrap{display:flex;align-items:center;gap:8px}.colorwrap input[type=color]{width:38px;height:28px;border:1px solid #d5d3c9;border-radius:6px;background:#fff;cursor:pointer;padding:2px}'+
     '.hex{flex:1;padding:5px 8px;border:1px solid #d5d3c9;border-radius:6px;font-size:12px;font-family:ui-monospace,Menlo,monospace}'+
     '.note{color:#a08a4a;font-size:10.5px;margin-top:4px}.empty{padding:24px;text-align:center;color:#999}'+
+    '.postertool{border:1px solid #333;border-radius:10px;background:#111;color:#fff;padding:10px;margin:8px 4px 12px}'+
+    '.postertool-title{font:600 12px/1.2 Poppins,sans-serif;margin-bottom:8px}'+
+    '.postertool-row{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}'+
+    '.postertool-row label{font:500 10.5px Poppins,sans-serif;color:#bbb}'+
+    '.postertool-row input[type=text],.postertool-row textarea,.postertool-row select{background:#1c1c1c;color:#fff;border:1px solid #444;border-radius:6px;padding:6px 8px;font:12px/1.35 Poppins,sans-serif;font-family:inherit;resize:vertical}'+
+    '.postertool-row input[type=file]{color:#ccc;font-size:11px}'+
+    '.postertool-preview{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}'+
+    '.postertool-preview img{width:44px;height:62px;object-fit:cover;border-radius:4px;border:1px solid #444}'+
+    '.postertool-err{color:#ff8a80;font-size:11px;min-height:14px;margin-bottom:6px}'+
+    '.postertool-btn{width:100%;background:#fcc454;color:#1b1b1b;border:0;border-radius:7px;padding:9px;font:600 11px Poppins,sans-serif;cursor:pointer}'+
+    '.postertool-btn:hover{background:#f7b93a}'+
+    '.postertool-hint{font:9px/1.35 Poppins,sans-serif;color:#888;margin-top:8px}'+
     'footer{display:flex;gap:6px;padding:10px;border-top:1px solid #e2e0d8;background:#efeee9}'+
     'footer button{padding:9px 8px;border-radius:8px;border:1px solid #1b1b1b;background:#1b1b1b;color:#fcc454;font-size:12px;cursor:pointer;font-weight:600}'+
     '#exportFull{flex:1}footer button.ghost{background:#fff;color:#333;border-color:#d5d3c9;font-weight:500}footer button.danger:hover{border-color:#c0392b;color:#c0392b}'+
