@@ -772,8 +772,15 @@
     monthSel.addEventListener('change', populateDateOptions);
     row('Data').appendChild(dateSel);
 
-    var timeInp=document.createElement('input'); timeInp.type='text'; timeInp.placeholder='es. 21:00';
-    row('Ora').appendChild(timeInp);
+    var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
+    var hourSel=document.createElement('select');
+    for(var h=0; h<24; h++){ var ho=document.createElement('option'); var hv=String(h).padStart(2,'0'); ho.value=hv; ho.textContent=hv; hourSel.appendChild(ho); }
+    hourSel.value='21';
+    var timeSep=document.createElement('span'); timeSep.className='postertool-timesep'; timeSep.textContent=':';
+    var minSel=document.createElement('select');
+    ['00','15','30','45'].forEach(function(mm){ var mo=document.createElement('option'); mo.value=mm; mo.textContent=mm; minSel.appendChild(mo); });
+    timeWrap.appendChild(hourSel); timeWrap.appendChild(timeSep); timeWrap.appendChild(minSel);
+    row('Ora').appendChild(timeWrap);
 
     var tagSel=document.createElement('select');
     ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; tagSel.appendChild(o); });
@@ -834,7 +841,7 @@
         synopsis:(synInp.value||'').trim(),
         cast:(castInp.value||'').trim(),
         date:dateStr,
-        time:(timeInp.value||'').trim(),
+        time:hourSel.value+':'+minSel.value,
         tag:tagSel.value,
         meta:tagSel.value,
         gallery:images.slice()
@@ -1137,6 +1144,9 @@
     '.postertool-row label{font:500 10.5px Poppins,sans-serif;color:#bbb}'+
     '.postertool-row input[type=text],.postertool-row textarea,.postertool-row select{background:#1c1c1c;color:#fff;border:1px solid #444;border-radius:6px;padding:6px 8px;font:12px/1.35 Poppins,sans-serif;font-family:inherit;resize:vertical}'+
     '.postertool-row input[type=file]{color:#ccc;font-size:11px}'+
+    '.postertool-timewrap{display:flex;align-items:center;gap:6px}'+
+    '.postertool-timewrap select{flex:1;min-width:0}'+
+    '.postertool-timesep{color:#888;font-weight:600}'+
     '.postertool-preview{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}'+
     '.postertool-preview img{width:44px;height:62px;object-fit:cover;border-radius:4px;border:1px solid #444}'+
     '.postertool-err{color:#ff8a80;font-size:11px;min-height:14px;margin-bottom:6px}'+
