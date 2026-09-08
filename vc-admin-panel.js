@@ -746,8 +746,28 @@
     var castInp=document.createElement('input'); castInp.type='text'; castInp.placeholder='Nomi separati da virgola';
     row('Cast').appendChild(castInp);
 
-    var dateInp=document.createElement('input'); dateInp.type='text'; dateInp.placeholder='es. Sabato 6 dicembre';
-    row('Data').appendChild(dateInp);
+    /* Data: selettore dei giorni del mese scelto (non testo libero). La stagione
+       "26/27" -> novembre/dicembre sono 2026, gennaio-aprile sono 2027. */
+    var MONTH_IDX={novembre:10,dicembre:11,gennaio:0,febbraio:1,marzo:2,aprile:3};
+    var WD_ABBR=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+    var WD_FULL=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    function yearForMonth(m){ return (m==='novembre'||m==='dicembre') ? 2026 : 2027; }
+    function daysInMonth(m){ var mi=MONTH_IDX[m]; if(mi==null) return 30; return new Date(yearForMonth(m), mi+1, 0).getDate(); }
+    var dateSel=document.createElement('select');
+    function populateDateOptions(){
+      var m=monthSel.value, mi=MONTH_IDX[m], y=yearForMonth(m), n=daysInMonth(m);
+      var prevDay=dateSel.value?parseInt(dateSel.value,10):null;
+      dateSel.innerHTML='';
+      for(var d=1; d<=n; d++){
+        var dow=new Date(y, mi, d).getDay();
+        var o=document.createElement('option'); o.value=String(d); o.textContent=WD_ABBR[dow]+' '+d;
+        dateSel.appendChild(o);
+      }
+      if(prevDay && prevDay<=n) dateSel.value=String(prevDay);
+    }
+    populateDateOptions();
+    monthSel.addEventListener('change', populateDateOptions);
+    row('Data').appendChild(dateSel);
 
     var timeInp=document.createElement('input'); timeInp.type='text'; timeInp.placeholder='es. 21:00';
     row('Ora').appendChild(timeInp);
@@ -801,12 +821,15 @@
       var title=(titleInp.value||'').trim();
       if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
       if(!images.length){ errEl.textContent='Carica almeno una immagine.'; return; }
+      var dDay=parseInt(dateSel.value,10), dMi=MONTH_IDX[monthSel.value], dY=yearForMonth(monthSel.value);
+      var dDow=WD_FULL[new Date(dY,dMi,dDay).getDay()];
+      var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
       var info={
         title:title,
         autore:(autoreInp.value||'').trim(),
         synopsis:(synInp.value||'').trim(),
         cast:(castInp.value||'').trim(),
-        date:(dateInp.value||'').trim(),
+        date:dateStr,
         time:(timeInp.value||'').trim(),
         tag:tagSel.value,
         meta:tagSel.value,
