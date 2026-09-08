@@ -1062,6 +1062,10 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-detail-info{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:20px 0 24px;font:11px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff}
 .s4-slide2-detail-info span{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px}
 .s4-slide2-detail-tag{background:var(--sede);color:#1b1b1b!important;border-color:var(--sede)!important;font-weight:600}
+/* Colore del tag categoria: fisso per Prosa/Musica, legato alla sede (come il logo Vicolo Off) per Improvvisazione */
+.s4-slide2-detail-tag.tag-prosa{background:#ff0084!important;border-color:#ff0084!important}
+.s4-slide2-detail-tag.tag-improvvisazione{background:var(--sede)!important;border-color:var(--sede)!important}
+.s4-slide2-detail-tag.tag-musica{background:#9cff00!important;border-color:#9cff00!important}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Bottone "Prenota" -> --s4-slide2-detail-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s4-slide2-detail-btn{display:inline-block;font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;background:var(--sede);border:2px solid var(--sede);font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1));padding:calc(16px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));line-height:var(--s4-slide2-detail-btn-lh,1);letter-spacing:var(--s4-slide2-detail-btn-ls,0px);color:var(--s4-slide2-detail-btn-color,#1b1b1b);align-self:center;margin-top:4px;transform:translate(var(--s4-slide2-detail-btn-x,0px),var(--s4-slide2-detail-btn-y,0px))}
 .s4-slide2-detail-btn:hover{background:transparent;color:var(--sede)}
@@ -1823,6 +1827,8 @@ requestAnimationFrame(riposiziona);
     setG(0);
     const autoreParts=[]; if(d.sottotitolo) autoreParts.push(d.sottotitolo); if(d.regia) autoreParts.push(d.regia);
     elTitle.textContent=d.title||''; elAutore.textContent=autoreParts.join(' · '); elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
+    elTag.classList.remove('tag-prosa','tag-improvvisazione','tag-musica');
+    if(d.tag) elTag.classList.add('tag-'+d.tag.toLowerCase());
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
   }
   function closeShow(){
