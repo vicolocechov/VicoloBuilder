@@ -309,9 +309,10 @@
   var BASECSS='';
 
   var HEADER_ITEMS = [
-    { fam:'logo', sel:'.brand',       origin:'left center'  },
-    { fam:'menu', sel:'.main-nav',    origin:'center'       },
-    { fam:'pill', sel:'.sede-toggle', origin:'right center' }
+    { fam:'logo',          sel:'.brand-logo-cechov', origin:'left center'  },
+    { fam:'logo-vicoloff', sel:'.brand-logo-off',    origin:'left center'  },
+    { fam:'menu',          sel:'.main-nav',          origin:'center'       },
+    { fam:'pill',          sel:'.sede-toggle',       origin:'right center' }
   ];
 
   function cstyle(sel, prop){ try{ var el=document.querySelector(sel); if(el) return getComputedStyle(el)[prop]; }catch(e){} return ''; }
@@ -690,6 +691,8 @@
     if(f==='paginablocco') return '★★ Tutta la pagina (tutti gli elementi)';
     if(f==='headerblocco') return '★ Header (tutto insieme)';
     if(f==='cardblocco') return '★ Tutte le card (blocco intero)';
+    if(f==='logo') return 'Logo Vicolo Cechov';
+    if(f==='logo-vicoloff') return 'Logo Vicolo Off';
     var _cm=f.match(/^cardblocco(\d+)$/); if(_cm) return '★ Card '+_cm[1]+' (intera)';
     return f.replace(/-/g,' ')
     .replace(/\btitolo\b/,'Titolo').replace(/\bsub\b/,'Sottotitolo').replace(/\bcorpo\b/,'Testo')
