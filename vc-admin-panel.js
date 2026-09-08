@@ -737,8 +737,11 @@
     var titleInp=document.createElement('input'); titleInp.type='text'; titleInp.placeholder='Titolo dello spettacolo';
     row('Titolo').appendChild(titleInp);
 
-    var autoreInp=document.createElement('input'); autoreInp.type='text'; autoreInp.placeholder='es. Regia di...';
-    row('Sottotitolo / Regia').appendChild(autoreInp);
+    var sottotitoloInp=document.createElement('input'); sottotitoloInp.type='text'; sottotitoloInp.placeholder='es. Una commedia in due atti';
+    row('Sottotitolo').appendChild(sottotitoloInp);
+
+    var regiaInp=document.createElement('input'); regiaInp.type='text'; regiaInp.placeholder='es. Mario Rossi (solo il nome: "Regia di" si aggiunge da solo)';
+    row('Regia').appendChild(regiaInp);
 
     var synInp=document.createElement('textarea'); synInp.rows=3; synInp.placeholder='Sinossi dello spettacolo';
     row('Sinossi').appendChild(synInp);
@@ -826,7 +829,8 @@
       var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
       var info={
         title:title,
-        autore:(autoreInp.value||'').trim(),
+        sottotitolo:(sottotitoloInp.value||'').trim(),
+        regia:(regiaInp.value||'').trim(),
         synopsis:(synInp.value||'').trim(),
         cast:(castInp.value||'').trim(),
         date:dateStr,

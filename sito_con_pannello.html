@@ -1821,7 +1821,8 @@ requestAnimationFrame(riposiziona);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
     });
     setG(0);
-    elTitle.textContent=d.title||''; elAutore.textContent=d.autore||''; elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
+    const autoreParts=[]; if(d.sottotitolo) autoreParts.push(d.sottotitolo); if(d.regia) autoreParts.push('Regia di '+d.regia);
+    elTitle.textContent=d.title||''; elAutore.textContent=autoreParts.join(' · '); elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
   }
   function closeShow(){
@@ -1853,7 +1854,7 @@ requestAnimationFrame(riposiziona);
     const id=String(next++).padStart(2,'0');
     ensurePosterCss(Number(id));
     const m=months.includes(month)?month:activeMonth;
-    data[id]=Object.assign({title:'',autore:'',synopsis:'',cast:'',date:'',time:'',tag:'',meta:'',gallery:[]}, info||{}, {month:m});
+    data[id]=Object.assign({title:'',sottotitolo:'',regia:'',synopsis:'',cast:'',date:'',time:'',tag:'',meta:'',gallery:[]}, info||{}, {month:m});
     byMonth[m].push(id);
     activeMonth=m; activePage=pages(m).length-1;
     render(m);
