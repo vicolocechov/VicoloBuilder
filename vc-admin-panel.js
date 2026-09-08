@@ -762,23 +762,42 @@
     var preview=document.createElement('div'); preview.className='postertool-preview'; box.appendChild(preview);
     var errEl=document.createElement('div'); errEl.className='postertool-err'; box.appendChild(errEl);
     var images=[];
+    var loadingFiles=false;
 
+    var btn=document.createElement('button'); btn.type='button'; btn.className='postertool-btn'; btn.textContent='+ Aggiungi locandina';
+
+    /* Bug corretto: cliccare "Aggiungi" subito dopo aver scelto il file poteva
+       precedere la fine della lettura del FileReader (piu' probabile su Chrome,
+       che restituisce il controllo allo script prima di Firefox in questo
+       frangente) - il salvataggio partiva con la galleria ancora vuota e
+       falliva silenziosamente. Ora tutte le letture sono attese con
+       Promise.all PRIMA di riabilitare il bottone: finche' il caricamento e'
+       in corso il bottone resta disabilitato, quindi il click non puo' mai
+       arrivare prima che le immagini siano pronte. */
     fileInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(fileInp.files||[]);
       if(!files.length) return;
       images=[]; preview.innerHTML=''; errEl.textContent='';
-      files.forEach(function(file){
-        var reader=new FileReader();
-        reader.onload=function(){
-          images.push(reader.result);
-          var im=document.createElement('img'); im.src=reader.result; preview.appendChild(im);
-        };
-        reader.readAsDataURL(file);
+      loadingFiles=true; btn.disabled=true; btn.textContent='Caricamento immagini...';
+      Promise.all(files.map(function(file){
+        return new Promise(function(resolve,reject){
+          var reader=new FileReader();
+          reader.onload=function(){ resolve(reader.result); };
+          reader.onerror=function(){ reject(reader.error||new Error('read error')); };
+          reader.readAsDataURL(file);
+        });
+      })).then(function(results){
+        images=results;
+        results.forEach(function(src){ var im=document.createElement('img'); im.src=src; preview.appendChild(im); });
+      }).catch(function(){
+        errEl.textContent='Errore nel caricamento di una o piu\' immagini. Riprova.';
+      }).then(function(){
+        loadingFiles=false; btn.disabled=false; btn.textContent='+ Aggiungi locandina';
       });
     });
 
-    var btn=document.createElement('button'); btn.type='button'; btn.className='postertool-btn'; btn.textContent='+ Aggiungi locandina';
     btn.addEventListener('click', function(){
+      if(loadingFiles){ errEl.textContent='Attendi il caricamento delle immagini...'; return; }
       var title=(titleInp.value||'').trim();
       if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
       if(!images.length){ errEl.textContent='Carica almeno una immagine.'; return; }
@@ -1096,6 +1115,7 @@
     '.postertool-err{color:#ff8a80;font-size:11px;min-height:14px;margin-bottom:6px}'+
     '.postertool-btn{width:100%;background:#fcc454;color:#1b1b1b;border:0;border-radius:7px;padding:9px;font:600 11px Poppins,sans-serif;cursor:pointer}'+
     '.postertool-btn:hover{background:#f7b93a}'+
+    '.postertool-btn:disabled{background:#555;color:#aaa;cursor:wait}'+
     '.postertool-hint{font:9px/1.35 Poppins,sans-serif;color:#888;margin-top:8px}'+
     'footer{display:flex;gap:6px;padding:10px;border-top:1px solid #e2e0d8;background:#efeee9}'+
     'footer button{padding:9px 8px;border-radius:8px;border:1px solid #1b1b1b;background:#1b1b1b;color:#fcc454;font-size:12px;cursor:pointer;font-weight:600}'+
