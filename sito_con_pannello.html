@@ -1024,6 +1024,13 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:9px 0 0;font-size:calc(clamp(40px,5vw,74px) * var(--s4-slide2-titolo-scale,1));line-height:var(--s4-slide2-titolo-lh,.9);letter-spacing:var(--s4-slide2-titolo-ls,0px);color:var(--s4-slide2-titolo-color,#fff);transform:translate(var(--s4-slide2-titolo-x,0px),var(--s4-slide2-titolo-y,0px));}
 /* MASCHERINO — VICOLO OFF · Slide 2 · Paragrafo "Scegli il mese e poi la locandina." -> --s4-slide2-corpo-{scale|x|y|lh|ls|color} */
 .s4-slide2-corpo{font-family:'Montserrat',sans-serif;margin:9px auto 0;font-size:calc(clamp(13px,1.1vw,16px) * var(--s4-slide2-corpo-scale,1));line-height:var(--s4-slide2-corpo-lh,1.35);letter-spacing:var(--s4-slide2-corpo-ls,0px);color:var(--s4-slide2-corpo-color,#cfcfcf);transform:translate(var(--s4-slide2-corpo-x,0px),var(--s4-slide2-corpo-y,0px));}
+.s4-slide2-catfilter{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px auto 0}
+.s4-slide2-catbtn{border:1.5px solid var(--catcolor,#fff);background:transparent;color:var(--catcolor,#fff);border-radius:999px;padding:6px 14px;font:600 9px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s}
+.s4-slide2-catbtn.is-active{background:var(--catcolor,#fff);color:#1b1b1b}
+/* Colore fisso per Prosa/Musica, legato alla sede (come il logo Vicolo Off) per Improvvisazione */
+.s4-slide2-catbtn.cat-prosa{--catcolor:#ff0084}
+.s4-slide2-catbtn.cat-improvvisazione{--catcolor:var(--sede)}
+.s4-slide2-catbtn.cat-musica{--catcolor:#9cff00}
 .s4-slide2-months{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:13px auto 0}
 .s4-slide2-month{border:1px solid rgba(255,255,255,.22);background:transparent;color:#fff;border-radius:999px;padding:6px 11px;font:500 9px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
 .s4-slide2-month.is-active{background:var(--sede);border-color:var(--sede);color:#1b1b1b}
@@ -1040,7 +1047,6 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-poster:hover,.s4-slide2-poster:focus{z-index:5}
 .s4-slide2-poster:hover{filter:brightness(1)}
 .s4-slide2-poster-img{display:block;width:100%;aspect-ratio:700/980;object-fit:cover;background:#26261f}
-.s4-slide2-poster-meta{position:absolute;left:7px;bottom:7px;font:8px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.5)}
 .s4-slide2-page-dots{display:flex;justify-content:center;gap:7px;margin:8px 0 0}
 .s4-slide2-page-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent;padding:0;cursor:pointer}
 .s4-slide2-page-dot.is-active{background:#fff}
@@ -1460,6 +1466,11 @@ html.sede-monte #s3-slide1{display:none}
       <div class="eyebrow s4-slide2-eyebrow">Gli spettacoli · Stagione 26/27</div>
       <h2 class="titolone s4-slide2-titolo">Succede <span class="punto">al Vicolo Off.</span></h2>
       <p class="corpo s4-slide2-corpo">Scegli il mese e poi la locandina.</p>
+      <div class="s4-slide2-catfilter" role="group" aria-label="Filtra per categoria">
+        <button class="s4-slide2-catbtn cat-prosa" data-cat="Prosa" type="button">Prosa</button>
+        <button class="s4-slide2-catbtn cat-improvvisazione" data-cat="Improvvisazione" type="button">Improvvisazione</button>
+        <button class="s4-slide2-catbtn cat-musica" data-cat="Musica" type="button">Musica</button>
+      </div>
       <div class="s4-slide2-months" role="tablist" aria-label="Mesi spettacoli">
         <button class="s4-slide2-month is-active" data-month="novembre" type="button">Novembre</button><button class="s4-slide2-month" data-month="dicembre" type="button">Dicembre</button><button class="s4-slide2-month" data-month="gennaio" type="button">Gennaio</button><button class="s4-slide2-month" data-month="febbraio" type="button">Febbraio</button><button class="s4-slide2-month" data-month="marzo" type="button">Marzo</button><button class="s4-slide2-month" data-month="aprile" type="button">Aprile</button>
       </div>
@@ -1756,7 +1767,7 @@ requestAnimationFrame(riposiziona);
 (function(){
   const months=['novembre','dicembre','gennaio','febbraio','marzo','aprile'];
   const data={}, byMonth={}; months.forEach(m=>byMonth[m]=[]);
-  let next=1, activeMonth='novembre', activePage=0, gi=0, openId=null;
+  let next=1, activeMonth='novembre', activePage=0, gi=0, openId=null, activeFilterTag=null;
   const POSTER_KEY='vc-wall-posters-v1';
   function loadSavedPosters(){ try{ const r=localStorage.getItem(POSTER_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
   function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); }catch(e){} }
@@ -1767,7 +1778,12 @@ requestAnimationFrame(riposiziona);
   const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
   let lastOpener=null;
 
-  function pages(m){ const a=byMonth[m]||[], p=[]; for(let i=0;i<a.length;i+=4) p.push(a.slice(i,i+4)); return p.length?p:[[]]; }
+  function pages(m){
+    const all=byMonth[m]||[];
+    const a=activeFilterTag ? all.filter(id=>data[id] && data[id].tag===activeFilterTag) : all;
+    const p=[]; for(let i=0;i<a.length;i+=4) p.push(a.slice(i,i+4));
+    return p.length?p:[[]];
+  }
 
   function makePoster(id){
     const d=data[id], slot=document.createElement('div'), b=document.createElement('button');
@@ -1775,7 +1791,6 @@ requestAnimationFrame(riposiziona);
     b.className='s4-slide2-poster s4-slide2-poster'+id; b.type='button'; b.dataset.show=id;
     const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=d.cover||(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
     b.appendChild(im);
-    const sp=document.createElement('span'); sp.className='s4-slide2-poster-meta'; sp.textContent=d.meta||d.tag||''; b.appendChild(sp);
     b.onclick=()=>{ lastOpener=b; openShow(id); };
     slot.appendChild(b);
     return slot;
@@ -1797,7 +1812,7 @@ requestAnimationFrame(riposiziona);
         ids.forEach(id=>wall.appendChild(makePoster(id)));
       } else {
         const empty=document.createElement('div'); empty.className='s4-slide2-wall-empty';
-        empty.textContent='Nessuno spettacolo ancora in programma per questo mese.';
+        empty.textContent=activeFilterTag?('Nessuno spettacolo di '+activeFilterTag+' in programma per questo mese.'):'Nessuno spettacolo ancora in programma per questo mese.';
         wall.appendChild(empty);
       }
       page.appendChild(wall);
@@ -1914,6 +1929,14 @@ requestAnimationFrame(riposiziona);
   }
 
   tabs.forEach(t=>t.onclick=()=>{ activePage=0; render(t.dataset.month); });
+  const catBtns=[...document.querySelectorAll('.s4-slide2-catbtn')];
+  catBtns.forEach(b=>b.onclick=()=>{
+    const t=b.dataset.cat;
+    activeFilterTag=(activeFilterTag===t)?null:t;
+    catBtns.forEach(x=>x.classList.toggle('is-active', x.dataset.cat===activeFilterTag));
+    activePage=0;
+    render(activeMonth);
+  });
   closeBtn.onclick=closeShow;
   overlay.onclick=e=>{ if(e.target===overlay) closeShow(); };
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.classList.contains('open')) closeShow(); });
