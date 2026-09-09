@@ -786,51 +786,99 @@
     ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; tagSel.appendChild(o); });
     row('Categoria').appendChild(tagSel);
 
-    var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.multiple=true;
-    row('Immagini').appendChild(fileInp);
+    /* Copertina: una sola immagine, obbligatoria - e' quella che appare come locandina sul muro. */
+    var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
+    row('Copertina').appendChild(coverInp);
+    var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
-    var preview=document.createElement('div'); preview.className='postertool-preview'; box.appendChild(preview);
+    /* Galleria: piu' immagini, opzionali - sono quelle nel carosello dentro la scheda sinossi.
+       Riordinabili (su/giu') ed eliminabili singolarmente prima di salvare. */
+    var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
+    row('Galleria').appendChild(galleryInp);
+    var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
+
     var errEl=document.createElement('div'); errEl.className='postertool-err'; box.appendChild(errEl);
-    var images=[];
-    var loadingFiles=false;
+    var coverImage=null, galleryImages=[];
+    var loadingCount=0;
 
     var btn=document.createElement('button'); btn.type='button'; btn.className='postertool-btn'; btn.textContent='+ Aggiungi locandina';
 
-    /* Bug corretto: cliccare "Aggiungi" subito dopo aver scelto il file poteva
-       precedere la fine della lettura del FileReader (piu' probabile su Chrome,
-       che restituisce il controllo allo script prima di Firefox in questo
-       frangente) - il salvataggio partiva con la galleria ancora vuota e
-       falliva silenziosamente. Ora tutte le letture sono attese con
-       Promise.all PRIMA di riabilitare il bottone: finche' il caricamento e'
-       in corso il bottone resta disabilitato, quindi il click non puo' mai
-       arrivare prima che le immagini siano pronte. */
-    fileInp.addEventListener('change', function(){
-      var files=Array.prototype.slice.call(fileInp.files||[]);
-      if(!files.length) return;
-      images=[]; preview.innerHTML=''; errEl.textContent='';
-      loadingFiles=true; btn.disabled=true; btn.textContent='Caricamento immagini...';
-      Promise.all(files.map(function(file){
+    /* Bug corretto in precedenza: cliccare "Aggiungi" subito dopo aver scelto un file poteva
+       precedere la fine della lettura del FileReader (piu' probabile su Chrome, che restituisce
+       il controllo allo script prima di Firefox in questo frangente) - il salvataggio partiva
+       con l'immagine ancora mancante e falliva silenziosamente. Il bottone ora resta disabilitato
+       finche' TUTTI i caricamenti in corso (copertina e/o galleria) non sono finiti. */
+    function setLoading(active){
+      loadingCount+=active?1:-1; if(loadingCount<0) loadingCount=0;
+      btn.disabled=loadingCount>0; btn.textContent=loadingCount>0?'Caricamento immagini...':'+ Aggiungi locandina';
+    }
+    function readFiles(files){
+      return Promise.all(files.map(function(file){
         return new Promise(function(resolve,reject){
           var reader=new FileReader();
           reader.onload=function(){ resolve(reader.result); };
           reader.onerror=function(){ reject(reader.error||new Error('read error')); };
           reader.readAsDataURL(file);
         });
-      })).then(function(results){
-        images=results;
-        results.forEach(function(src){ var im=document.createElement('img'); im.src=src; preview.appendChild(im); });
+      }));
+    }
+
+    function renderCoverPreview(){
+      coverPreview.innerHTML='';
+      if(!coverImage) return;
+      var wrap=document.createElement('div'); wrap.className='postertool-coveritem';
+      var im=document.createElement('img'); im.src=coverImage; wrap.appendChild(im);
+      var rm=document.createElement('button'); rm.type='button'; rm.className='postertool-imgbtn postertool-imgbtn-rm'; rm.textContent='×'; rm.title='Rimuovi copertina';
+      rm.addEventListener('click', function(){ coverImage=null; coverInp.value=''; renderCoverPreview(); });
+      wrap.appendChild(rm);
+      coverPreview.appendChild(wrap);
+    }
+    coverInp.addEventListener('change', function(){
+      var files=Array.prototype.slice.call(coverInp.files||[]);
+      if(!files.length) return;
+      errEl.textContent=''; setLoading(true);
+      readFiles(files.slice(0,1)).then(function(results){
+        coverImage=results[0]; renderCoverPreview();
       }).catch(function(){
-        errEl.textContent='Errore nel caricamento di una o piu\' immagini. Riprova.';
-      }).then(function(){
-        loadingFiles=false; btn.disabled=false; btn.textContent='+ Aggiungi locandina';
+        errEl.textContent='Errore nel caricamento della copertina. Riprova.';
+      }).then(function(){ setLoading(false); });
+    });
+
+    function renderGalleryPreview(){
+      galleryPreview.innerHTML='';
+      galleryImages.forEach(function(src, idx){
+        var wrap=document.createElement('div'); wrap.className='postertool-galitem';
+        var im=document.createElement('img'); im.src=src; wrap.appendChild(im);
+        var ctr=document.createElement('div'); ctr.className='postertool-galctrl';
+        var up=document.createElement('button'); up.type='button'; up.className='postertool-imgbtn'; up.textContent='↑'; up.title='Sposta su'; up.disabled=(idx===0);
+        up.addEventListener('click', function(){ var t=galleryImages[idx-1]; galleryImages[idx-1]=galleryImages[idx]; galleryImages[idx]=t; renderGalleryPreview(); });
+        var down=document.createElement('button'); down.type='button'; down.className='postertool-imgbtn'; down.textContent='↓'; down.title="Sposta giu'"; down.disabled=(idx===galleryImages.length-1);
+        down.addEventListener('click', function(){ var t=galleryImages[idx+1]; galleryImages[idx+1]=galleryImages[idx]; galleryImages[idx]=t; renderGalleryPreview(); });
+        var rm=document.createElement('button'); rm.type='button'; rm.className='postertool-imgbtn postertool-imgbtn-rm'; rm.textContent='×'; rm.title='Rimuovi';
+        rm.addEventListener('click', function(){ galleryImages.splice(idx,1); renderGalleryPreview(); });
+        ctr.appendChild(up); ctr.appendChild(down); ctr.appendChild(rm);
+        wrap.appendChild(ctr);
+        galleryPreview.appendChild(wrap);
       });
+    }
+    galleryInp.addEventListener('change', function(){
+      var files=Array.prototype.slice.call(galleryInp.files||[]);
+      if(!files.length) return;
+      errEl.textContent=''; setLoading(true);
+      readFiles(files).then(function(results){
+        galleryImages=galleryImages.concat(results);
+        renderGalleryPreview();
+        galleryInp.value=''; // permette di aggiungere altre foto in un secondo momento senza dover riselezionare le stesse
+      }).catch(function(){
+        errEl.textContent='Errore nel caricamento di una o piu\' immagini della galleria. Riprova.';
+      }).then(function(){ setLoading(false); });
     });
 
     btn.addEventListener('click', function(){
-      if(loadingFiles){ errEl.textContent='Attendi il caricamento delle immagini...'; return; }
+      if(loadingCount>0){ errEl.textContent='Attendi il caricamento delle immagini...'; return; }
       var title=(titleInp.value||'').trim();
       if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
-      if(!images.length){ errEl.textContent='Carica almeno una immagine.'; return; }
+      if(!coverImage){ errEl.textContent='Carica una copertina (la locandina che appare sul muro).'; return; }
       var dDay=parseInt(dateSel.value,10), dMi=MONTH_IDX[monthSel.value], dY=yearForMonth(monthSel.value);
       var dDow=WD_FULL[new Date(dY,dMi,dDay).getDay()];
       var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
@@ -844,7 +892,8 @@
         time:hourSel.value+':'+minSel.value,
         tag:tagSel.value,
         meta:tagSel.value,
-        gallery:images.slice()
+        cover:coverImage,
+        gallery:galleryImages.slice()
       };
       window.__vcWallAddPoster(monthSel.value, info);
       // se l'anteprima e' un dispositivo (iframe separato, non "Modifica diretta"), l'aggiunta
@@ -1151,8 +1200,17 @@
     '.postertool-timewrap{display:flex;align-items:center;gap:6px}'+
     '.postertool-timewrap select{flex:1;min-width:0}'+
     '.postertool-timesep{color:#888;font-weight:600}'+
-    '.postertool-preview{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}'+
-    '.postertool-preview img{width:44px;height:62px;object-fit:cover;border-radius:4px;border:1px solid #444}'+
+    '.postertool-coverpreview{margin:6px 0 8px}'+
+    '.postertool-coveritem{position:relative;width:64px}'+
+    '.postertool-coveritem img{display:block;width:64px;height:90px;object-fit:cover;border-radius:4px;border:1px solid #444}'+
+    '.postertool-coveritem .postertool-imgbtn-rm{position:absolute;top:-7px;right:-7px;border-radius:50%;padding:2px 6px;background:#1b1b1b}'+
+    '.postertool-gallerypreview{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 8px}'+
+    '.postertool-galitem{width:56px}'+
+    '.postertool-galitem img{display:block;width:56px;height:78px;object-fit:cover;border-radius:4px;border:1px solid #444}'+
+    '.postertool-galctrl{display:flex;gap:2px;margin-top:3px;justify-content:center}'+
+    '.postertool-imgbtn{background:#1c1c1c;color:#fff;border:1px solid #444;border-radius:4px;font-size:10px;line-height:1;padding:3px 5px;cursor:pointer}'+
+    '.postertool-imgbtn:disabled{opacity:.3;cursor:default}'+
+    '.postertool-imgbtn-rm{color:#ff8a80}'+
     '.postertool-err{color:#ff8a80;font-size:11px;min-height:14px;margin-bottom:6px}'+
     '.postertool-btn{width:100%;background:#fcc454;color:#1b1b1b;border:0;border-radius:7px;padding:9px;font:600 11px Poppins,sans-serif;cursor:pointer}'+
     '.postertool-btn:hover{background:#f7b93a}'+

@@ -1773,7 +1773,7 @@ requestAnimationFrame(riposiziona);
     const d=data[id], slot=document.createElement('div'), b=document.createElement('button');
     slot.className='s4-slide2-poster-slot';
     b.className='s4-slide2-poster s4-slide2-poster'+id; b.type='button'; b.dataset.show=id;
-    const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
+    const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=d.cover||(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
     b.appendChild(im);
     const sp=document.createElement('span'); sp.className='s4-slide2-poster-meta'; sp.textContent=d.meta||d.tag||''; b.appendChild(sp);
     b.onclick=()=>{ lastOpener=b; openShow(id); };
@@ -1820,7 +1820,8 @@ requestAnimationFrame(riposiziona);
   function openShow(id){
     const d=data[id]; if(!d) return;
     track.innerHTML=''; nav.innerHTML='';
-    (d.gallery||[]).forEach((u,k)=>{
+    const galleryImgs=(d.gallery&&d.gallery.length)?d.gallery:(d.cover?[d.cover]:[]);
+    galleryImgs.forEach((u,k)=>{
       const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); track.appendChild(im);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
     });
@@ -1860,7 +1861,7 @@ requestAnimationFrame(riposiziona);
     const id=String(next++).padStart(2,'0');
     ensurePosterCss(Number(id));
     const m=months.includes(month)?month:activeMonth;
-    data[id]=Object.assign({title:'',sottotitolo:'',regia:'',synopsis:'',cast:'',date:'',time:'',tag:'',meta:'',gallery:[]}, info||{}, {month:m});
+    data[id]=Object.assign({title:'',sottotitolo:'',regia:'',synopsis:'',cast:'',date:'',time:'',tag:'',meta:'',cover:'',gallery:[]}, info||{}, {month:m});
     byMonth[m].push(id);
     activeMonth=m; activePage=pages(m).length-1;
     render(m);
