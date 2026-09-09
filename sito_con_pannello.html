@@ -1756,7 +1756,7 @@ requestAnimationFrame(riposiziona);
 (function(){
   const months=['novembre','dicembre','gennaio','febbraio','marzo','aprile'];
   const data={}, byMonth={}; months.forEach(m=>byMonth[m]=[]);
-  let next=1, activeMonth='novembre', activePage=0, gi=0;
+  let next=1, activeMonth='novembre', activePage=0, gi=0, openId=null;
   const POSTER_KEY='vc-wall-posters-v1';
   function loadSavedPosters(){ try{ const r=localStorage.getItem(POSTER_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
   function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); }catch(e){} }
@@ -1819,8 +1819,9 @@ requestAnimationFrame(riposiziona);
 
   function openShow(id){
     const d=data[id]; if(!d) return;
+    openId=id;
     track.innerHTML=''; nav.innerHTML='';
-    const galleryImgs=(d.gallery&&d.gallery.length)?d.gallery:(d.cover?[d.cover]:[]);
+    const galleryImgs=d.cover?[d.cover, ...(d.gallery||[])]:(d.gallery||[]);
     galleryImgs.forEach((u,k)=>{
       const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); track.appendChild(im);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
@@ -1831,6 +1832,7 @@ requestAnimationFrame(riposiziona);
     elTag.classList.remove('tag-prosa','tag-improvvisazione','tag-musica');
     if(d.tag) elTag.classList.add('tag-'+d.tag.toLowerCase());
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+    notifyPosterOpenChanged();
   }
   function closeShow(){
     /* sposta il focus FUORI dalla scheda prima di nasconderla con aria-hidden,
@@ -1841,6 +1843,17 @@ requestAnimationFrame(riposiziona);
       else document.activeElement.blur();
     }
     overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
+    openId=null;
+    notifyPosterOpenChanged();
+  }
+
+  /* avvisa il pannello (che sia nella stessa pagina, in "Modifica diretta", o nel
+     frame padre se questa pagina gira dentro l'iframe di anteprima dispositivo)
+     che si e' aperta/chiusa una scheda spettacolo, cosi' puo' mostrare/nascondere
+     subito il tool "Modifica locandina" per quella scheda. */
+  function notifyPosterOpenChanged(){
+    try{ window.__vcAdminPosterOpenChanged && window.__vcAdminPosterOpenChanged(openId); }catch(e){}
+    try{ if(window!==window.top) window.parent.postMessage({__vc:'posteropen', id:openId}, '*'); }catch(e){}
   }
 
   function ensurePosterCss(n){
@@ -1872,6 +1885,34 @@ requestAnimationFrame(riposiziona);
     return id;
   }
 
+  /* updatePoster modifica una locandina gia' esistente (stesso principio di
+     addPoster: nessun dato inventato, solo quello che arriva da info).
+     Se la scheda di quella locandina e' aperta, la riapre subito cosi'
+     l'utente vede il cambiamento in tempo reale. { silent:true } salta il
+     salvataggio (usato dallo slave nell'iframe di anteprima, per non
+     duplicare il salvataggio gia' fatto dal master). */
+  function updatePoster(id, month, info, opts){
+    opts=opts||{};
+    const d=data[id]; if(!d) return false;
+    const oldMonth=d.month;
+    Object.assign(d, info||{});
+    const m=months.includes(month)?month:oldMonth;
+    d.month=m;
+    if(m!==oldMonth){
+      byMonth[oldMonth]=byMonth[oldMonth].filter(x=>x!==id);
+      byMonth[m].push(id);
+      activeMonth=m; activePage=pages(m).length-1;
+    }
+    render(activeMonth);
+    if(openId===id) openShow(id);
+    if(!opts.silent){
+      const idx=parseInt(id,10)-1;
+      if(savedPosters[idx]) savedPosters[idx]=Object.assign({}, savedPosters[idx], info||{}, {month:m});
+      saveSavedPosters(savedPosters);
+    }
+    return true;
+  }
+
   tabs.forEach(t=>t.onclick=()=>{ activePage=0; render(t.dataset.month); });
   closeBtn.onclick=closeShow;
   overlay.onclick=e=>{ if(e.target===overlay) closeShow(); };
@@ -1880,8 +1921,11 @@ requestAnimationFrame(riposiziona);
   document.getElementById('s4Slide2GalleryNext').onclick=()=>setG(gi+1);
 
   window.__vcWallAddPoster=addPoster;
+  window.__vcWallUpdatePoster=updatePoster;
   window.__vcWallGetActiveMonth=()=>activeMonth;
   window.__vcWallMonths=months.slice();
+  window.__vcWallGetOpenPosterId=()=>openId;
+  window.__vcWallGetPoster=(id)=>data[id]?Object.assign({}, data[id]):null;
 
   // ripristina le locandine salvate (dati reali, mai inventati) e riparte sempre da Novembre
   savedPosters.forEach(p=>addPoster(p.month, p, {silent:true}));

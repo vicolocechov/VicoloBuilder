@@ -449,6 +449,7 @@
   var overrides = loadOverrides();
   var currentZone = 'base';
   var currentDevice = 'live';
+  var openPosterId = null;
   var orientation = 'portrait';
   var showGuides = true;
   var showNotch = true;
@@ -668,7 +669,12 @@
     if(m.__vc==='inview') setActiveFromScroll(m.sec, m.slide);
     if(m.__vc==='picked') openElementCard(m.sec, m.slide, m.family);
     if(m.__vc==='ready') syncFrame();
+    if(m.__vc==='posteropen'){ if(m.id!==openPosterId){ openPosterId=m.id; renderBody(); } }
   });
+  /* chiamata direttamente dal sito quando siamo in "Modifica diretta" (stessa pagina,
+     nessun iframe): apre/chiude una scheda spettacolo -> il pannello mostra/nasconde
+     subito il tool "Modifica locandina" per quella scheda specifica. */
+  window.__vcAdminPosterOpenChanged=function(id){ if(id===openPosterId) return; openPosterId=id; renderBody(); };
 
   $('#prev').addEventListener('change', function(e){ previewOn=e.target.checked; applyLocalPreview(); });
   $('#q').addEventListener('input', function(){ renderBody(); });
@@ -712,9 +718,27 @@
 
   function renderNav(){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length){ $('#curSlide').textContent='-'; return; } if(!activeGroupKey || keys.indexOf(activeGroupKey)<0) activeGroupKey=keys[0]; var g=tree[activeGroupKey]; $('#curSlide').textContent=groupLabel(g.sec,g.slide); }
 
-  /* ===================== TOOL "AGGIUNGI LOCANDINA" (Vicolo Off · Muro spettacoli) =====================
+  /* ===================== TOOL "AGGIUNGI LOCANDINA" / "MODIFICA LOCANDINA" (Vicolo Off · Muro spettacoli) =====================
      Nessun dato/immagine inventato: tutto arriva da quello che l'admin scrive/carica qui.
-     Persistenza gestita dal sito stesso (window.__vcWallAddPoster salva in localStorage). */
+     Persistenza gestita dal sito stesso (window.__vcWallAddPoster / window.__vcWallUpdatePoster salvano in localStorage). */
+  var POSTER_MONTH_IDX={novembre:10,dicembre:11,gennaio:0,febbraio:1,marzo:2,aprile:3};
+  var POSTER_WD_ABBR=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  var POSTER_WD_FULL=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  function posterYearForMonth(m){ return (m==='novembre'||m==='dicembre') ? 2026 : 2027; }
+  function posterDaysInMonth(m){ var mi=POSTER_MONTH_IDX[m]; if(mi==null) return 30; return new Date(posterYearForMonth(m), mi+1, 0).getDate(); }
+  function posterPopulateDateOptions(monthSel, dateSel){
+    var m=monthSel.value, mi=POSTER_MONTH_IDX[m], y=posterYearForMonth(m), n=posterDaysInMonth(m);
+    var prevDay=dateSel.value?parseInt(dateSel.value,10):null;
+    dateSel.innerHTML='';
+    for(var d=1; d<=n; d++){
+      var dow=new Date(y, mi, d).getDay();
+      var o=document.createElement('option'); o.value=String(d); o.textContent=POSTER_WD_ABBR[dow]+' '+d;
+      dateSel.appendChild(o);
+    }
+    if(prevDay && prevDay<=n) dateSel.value=String(prevDay);
+  }
+  function posterParseDay(dateStr){ if(!dateStr) return null; var m=String(dateStr).match(/(\d{1,2})/); return m?parseInt(m[1],10):null; }
+
   function buildPosterTool(){
     var box=document.createElement('div'); box.className='postertool';
     var ttl=document.createElement('div'); ttl.className='postertool-title'; ttl.textContent='Aggiungi locandina'; box.appendChild(ttl);
@@ -751,25 +775,9 @@
 
     /* Data: selettore dei giorni del mese scelto (non testo libero). La stagione
        "26/27" -> novembre/dicembre sono 2026, gennaio-aprile sono 2027. */
-    var MONTH_IDX={novembre:10,dicembre:11,gennaio:0,febbraio:1,marzo:2,aprile:3};
-    var WD_ABBR=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-    var WD_FULL=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-    function yearForMonth(m){ return (m==='novembre'||m==='dicembre') ? 2026 : 2027; }
-    function daysInMonth(m){ var mi=MONTH_IDX[m]; if(mi==null) return 30; return new Date(yearForMonth(m), mi+1, 0).getDate(); }
     var dateSel=document.createElement('select');
-    function populateDateOptions(){
-      var m=monthSel.value, mi=MONTH_IDX[m], y=yearForMonth(m), n=daysInMonth(m);
-      var prevDay=dateSel.value?parseInt(dateSel.value,10):null;
-      dateSel.innerHTML='';
-      for(var d=1; d<=n; d++){
-        var dow=new Date(y, mi, d).getDay();
-        var o=document.createElement('option'); o.value=String(d); o.textContent=WD_ABBR[dow]+' '+d;
-        dateSel.appendChild(o);
-      }
-      if(prevDay && prevDay<=n) dateSel.value=String(prevDay);
-    }
-    populateDateOptions();
-    monthSel.addEventListener('change', populateDateOptions);
+    posterPopulateDateOptions(monthSel, dateSel);
+    monthSel.addEventListener('change', function(){ posterPopulateDateOptions(monthSel, dateSel); });
     row('Data').appendChild(dateSel);
 
     var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
@@ -879,8 +887,8 @@
       var title=(titleInp.value||'').trim();
       if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
       if(!coverImage){ errEl.textContent='Carica una copertina (la locandina che appare sul muro).'; return; }
-      var dDay=parseInt(dateSel.value,10), dMi=MONTH_IDX[monthSel.value], dY=yearForMonth(monthSel.value);
-      var dDow=WD_FULL[new Date(dY,dMi,dDay).getDay()];
+      var dDay=parseInt(dateSel.value,10), dMi=POSTER_MONTH_IDX[monthSel.value], dY=posterYearForMonth(monthSel.value);
+      var dDow=POSTER_WD_FULL[new Date(dY,dMi,dDay).getDay()];
       var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
       var info={
         title:title,
@@ -912,6 +920,195 @@
     return box;
   }
 
+  /* ===================== TOOL "MODIFICA LOCANDINA" =====================
+     Compare solo quando una scheda-spettacolo e' aperta (window.__vcWallGetOpenPosterId()).
+     A differenza di "Aggiungi locandina", qui i campi sono precompilati con i dati gia'
+     salvati e ogni modifica viene applicata subito (nessun pulsante "salva", nessun reset):
+     l'admin vede la scheda aggiornarsi in tempo reale mentre scrive o cambia le immagini. */
+  function buildPosterEditTool(id){
+    var d=window.__vcWallGetPoster ? window.__vcWallGetPoster(id) : null;
+    if(!d) return document.createElement('div');
+
+    var box=document.createElement('div'); box.className='postertool';
+    var ttl=document.createElement('div'); ttl.className='postertool-title'; ttl.textContent='Modifica locandina'; box.appendChild(ttl);
+
+    function row(labelText){
+      var r=document.createElement('div'); r.className='postertool-row';
+      var lab=document.createElement('label'); lab.textContent=labelText; r.appendChild(lab);
+      box.appendChild(r);
+      return r;
+    }
+
+    var monthSel=document.createElement('select');
+    (window.__vcWallMonths||[]).forEach(function(m){
+      var o=document.createElement('option'); o.value=m; o.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+      if(m===d.month) o.selected=true;
+      monthSel.appendChild(o);
+    });
+    row('Mese').appendChild(monthSel);
+
+    var titleInp=document.createElement('input'); titleInp.type='text'; titleInp.placeholder='Titolo dello spettacolo'; titleInp.value=d.title||'';
+    row('Titolo').appendChild(titleInp);
+
+    var sottotitoloInp=document.createElement('input'); sottotitoloInp.type='text'; sottotitoloInp.placeholder='es. Una commedia in due atti'; sottotitoloInp.value=d.sottotitolo||'';
+    row('Sottotitolo').appendChild(sottotitoloInp);
+
+    var regiaInp=document.createElement('input'); regiaInp.type='text'; regiaInp.placeholder='es. Regia di Mario Rossi, o Soggetto e sceneggiatura di...'; regiaInp.value=d.regia||'';
+    row('Regia').appendChild(regiaInp);
+
+    var synInp=document.createElement('textarea'); synInp.rows=3; synInp.placeholder='Sinossi dello spettacolo'; synInp.value=d.synopsis||'';
+    row('Sinossi').appendChild(synInp);
+
+    var castInp=document.createElement('input'); castInp.type='text'; castInp.placeholder='Nomi separati da virgola'; castInp.value=d.cast||'';
+    row('Cast').appendChild(castInp);
+
+    var dateSel=document.createElement('select');
+    posterPopulateDateOptions(monthSel, dateSel);
+    var prevDay=posterParseDay(d.date);
+    if(prevDay) dateSel.value=String(prevDay);
+    monthSel.addEventListener('change', function(){ posterPopulateDateOptions(monthSel, dateSel); commit(); });
+    row('Data').appendChild(dateSel);
+
+    var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
+    var hourSel=document.createElement('select');
+    for(var h=0; h<24; h++){ var ho=document.createElement('option'); var hv=String(h).padStart(2,'0'); ho.value=hv; ho.textContent=hv; hourSel.appendChild(ho); }
+    var timeSep=document.createElement('span'); timeSep.className='postertool-timesep'; timeSep.textContent=':';
+    var minSel=document.createElement('select');
+    ['00','15','30','45'].forEach(function(mm){ var mo=document.createElement('option'); mo.value=mm; mo.textContent=mm; minSel.appendChild(mo); });
+    var dTime=(d.time||'').split(':');
+    hourSel.value=(dTime[0]&&hourSel.querySelector('option[value="'+dTime[0]+'"]'))?dTime[0]:'21';
+    minSel.value=(dTime[1]&&minSel.querySelector('option[value="'+dTime[1]+'"]'))?dTime[1]:'00';
+    timeWrap.appendChild(hourSel); timeWrap.appendChild(timeSep); timeWrap.appendChild(minSel);
+    row('Ora').appendChild(timeWrap);
+
+    var tagSel=document.createElement('select');
+    ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; if(t===d.tag) o.selected=true; tagSel.appendChild(o); });
+    row('Categoria').appendChild(tagSel);
+
+    var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
+    row('Copertina').appendChild(coverInp);
+    var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
+
+    var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
+    row('Galleria').appendChild(galleryInp);
+    var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
+
+    var errEl=document.createElement('div'); errEl.className='postertool-err'; box.appendChild(errEl);
+    var coverImage=d.cover||null, galleryImages=(d.gallery||[]).slice();
+    var loadingCount=0;
+
+    function setLoading(active){
+      loadingCount+=active?1:-1; if(loadingCount<0) loadingCount=0;
+    }
+    function readFiles(files){
+      return Promise.all(files.map(function(file){
+        return new Promise(function(resolve,reject){
+          var reader=new FileReader();
+          reader.onload=function(){ resolve(reader.result); };
+          reader.onerror=function(){ reject(reader.error||new Error('read error')); };
+          reader.readAsDataURL(file);
+        });
+      }));
+    }
+
+    var commitTimer=null;
+    function commit(){
+      var title=(titleInp.value||'').trim();
+      if(!title){ errEl.textContent='Il titolo non puo\' restare vuoto.'; return; }
+      if(!coverImage){ errEl.textContent='Serve sempre una copertina (la locandina che appare sul muro).'; return; }
+      errEl.textContent='';
+      var dDay=parseInt(dateSel.value,10), dMi=POSTER_MONTH_IDX[monthSel.value], dY=posterYearForMonth(monthSel.value);
+      var dDow=dDay?POSTER_WD_FULL[new Date(dY,dMi,dDay).getDay()]:'';
+      var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
+      var info={
+        title:title,
+        sottotitolo:(sottotitoloInp.value||'').trim(),
+        regia:(regiaInp.value||'').trim(),
+        synopsis:(synInp.value||'').trim(),
+        cast:(castInp.value||'').trim(),
+        date:dateStr,
+        time:hourSel.value+':'+minSel.value,
+        tag:tagSel.value,
+        meta:tagSel.value,
+        cover:coverImage,
+        gallery:galleryImages.slice()
+      };
+      window.__vcWallUpdatePoster(id, monthSel.value, info);
+      // stesso motivo di "Aggiungi locandina": in anteprima dispositivo il sito vero e proprio
+      // vive in un iframe separato, va aggiornato anche li' con lo stesso messaggio.
+      try{ frame.contentWindow.postMessage({__vc:'updateposter', id:id, month:monthSel.value, info:info}, '*'); }catch(eUpd){}
+    }
+    function scheduleCommit(){ clearTimeout(commitTimer); commitTimer=setTimeout(commit, 250); }
+
+    [titleInp, sottotitoloInp, regiaInp, castInp].forEach(function(inp){ inp.addEventListener('input', scheduleCommit); });
+    synInp.addEventListener('input', scheduleCommit);
+    dateSel.addEventListener('change', commit);
+    hourSel.addEventListener('change', commit);
+    minSel.addEventListener('change', commit);
+    tagSel.addEventListener('change', commit);
+
+    function renderCoverPreview(){
+      coverPreview.innerHTML='';
+      if(!coverImage) return;
+      var wrap=document.createElement('div'); wrap.className='postertool-coveritem';
+      var im=document.createElement('img'); im.src=coverImage; wrap.appendChild(im);
+      var rm=document.createElement('button'); rm.type='button'; rm.className='postertool-imgbtn postertool-imgbtn-rm'; rm.textContent='×'; rm.title='Rimuovi copertina (poi caricane una nuova)';
+      rm.addEventListener('click', function(){ coverImage=null; coverInp.value=''; renderCoverPreview(); commit(); });
+      wrap.appendChild(rm);
+      coverPreview.appendChild(wrap);
+    }
+    coverInp.addEventListener('change', function(){
+      var files=Array.prototype.slice.call(coverInp.files||[]);
+      if(!files.length) return;
+      errEl.textContent=''; setLoading(true);
+      readFiles(files.slice(0,1)).then(function(results){
+        coverImage=results[0]; renderCoverPreview(); commit();
+      }).catch(function(){
+        errEl.textContent='Errore nel caricamento della copertina. Riprova.';
+      }).then(function(){ setLoading(false); });
+    });
+
+    function renderGalleryPreview(){
+      galleryPreview.innerHTML='';
+      galleryImages.forEach(function(src, idx){
+        var wrap=document.createElement('div'); wrap.className='postertool-galitem';
+        var im=document.createElement('img'); im.src=src; wrap.appendChild(im);
+        var ctr=document.createElement('div'); ctr.className='postertool-galctrl';
+        var up=document.createElement('button'); up.type='button'; up.className='postertool-imgbtn'; up.textContent='↑'; up.title='Sposta su'; up.disabled=(idx===0);
+        up.addEventListener('click', function(){ var t=galleryImages[idx-1]; galleryImages[idx-1]=galleryImages[idx]; galleryImages[idx]=t; renderGalleryPreview(); commit(); });
+        var down=document.createElement('button'); down.type='button'; down.className='postertool-imgbtn'; down.textContent='↓'; down.title="Sposta giu'"; down.disabled=(idx===galleryImages.length-1);
+        down.addEventListener('click', function(){ var t=galleryImages[idx+1]; galleryImages[idx+1]=galleryImages[idx]; galleryImages[idx]=t; renderGalleryPreview(); commit(); });
+        var rm=document.createElement('button'); rm.type='button'; rm.className='postertool-imgbtn postertool-imgbtn-rm'; rm.textContent='×'; rm.title='Rimuovi';
+        rm.addEventListener('click', function(){ galleryImages.splice(idx,1); renderGalleryPreview(); commit(); });
+        ctr.appendChild(up); ctr.appendChild(down); ctr.appendChild(rm);
+        wrap.appendChild(ctr);
+        galleryPreview.appendChild(wrap);
+      });
+    }
+    galleryInp.addEventListener('change', function(){
+      var files=Array.prototype.slice.call(galleryInp.files||[]);
+      if(!files.length) return;
+      errEl.textContent=''; setLoading(true);
+      readFiles(files).then(function(results){
+        galleryImages=galleryImages.concat(results);
+        renderGalleryPreview();
+        galleryInp.value='';
+        commit();
+      }).catch(function(){
+        errEl.textContent='Errore nel caricamento di una o piu\' immagini della galleria. Riprova.';
+      }).then(function(){ setLoading(false); });
+    });
+
+    renderCoverPreview();
+    renderGalleryPreview();
+
+    var hint=document.createElement('div'); hint.className='postertool-hint';
+    hint.textContent='Stai modificando la scheda aperta: ogni cambiamento (testo o immagini) si applica subito, in tempo reale, sia qui che sulla scheda sul sito.';
+    box.appendChild(hint);
+
+    return box;
+  }
+
   function renderBody(){
     var body=$('#body');
     // memorizza quali elementi sono aperti e la posizione di scroll, per non richiudere/saltare
@@ -934,7 +1131,10 @@
       var sec=document.createElement('div'); sec.className='grp open'; sec.dataset.gk=gk;
       if(q){ var h=document.createElement('div'); h.className='grphead'; h.innerHTML='<span>'+groupLabel(g.sec,g.slide)+'</span>'; sec.appendChild(h); }
       var wrap=document.createElement('div'); wrap.className='grpbody'; sec.appendChild(wrap);
-      if(!q && gk===groupKey(4,2)){ wrap.appendChild(buildPosterTool()); }
+      if(!q && gk===groupKey(4,2)){
+        if(openPosterId) wrap.appendChild(buildPosterEditTool(openPosterId));
+        wrap.appendChild(buildPosterTool());
+      }
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
         var eh=document.createElement('div'); eh.className='elemhead';
@@ -1302,6 +1502,7 @@
          inviato il messaggio; qui (slave nell'iframe) serve solo aggiornare cio' che si vede,
          altrimenti la locandina finirebbe salvata due volte. */
       if(m.__vc==='addposter'){ try{ if(window.__vcWallAddPoster) window.__vcWallAddPoster(m.month, m.info, {silent:true}); }catch(e6){} }
+      if(m.__vc==='updateposter'){ try{ if(window.__vcWallUpdatePoster) window.__vcWallUpdatePoster(m.id, m.month, m.info, {silent:true}); }catch(e8){} }
       if(m.__vc==='textmap'){
         try{ var T=m.text||{}; Object.keys(T).forEach(function(k){ var o=T[k]; var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }); }catch(e4){}
         try{ var W=m.words||{}; Object.keys(W).forEach(function(k){ var w=W[k]; var el=document.querySelector(w.sel); if(el) el.innerHTML=w.words.map(function(word,i){ var t=(word&&word.text!=null)?word.text:word; return '<span class="'+w.base+'-w'+(i+1)+'">'+String(t).replace(/[&<>\"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[c];})+'</span>'; }).join(' '); }); }catch(e5){}
