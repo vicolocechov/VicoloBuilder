@@ -1080,7 +1080,8 @@ html.sede-monte #s3-slide1{display:none}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Bottone "Prenota" -> --s4-slide2-detail-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s4-slide2-detail-btn{display:inline-block;font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;background:var(--sede);border:2px solid var(--sede);font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1));padding:calc(16px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));line-height:var(--s4-slide2-detail-btn-lh,1);letter-spacing:var(--s4-slide2-detail-btn-ls,0px);color:var(--s4-slide2-detail-btn-color,#1b1b1b);align-self:center;margin-top:4px;transform:translate(var(--s4-slide2-detail-btn-x,0px),var(--s4-slide2-detail-btn-y,0px))}
 .s4-slide2-detail-btn:hover{background:transparent;color:var(--sede)}
-.s4-slide2-detail-gallery{position:relative;overflow:hidden;flex:0 0 42%;border-radius:14px;background:transparent}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Locandina/galleria a sinistra -> --s4-slide2-detail-gallery-{scale|x|y} */
+.s4-slide2-detail-gallery{position:relative;overflow:hidden;flex:0 0 42%;border-radius:14px;background:transparent;transform:translate(var(--s4-slide2-detail-gallery-x,0px),var(--s4-slide2-detail-gallery-y,0px)) scale(var(--s4-slide2-detail-gallery-scale,1));transform-origin:center center}
 .s4-slide2-gallery-track{display:flex;transition:transform .25s ease}
 .s4-slide2-gallery-track img{flex:0 0 100%;display:block;width:100%;max-height:48vh;object-fit:contain;border-radius:12px}
 .s4-slide2-gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:22px;cursor:pointer}
