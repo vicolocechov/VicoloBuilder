@@ -353,6 +353,7 @@
     fillSynthetic();
     detectCards(); // "Card N (intera)" e "Tutte le card (blocco)"
     detectPageBlocks(); // "Tutta la pagina (tutti gli elementi)" per ogni slide + "Header (tutto insieme)"
+    detectPosterDetailBlock(); // "Tutta la scheda spettacolo (in blocco)" - solo la scheda, mai la pagina del muro
   }
   function selFor(sec,slide,family){ var s=SELMAP[famKeyOf(sec,slide,family)]; return (s&&s[0])||null; }
 
@@ -400,6 +401,15 @@
     // Header intero (logo+menu+pillola insieme)
     var hsel=null; try{ if(document.querySelector('.header-inner')) hsel='.header-inner'; else if(document.querySelector('.site-header')) hsel='.site-header'; }catch(e){}
     if(hsel) regSynthProps(0,0,'headerblocco', hsel, ['zoom','x','y']);
+  }
+
+  /* "Tutta la scheda spettacolo (in blocco)" (Vicolo Off · muro spettacoli): scala/sposta la
+     SOLA scheda-sinossi aperta (.s4-slide2-detail), mai il muro/pagina principale - i due
+     elementi sono fratelli nel DOM (la scheda vive nell'overlay, fuori da .scena-inner), quindi
+     questo blocco non puo' toccare nulla della pagina sotto. */
+  function detectPosterDetailBlock(){
+    var sel=null; try{ sel = document.querySelector('.s4-slide2-detail') ? '.s4-slide2-detail' : null; }catch(e){}
+    if(sel) regSynthProps(4,2,'detailblocco', sel, ['scale','x','y']);
   }
 
   // aggiunge, dove mancano, i controlli lh/ls/colore (+ scala/sposta se assenti del tutto) a QUALSIASI elemento
@@ -665,16 +675,23 @@
     fitStage(w,h);
   }
 
+  /* Apertura/chiusura di una scheda-spettacolo (chiamata sia dal sito in "Modifica diretta"
+     - stessa pagina, nessun iframe - sia, per l'anteprima dispositivo, tramite il messaggio
+     'posteropen' inviato dall'iframe): porta subito il pannello sul gruppo dedicato alla
+     scheda, cosi' i suoi comandi si vedono senza dover navigare manualmente fin li'. */
+  function onPosterOpenChanged(id){
+    if(id===openPosterId) return;
+    openPosterId=id;
+    if(id){ activeGroupKey=groupKey(4,2); follow=false; try{ $('#followBtn').classList.remove('on'); }catch(e){} }
+    renderNav(); renderBody();
+  }
   window.addEventListener('message', function(e){ var m=e.data; if(!m||!m.__vc) return;
     if(m.__vc==='inview') setActiveFromScroll(m.sec, m.slide);
     if(m.__vc==='picked') openElementCard(m.sec, m.slide, m.family);
     if(m.__vc==='ready') syncFrame();
-    if(m.__vc==='posteropen'){ if(m.id!==openPosterId){ openPosterId=m.id; renderBody(); } }
+    if(m.__vc==='posteropen') onPosterOpenChanged(m.id);
   });
-  /* chiamata direttamente dal sito quando siamo in "Modifica diretta" (stessa pagina,
-     nessun iframe): apre/chiude una scheda spettacolo -> il pannello mostra/nasconde
-     subito il tool "Modifica locandina" per quella scheda specifica. */
-  window.__vcAdminPosterOpenChanged=function(id){ if(id===openPosterId) return; openPosterId=id; renderBody(); };
+  window.__vcAdminPosterOpenChanged=onPosterOpenChanged;
 
   $('#prev').addEventListener('change', function(e){ previewOn=e.target.checked; applyLocalPreview(); });
   $('#q').addEventListener('input', function(){ renderBody(); });
@@ -697,17 +714,19 @@
     if(f==='paginablocco') return '★★ Tutta la pagina (tutti gli elementi)';
     if(f==='headerblocco') return '★ Header (tutto insieme)';
     if(f==='cardblocco') return '★ Tutte le card (blocco intero)';
+    if(f==='detailblocco') return '★ Tutta la scheda (in blocco)';
     if(f==='logo') return 'Logo Vicolo Cechov';
     if(f==='logo-vicoloff') return 'Logo Vicolo Off';
     var _cm=f.match(/^cardblocco(\d+)$/); if(_cm) return '★ Card '+_cm[1]+' (intera)';
     return f.replace(/-/g,' ')
+    .replace(/\bdetail\b/,'Scheda').replace(/\bautore\b/,'Autore/regia')
     .replace(/\btitolo\b/,'Titolo').replace(/\bsub\b/,'Sottotitolo').replace(/\bcorpo\b/,'Testo')
     .replace(/\beyebrow\b/,'Occhiello').replace(/\bfrase\b/,'Frase').replace(/\bbtn\b/,'Bottone')
     .replace(/\bcard\b/,'Card').replace(/\bvoce\b/,'Voce').replace(/\bnum\b/,'Numero')
     .replace(/\btit\b/,'Titolo').replace(/\btesto\b/,'Testo').replace(/\bnome\b/,'Nome')
     .replace(/\bimmagine\b/,'Immagine').replace(/\bw(\d+)\b/,'Parola $1')
     .replace(/\b\w/g, function(c){ return c.toUpperCase(); }); }
-  function groupLabel(sec,slide){ if(+sec===0) return 'Header (logo · menu · pillola)'; if(+sec===1) return 'Slide '+slide+(SLIDE_NAMI[slide]?' - '+SLIDE_NAMI[slide]:''); return 'Sez '+sec+' - Slide '+slide; }
+  function groupLabel(sec,slide){ if(+sec===0) return 'Header (logo · menu · pillola)'; if(+sec===1) return 'Slide '+slide+(SLIDE_NAMI[slide]?' - '+SLIDE_NAMI[slide]:''); if(+sec===4 && +slide===2 && openPosterId) return 'Scheda spettacolo aperta'; return 'Sez '+sec+' - Slide '+slide; }
   function groupKey(sec,slide){ return 's'+sec+'sl'+slide; }
 
   function buildTree(){ var tree={}; Object.keys(VARS).forEach(function(name){ var v=VARS[name], k=groupKey(v.sec,v.slide); (tree[k]=tree[k]||{sec:v.sec,slide:v.slide,fams:{}}); (tree[k].fams[v.family]=tree[k].fams[v.family]||[]).push({name:name,prop:v.prop}); }); return tree; }
@@ -1126,6 +1145,12 @@
 
     showKeys.forEach(function(gk){
       var g=tree[gk], famKeys=Object.keys(g.fams).sort();
+      /* Con la scheda-spettacolo aperta, il pannello mostra SOLO i comandi di quella scheda
+         (famiglie "detail*"), mai quelli del muro/pagina principale sotto - e viceversa quando
+         e' chiusa: cosi' non si rischia piu' di modificare l'uno pensando di modificare l'altro. */
+      if(!q && gk===groupKey(4,2)){
+        famKeys=famKeys.filter(function(f){ return openPosterId ? (f.indexOf('detail')===0) : (f.indexOf('detail')!==0); });
+      }
       var visible=famKeys.filter(function(f){ return !q || (groupLabel(g.sec,g.slide)+' '+familyLabel(f)+' '+f).toLowerCase().indexOf(q)!==-1; });
       if(!visible.length) return;
       var sec=document.createElement('div'); sec.className='grp open'; sec.dataset.gk=gk;
@@ -1133,7 +1158,7 @@
       var wrap=document.createElement('div'); wrap.className='grpbody'; sec.appendChild(wrap);
       if(!q && gk===groupKey(4,2)){
         if(openPosterId) wrap.appendChild(buildPosterEditTool(openPosterId));
-        wrap.appendChild(buildPosterTool());
+        else wrap.appendChild(buildPosterTool());
       }
       visible.forEach(function(family){
         var el=document.createElement('div'); el.className='elem'; el.dataset.fam=family;
