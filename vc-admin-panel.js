@@ -760,6 +760,32 @@
   }
   function posterParseDay(dateStr){ if(!dateStr) return null; var m=String(dateStr).match(/(\d{1,2})/); return m?parseInt(m[1],10):null; }
 
+  /* Le foto vere di un telefono (spesso diversi MB l'una) esaurivano in fretta lo spazio di
+     localStorage (in genere 5-10MB per sito): il salvataggio falliva in silenzio dopo poche
+     locandine, che sparivano al ricaricamento della pagina senza nessun avviso. Ridimensionando
+     e ricomprimendo qui (lato client, prima di salvare) il peso scende di solito a poche
+     centinaia di KB per immagine, senza perdita visibile alla dimensione a cui vengono mostrate
+     sul sito (locandina nel muro, galleria nella scheda). */
+  function resizePosterImage(dataUrl, maxDim, quality){
+    return new Promise(function(resolve){
+      var img=new Image();
+      img.onload=function(){
+        var w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+        if(!w || !h){ resolve(dataUrl); return; }
+        if(w>maxDim || h>maxDim){ if(w>h){ h=Math.round(h*maxDim/w); w=maxDim; } else { w=Math.round(w*maxDim/h); h=maxDim; } }
+        try{
+          var canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+          var ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          var out=canvas.toDataURL('image/jpeg', quality);
+          resolve(out && out.length<dataUrl.length ? out : dataUrl);
+        }catch(e){ resolve(dataUrl); }
+      };
+      img.onerror=function(){ resolve(dataUrl); };
+      img.src=dataUrl;
+    });
+  }
+
   function buildPosterTool(){
     var box=document.createElement('div'); box.className='postertool';
     var ttl=document.createElement('div'); ttl.className='postertool-title'; ttl.textContent='Aggiungi locandina'; box.appendChild(ttl);
@@ -845,7 +871,7 @@
       return Promise.all(files.map(function(file){
         return new Promise(function(resolve,reject){
           var reader=new FileReader();
-          reader.onload=function(){ resolve(reader.result); };
+          reader.onload=function(){ resizePosterImage(reader.result, 1100, 0.82).then(resolve); };
           reader.onerror=function(){ reject(reader.error||new Error('read error')); };
           reader.readAsDataURL(file);
         });
@@ -929,6 +955,11 @@
       // va inoltrata anche li' - altrimenti si vede aggiornare solo la pagina in background
       // nascosta dietro l'overlay, e la locandina "sparisce" agli occhi di chi guarda l'iframe.
       try{ frame.contentWindow.postMessage({__vc:'addposter', month:monthSel.value, info:info}, '*'); }catch(eAdd){}
+      // il salvataggio in localStorage puo' fallire (spazio esaurito) senza che nulla lo segnali
+      // altrimenti: la locandina sembra salvata (resta visibile) ma sparirebbe al primo refresh.
+      if(window.__vcWallLastSaveOk && !window.__vcWallLastSaveOk()){
+        alert('Attenzione: la locandina e\' stata aggiunta ma NON e\' stato possibile salvarla (spazio di archiviazione del browser esaurito). Restera\' visibile solo in questa sessione: se ricarichi la pagina o riapri il sito da un altro dispositivo sparira\'. Elimina qualche locandina piu\' vecchia per liberare spazio, poi riprova.');
+      }
       // la nuova locandina espone le proprie variabili di scala/posizione: le rileva subito
       refreshVars(); renderNav(); renderBody(); syncFrame();
     });
@@ -1017,6 +1048,7 @@
     var errEl=document.createElement('div'); errEl.className='postertool-err'; box.appendChild(errEl);
     var coverImage=d.cover||null, galleryImages=(d.gallery||[]).slice();
     var loadingCount=0;
+    var quotaWarned=false; // avvisa una sola volta per apertura scheda, non a ogni commit() automatico
 
     function setLoading(active){
       loadingCount+=active?1:-1; if(loadingCount<0) loadingCount=0;
@@ -1025,7 +1057,7 @@
       return Promise.all(files.map(function(file){
         return new Promise(function(resolve,reject){
           var reader=new FileReader();
-          reader.onload=function(){ resolve(reader.result); };
+          reader.onload=function(){ resizePosterImage(reader.result, 1100, 0.82).then(resolve); };
           reader.onerror=function(){ reject(reader.error||new Error('read error')); };
           reader.readAsDataURL(file);
         });
@@ -1058,6 +1090,12 @@
       // stesso motivo di "Aggiungi locandina": in anteprima dispositivo il sito vero e proprio
       // vive in un iframe separato, va aggiornato anche li' con lo stesso messaggio.
       try{ frame.contentWindow.postMessage({__vc:'updateposter', id:id, month:monthSel.value, info:info}, '*'); }catch(eUpd){}
+      // un solo avviso per apertura scheda (commit() parte a ogni modifica: un alert() per
+      // ciascuno sarebbe fastidioso, non serve ripeterlo se il problema persiste).
+      if(!quotaWarned && window.__vcWallLastSaveOk && !window.__vcWallLastSaveOk()){
+        quotaWarned=true;
+        alert('Attenzione: la modifica e\' stata applicata ma NON e\' stato possibile salvarla (spazio di archiviazione del browser esaurito). Se ricarichi la pagina o riapri il sito da un altro dispositivo, questa modifica sparira\'. Elimina qualche locandina piu\' vecchia per liberare spazio, poi riprova.');
+      }
     }
     function scheduleCommit(){ clearTimeout(commitTimer); commitTimer=setTimeout(commit, 250); }
 

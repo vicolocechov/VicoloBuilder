@@ -1810,7 +1810,11 @@ requestAnimationFrame(riposiziona);
   let next=1, activeMonth='novembre', activePage=0, gi=0, openId=null, activeFilterTag=null;
   const POSTER_KEY='vc-wall-posters-v1';
   function loadSavedPosters(){ try{ const r=localStorage.getItem(POSTER_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
-  function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); }catch(e){} }
+  /* se il salvataggio fallisce (es. spazio di localStorage esaurito) la locandina resta
+     visibile solo per questa sessione, ma sparirebbe al ricaricamento senza nessun avviso -
+     lastSaveOk lo espone cosi' il pannello puo' segnalarlo subito a chi la sta caricando. */
+  let lastSaveOk=true;
+  function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); lastSaveOk=true; }catch(e){ lastSaveOk=false; } }
   let savedPosters=loadSavedPosters();
   /* mappa id-locandina -> il SUO elemento dentro savedPosters (per riferimento, non per indice):
      l'indice posizionale (id = indice+1) si rompe non appena si elimina una locandina, quindi
@@ -2037,6 +2041,7 @@ requestAnimationFrame(riposiziona);
   window.__vcWallAddPoster=addPoster;
   window.__vcWallUpdatePoster=updatePoster;
   window.__vcWallDeletePoster=deletePoster;
+  window.__vcWallLastSaveOk=()=>lastSaveOk;
   window.__vcWallGetActiveMonth=()=>activeMonth;
   window.__vcWallMonths=months.slice();
   window.__vcWallGetOpenPosterId=()=>openId;
