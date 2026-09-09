@@ -1125,6 +1125,17 @@
     hint.textContent='Stai modificando la scheda aperta: ogni cambiamento (testo o immagini) si applica subito, in tempo reale, sia qui che sulla scheda sul sito.';
     box.appendChild(hint);
 
+    var delBtn=document.createElement('button'); delBtn.type='button'; delBtn.className='postertool-btn postertool-btn-danger'; delBtn.textContent='🗑 Elimina questa locandina';
+    delBtn.addEventListener('click', function(){
+      if(!window.confirm('Eliminare definitivamente "'+(d.title||'questa locandina')+'"? Non si puo\' annullare.')) return;
+      try{ window.__vcWallDeletePoster && window.__vcWallDeletePoster(id); }catch(eDel1){}
+      // stesso motivo delle altre azioni sulle locandine: in anteprima dispositivo il sito vero
+      // e proprio vive in un iframe separato, va eliminata anche li'.
+      try{ frame.contentWindow.postMessage({__vc:'deleteposter', id:id}, '*'); }catch(eDel2){}
+      refreshVars(); renderNav(); renderBody(); syncFrame();
+    });
+    box.appendChild(delBtn);
+
     return box;
   }
 
@@ -1441,6 +1452,8 @@
     '.postertool-btn:hover{background:#f7b93a}'+
     '.postertool-btn:disabled{background:#555;color:#aaa;cursor:wait}'+
     '.postertool-hint{font:9px/1.35 Poppins,sans-serif;color:#888;margin-top:8px}'+
+    '.postertool-btn-danger{background:transparent;border:1px solid #ff5252;color:#ff5252;margin-top:12px}'+
+    '.postertool-btn-danger:hover{background:#ff5252;color:#1b1b1b}'+
     'footer{display:flex;gap:6px;padding:10px;border-top:1px solid #e2e0d8;background:#efeee9}'+
     'footer button{padding:9px 8px;border-radius:8px;border:1px solid #1b1b1b;background:#1b1b1b;color:#fcc454;font-size:12px;cursor:pointer;font-weight:600}'+
     '#exportFull{flex:1}footer button.ghost{background:#fff;color:#333;border-color:#d5d3c9;font-weight:500}footer button.danger:hover{border-color:#c0392b;color:#c0392b}'+
@@ -1528,6 +1541,7 @@
          altrimenti la locandina finirebbe salvata due volte. */
       if(m.__vc==='addposter'){ try{ if(window.__vcWallAddPoster) window.__vcWallAddPoster(m.month, m.info, {silent:true}); }catch(e6){} }
       if(m.__vc==='updateposter'){ try{ if(window.__vcWallUpdatePoster) window.__vcWallUpdatePoster(m.id, m.month, m.info, {silent:true}); }catch(e8){} }
+      if(m.__vc==='deleteposter'){ try{ if(window.__vcWallDeletePoster) window.__vcWallDeletePoster(m.id, {silent:true}); }catch(e9){} }
       if(m.__vc==='textmap'){
         try{ var T=m.text||{}; Object.keys(T).forEach(function(k){ var o=T[k]; var el=document.querySelector(o.sel); if(el) el.textContent=o.text; }); }catch(e4){}
         try{ var W=m.words||{}; Object.keys(W).forEach(function(k){ var w=W[k]; var el=document.querySelector(w.sel); if(el) el.innerHTML=w.words.map(function(word,i){ var t=(word&&word.text!=null)?word.text:word; return '<span class="'+w.base+'-w'+(i+1)+'">'+String(t).replace(/[&<>\"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[c];})+'</span>'; }).join(' '); }); }catch(e5){}

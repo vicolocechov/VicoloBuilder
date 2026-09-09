@@ -1778,6 +1778,10 @@ requestAnimationFrame(riposiziona);
   function loadSavedPosters(){ try{ const r=localStorage.getItem(POSTER_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
   function saveSavedPosters(list){ try{ localStorage.setItem(POSTER_KEY, JSON.stringify(list)); }catch(e){} }
   let savedPosters=loadSavedPosters();
+  /* mappa id-locandina -> il SUO elemento dentro savedPosters (per riferimento, non per indice):
+     l'indice posizionale (id = indice+1) si rompe non appena si elimina una locandina, quindi
+     update/delete cercano sempre l'elemento vero tramite questa mappa, mai per posizione. */
+  const savedRef={};
   const tabs=[...document.querySelectorAll('.s4-slide2-month')], panels=[...document.querySelectorAll('.s4-slide2-month-panel')];
   if(!tabs.length) return;
   const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
@@ -1890,6 +1894,9 @@ requestAnimationFrame(riposiziona);
     st.textContent='.s4-slide2-poster'+String(n).padStart(2,'0')+'{transform:translate(var(--s4-slide2-poster'+n+'-x,0px),var(--s4-slide2-poster'+n+'-y,0px)) scale(var(--s4-slide2-poster'+n+'-scale,1));}';
     document.head.appendChild(st);
   }
+  function removePosterCss(n){
+    const st=document.getElementById('s4-poster-vars-'+n); if(st) st.remove();
+  }
 
   /* addPoster non inventa nessun contenuto: chi la chiama deve passare i dati veri
      (titolo, autore/regia, sinossi, cast, data, ora, tag, immagini caricate).
@@ -1906,8 +1913,13 @@ requestAnimationFrame(riposiziona);
     byMonth[m].push(id);
     activeMonth=m; activePage=pages(m).length-1;
     render(m);
-    if(!opts.silent){
-      savedPosters.push(Object.assign({}, info||{}, {month:m}));
+    if(opts.silent){
+      // ripristino all'avvio: 'info' e' gia' l'elemento vero dentro savedPosters, non va duplicato
+      savedRef[id]=info;
+    } else {
+      const entry=Object.assign({}, info||{}, {month:m});
+      savedPosters.push(entry);
+      savedRef[id]=entry;
       saveSavedPosters(savedPosters);
     }
     return id;
@@ -1934,10 +1946,31 @@ requestAnimationFrame(riposiziona);
     render(activeMonth);
     if(openId===id) openShow(id);
     if(!opts.silent){
-      const idx=parseInt(id,10)-1;
-      if(savedPosters[idx]) savedPosters[idx]=Object.assign({}, savedPosters[idx], info||{}, {month:m});
+      const entry=savedRef[id];
+      if(entry) Object.assign(entry, info||{}, {month:m});
       saveSavedPosters(savedPosters);
     }
+    return true;
+  }
+
+  /* deletePoster rimuove definitivamente una locandina (dati, scheda, controlli scala/posizione
+     nel pannello) e chiude la scheda se era quella aperta. { silent:true } salta il salvataggio
+     (usato dallo slave nell'iframe di anteprima, per non toccare due volte lo stesso storage). */
+  function deletePoster(id, opts){
+    opts=opts||{};
+    const d=data[id]; if(!d) return false;
+    byMonth[d.month]=(byMonth[d.month]||[]).filter(x=>x!==id);
+    delete data[id];
+    removePosterCss(Number(id));
+    if(openId===id) closeShow();
+    activePage=0;
+    render(activeMonth);
+    if(!opts.silent){
+      const entry=savedRef[id];
+      if(entry){ const i=savedPosters.indexOf(entry); if(i!==-1) savedPosters.splice(i,1); }
+      saveSavedPosters(savedPosters);
+    }
+    delete savedRef[id];
     return true;
   }
 
@@ -1958,6 +1991,7 @@ requestAnimationFrame(riposiziona);
 
   window.__vcWallAddPoster=addPoster;
   window.__vcWallUpdatePoster=updatePoster;
+  window.__vcWallDeletePoster=deletePoster;
   window.__vcWallGetActiveMonth=()=>activeMonth;
   window.__vcWallMonths=months.slice();
   window.__vcWallGetOpenPosterId=()=>openId;
