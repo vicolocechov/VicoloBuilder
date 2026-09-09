@@ -1048,7 +1048,11 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-wall{width:min(1040px,90vw);margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:center;overflow:visible;min-height:120px}
 .s4-slide2-wall-empty{grid-column:1/-1;text-align:center;color:#8f8f8f;font:13px/1.5 'Montserrat',sans-serif;padding:40px 10px}
 .s4-slide2-poster-slot{width:100%;min-width:0;position:relative;overflow:visible}
-.s4-slide2-poster{appearance:none;border:0;padding:0;background:none;width:100%;min-width:0;display:block;position:relative;cursor:pointer;text-align:left;filter:brightness(.88);transform:translate(var(--s4-slide2-poster-x,0px),var(--s4-slide2-poster-y,0px)) scale(var(--s4-slide2-poster-scale,1));transform-origin:center center;transition:filter .18s;z-index:1;will-change:transform}
+/* overflow:hidden qui - non sull'immagine - cosi' il riquadro (la "cornice" della locandina nel
+   muro) resta fisso e allineato con le altre, mentre l'immagine al suo interno puo' essere
+   ingrandita/spostata (vedi .s4-slide2-poster-img sotto) per aggiustare il ritaglio senza
+   deformare la griglia. */
+.s4-slide2-poster{appearance:none;border:0;padding:0;background:none;width:100%;min-width:0;display:block;position:relative;overflow:hidden;cursor:pointer;text-align:left;filter:brightness(.88);transform:translate(var(--s4-slide2-poster-x,0px),var(--s4-slide2-poster-y,0px)) scale(var(--s4-slide2-poster-scale,1));transform-origin:center center;transition:filter .18s;z-index:1;will-change:transform}
 .s4-slide2-poster:hover,.s4-slide2-poster:focus{z-index:5}
 .s4-slide2-poster:hover{filter:brightness(1)}
 .s4-slide2-poster-img{display:block;width:100%;aspect-ratio:700/980;object-fit:cover;background:#26261f}
@@ -1070,7 +1074,8 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-detail-sinossi{font-family:'Montserrat',sans-serif;font-size:calc(clamp(15px,1.25vw,18px) * var(--s4-slide2-detail-sinossi-scale,1));line-height:var(--s4-slide2-detail-sinossi-lh,1.65);letter-spacing:var(--s4-slide2-detail-sinossi-ls,0px);color:var(--s4-slide2-detail-sinossi-color,#cfcfcf);max-width:640px;margin:0;transform:translate(var(--s4-slide2-detail-sinossi-x,0px),var(--s4-slide2-detail-sinossi-y,0px))}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Cast -> --s4-slide2-detail-cast-{scale|x|y|lh|ls|color} */
 .s4-slide2-detail-cast{font-family:'Montserrat',sans-serif;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));line-height:var(--s4-slide2-detail-cast-lh,1.5);letter-spacing:var(--s4-slide2-detail-cast-ls,0px);color:var(--s4-slide2-detail-cast-color,#8f8f8f);margin-top:12px;transform:translate(var(--s4-slide2-detail-cast-x,0px),var(--s4-slide2-detail-cast-y,0px))}
-.s4-slide2-detail-info{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:20px 0 24px;font:11px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · Data/Ora/Categoria (i 3 tag, in gruppo) -> --s4-slide2-detail-info-{scale|x|y} */
+.s4-slide2-detail-info{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:20px 0 24px;font:11px/1 'Poppins',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff;transform:translate(var(--s4-slide2-detail-info-x,0px),var(--s4-slide2-detail-info-y,0px)) scale(var(--s4-slide2-detail-info-scale,1));transform-origin:center center}
 .s4-slide2-detail-info span{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px}
 .s4-slide2-detail-tag{background:var(--sede);color:#1b1b1b!important;border-color:var(--sede)!important;font-weight:600}
 /* Colore del tag categoria: fisso per Prosa/Musica, legato alla sede (come il logo Vicolo Off) per Improvvisazione */
@@ -1891,7 +1896,14 @@ requestAnimationFrame(riposiziona);
   function ensurePosterCss(n){
     const cssId='s4-poster-vars-'+n; if(document.getElementById(cssId)) return;
     const st=document.createElement('style'); st.id=cssId;
-    st.textContent='.s4-slide2-poster'+String(n).padStart(2,'0')+'{transform:translate(var(--s4-slide2-poster'+n+'-x,0px),var(--s4-slide2-poster'+n+'-y,0px)) scale(var(--s4-slide2-poster'+n+'-scale,1));}';
+    const padded=String(n).padStart(2,'0');
+    /* due trasformazioni indipendenti: quella sul riquadro (sopra, gia' esistente) ingrandisce/
+       sposta l'INTERA locandina nel muro; questa sull'immagine dentro il riquadro permette di
+       aggiustare il ritaglio (ingrandire/spostare la foto senza deformare la griglia) quando il
+       file caricato non ha esattamente le proporzioni 5:7. */
+    st.textContent=
+      '.s4-slide2-poster'+padded+'{transform:translate(var(--s4-slide2-poster'+n+'-x,0px),var(--s4-slide2-poster'+n+'-y,0px)) scale(var(--s4-slide2-poster'+n+'-scale,1));}'+
+      '.s4-slide2-poster'+padded+' .s4-slide2-poster-img{transform:translate(var(--s4-slide2-poster'+n+'img-x,0px),var(--s4-slide2-poster'+n+'img-y,0px)) scale(var(--s4-slide2-poster'+n+'img-scale,1));transform-origin:center center;}';
     document.head.appendChild(st);
   }
   function removePosterCss(n){

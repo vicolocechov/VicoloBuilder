@@ -718,8 +718,9 @@
     if(f==='logo') return 'Logo Vicolo Cechov';
     if(f==='logo-vicoloff') return 'Logo Vicolo Off';
     var _cm=f.match(/^cardblocco(\d+)$/); if(_cm) return '★ Card '+_cm[1]+' (intera)';
+    var _pim=f.match(/^poster(\d+)img$/); if(_pim) return 'Locandina '+_pim[1]+' - aggiusta immagine nel riquadro';
     return f.replace(/-/g,' ')
-    .replace(/\bdetail\b/,'Scheda').replace(/\bautore\b/,'Autore/regia').replace(/\bgallery\b/,'Locandina/Galleria')
+    .replace(/\bdetail\b/,'Scheda').replace(/\bautore\b/,'Autore/regia').replace(/\bgallery\b/,'Locandina/Galleria').replace(/\binfo\b/,'Data/Ora/Categoria')
     .replace(/\btitolo\b/,'Titolo').replace(/\bsub\b/,'Sottotitolo').replace(/\bcorpo\b/,'Testo')
     .replace(/\beyebrow\b/,'Occhiello').replace(/\bfrase\b/,'Frase').replace(/\bbtn\b/,'Bottone')
     .replace(/\bcard\b/,'Card').replace(/\bvoce\b/,'Voce').replace(/\bnum\b/,'Numero')
