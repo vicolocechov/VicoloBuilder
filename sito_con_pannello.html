@@ -1071,13 +1071,21 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-page-dot.is-active{background:#fff}
 .s4-slide2-overlay{position:absolute;inset:0;background:#1b1b1b;display:grid;place-items:center;padding:clamp(24px,5vw,70px);opacity:0;visibility:hidden;pointer-events:none;z-index:1002}
 .s4-slide2-overlay.open{opacity:1;visibility:visible;pointer-events:auto}
-.s4-slide2-detail{width:min(1040px,94vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column;justify-content:center;gap:22px;position:relative;padding:6px}
+/* justify-content:flex-start (non center): con "center" su un contenitore flex che scrolla,
+   quando il contenuto supera max-height il browser lo taglia simmetricamente sopra E sotto
+   invece di lasciarlo scorrere fino in fondo - un bottone come "Prenota" restava cosi'
+   irraggiungibile. La scheda resta comunque centrata nell'overlay (che la centra lui stesso),
+   qui serve solo che il proprio contenuto parta dall'alto quando serve scorrere. */
+.s4-slide2-detail{width:min(1040px,94vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;position:relative;padding:6px}
 .s4-slide2-detail::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-detail-head{max-width:720px;text-align:center;margin:0 auto}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Titolo -> --s4-slide2-detail-titolo-{scale|x|y|lh|ls|color} */
 .s4-slide2-detail-titolo{font-family:'AkkPorte',sans-serif;font-weight:400;text-transform:uppercase;font-size:calc(clamp(40px,5vw,76px) * var(--s4-slide2-detail-titolo-scale,1));line-height:var(--s4-slide2-detail-titolo-lh,.94);letter-spacing:var(--s4-slide2-detail-titolo-ls,0px);color:var(--s4-slide2-detail-titolo-color,#fff);margin:0 0 4px;transform:translate(var(--s4-slide2-detail-titolo-x,0px),var(--s4-slide2-detail-titolo-y,0px))}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Autore/regia -> --s4-slide2-detail-autore-{scale|x|y|lh|ls|color} */
-.s4-slide2-detail-autore{font-family:'Poppins',sans-serif;font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1));line-height:var(--s4-slide2-detail-autore-lh,1.3);letter-spacing:var(--s4-slide2-detail-autore-ls,.4px);color:var(--s4-slide2-detail-autore-color,#8f8f8f);margin:0;transform:translate(var(--s4-slide2-detail-autore-x,0px),var(--s4-slide2-detail-autore-y,0px))}
+.s4-slide2-detail-autore{font-family:'Poppins',sans-serif;font-size:calc(15px * var(--s4-slide2-detail-autore-scale,1));line-height:var(--s4-slide2-detail-autore-lh,1.3);letter-spacing:var(--s4-slide2-detail-autore-ls,.4px);color:var(--s4-slide2-detail-autore-color,#8f8f8f);margin:0;transform:translate(var(--s4-slide2-detail-autore-x,0px),var(--s4-slide2-detail-autore-y,0px))}
+/* sottotitolo e regia: due righe separate, staccate tra loro, centrate (ereditano il text-align:center di .s4-slide2-detail-head) */
+.s4-slide2-detail-autore-line{display:block}
+.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:6px}
 .s4-slide2-detail-row{display:flex;gap:clamp(24px,4vw,44px);align-items:flex-start}
 .s4-slide2-detail-copy{flex:1;min-width:0;padding-top:16px;text-align:left}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Sinossi -> --s4-slide2-detail-sinossi-{scale|x|y|lh|ls|color} */
@@ -1108,8 +1116,15 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:1px solid rgba(255,255,255,.28);background:rgba(27,27,27,.82);color:#fff;border-radius:50%;font-size:26px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s}
 .s4-slide2-close:hover{background:var(--sede);color:#1b1b1b;transform:scale(1.06)}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
-@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(26px,8vw,40px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(10px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(10.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:7px 10px;font-size:9px}.s4-slide2-detail-btn{padding:calc(14px * var(--s4-slide2-detail-btn-scale,1)) calc(20px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12.5px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
-@media (orientation:landscape) and (max-height:550px){.s4-slide2-wall{grid-template-columns:repeat(4,minmax(0,1fr));width:min(900px,88vw);gap:10px;margin-top:16px}.s4-slide2-detail{grid-template-columns:200px 1fr;gap:24px}.s4-slide2-detail-gallery img{max-height:74vh}.s4-slide2-detail-titolo{font-size:calc(clamp(40px,5vw,68px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-sinossi{font-size:14px}}
+@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:8px 11px;font-size:11px}.s4-slide2-detail-btn{padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
+/* Mobile ORIZZONTALE (telefono ruotato: pochissima altezza disponibile) - qui la priorita' e'
+   che TUTTO resti visibile/proporzionato senza sforare, non ingrandire come in verticale */
+@media (orientation:landscape) and (max-height:550px){#s4-slide2{padding-top:calc(var(--header-h,48px) + 6px);padding-bottom:16px}.s4-slide2-titolo{font-size:calc(clamp(24px,5vw,34px) * var(--s4-slide2-titolo-scale,1));margin-top:4px}.s4-slide2-corpo{margin-top:4px}.s4-slide2-catfilter{margin-top:8px}.s4-slide2-months{margin-top:8px}.s4-slide2-wall{grid-template-columns:repeat(4,minmax(0,1fr));width:min(900px,88vw);gap:10px;margin-top:16px}
+/* align-items:flex-start (non center): quando l'intera sezione (occhiello+titolo+testo+muro)
+   e' piu' alta di un solo schermo - frequente in orizzontale - centrare la scheda rispetto a
+   TUTTA la sezione la spinge fuori dalla porzione di schermo davvero visibile. Allineandola
+   in cima resta quasi sempre dentro lo schermo attuale. */
+.s4-slide2-overlay{padding:8px;padding-top:48px;align-items:flex-start}.s4-slide2-detail{max-height:calc(100svh - 60px);gap:10px;padding:2px}.s4-slide2-detail-row{gap:14px}.s4-slide2-detail-gallery{flex:0 0 34%}.s4-slide2-detail-gallery img{max-height:40vh}.s4-slide2-detail-titolo{font-size:calc(clamp(22px,5vw,34px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}.s4-slide2-detail-info{gap:6px;margin:10px 0 12px}.s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}.s4-slide2-detail-btn{padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin-top:0}.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
@@ -1867,8 +1882,12 @@ requestAnimationFrame(riposiziona);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
     });
     setG(0);
-    const autoreParts=[]; if(d.sottotitolo) autoreParts.push(d.sottotitolo); if(d.regia) autoreParts.push(d.regia);
-    elTitle.textContent=d.title||''; elAutore.textContent=autoreParts.join(' · '); elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
+    elTitle.textContent=d.title||'';
+    /* sottotitolo e regia su due righe separate (non piu' unite con " · " sulla stessa riga) */
+    elAutore.innerHTML='';
+    if(d.sottotitolo){ const s=document.createElement('span'); s.className='s4-slide2-detail-autore-line'; s.textContent=d.sottotitolo; elAutore.appendChild(s); }
+    if(d.regia){ const r=document.createElement('span'); r.className='s4-slide2-detail-autore-line'; r.textContent=d.regia; elAutore.appendChild(r); }
+    elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast?('Con: '+d.cast):''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
     elTag.classList.remove('tag-prosa','tag-improvvisazione','tag-musica');
     if(d.tag) elTag.classList.add('tag-'+d.tag.toLowerCase());
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
