@@ -1021,7 +1021,11 @@ html.sede-monte #s3-slide1{display:none}
 
 /* ===== SEZIONE 4 VICOLO OFF · SLIDE 2 — Il muro degli spettacoli ===== */
 #s4-slide2 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
-#s4-slide2{overflow:hidden}
+/* overflow-x:hidden per non far sporgere lateralmente le locandine ingrandite; MAI overflow-y
+   hidden qui - altrimenti spostando "Tutte le locandine (in blocco)" verso il basso (o
+   ingrandendole) la sezione le taglierebbe al proprio bordo inferiore invece di lasciarle
+   scendere per intero (il bordo della sezione e' fisso, il contenuto trasformato no). */
+#s4-slide2{overflow-x:hidden}
 #s4-slide2 .s4-slide2-inner{width:100%;max-width:1180px;position:relative;z-index:1}
 /* MASCHERINO — VICOLO OFF · Slide 2 · Occhiello "Gli spettacoli · Stagione 26/27" -> --s4-slide2-eyebrow-{scale|x|y|lh|ls|color} */
 .s4-slide2-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s4-slide2-eyebrow-scale,1));line-height:var(--s4-slide2-eyebrow-lh,1);letter-spacing:var(--s4-slide2-eyebrow-ls,2px);color:var(--s4-slide2-eyebrow-color,#fff);transform:translate(var(--s4-slide2-eyebrow-x,0px),var(--s4-slide2-eyebrow-y,0px));}
@@ -1043,7 +1047,11 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-month-panel{display:none}
 .s4-slide2-month-panel.is-active{display:block}
 .s4-slide2-pages{width:100%}
-.s4-slide2-page{display:none;width:100%;overflow:hidden}
+/* niente overflow:hidden qui: la sua altezza segue il layout NORMALE (senza contare gli
+   spostamenti "in blocco" del muro, che sono solo visivi via transform), quindi taglierebbe
+   le locandine ogni volta che il blocco viene spostato in basso o ingrandito. La sicurezza sui
+   lati la da' gia' #s4-slide2 sopra. */
+.s4-slide2-page{display:none;width:100%}
 .s4-slide2-page.is-active{display:block}
 /* MASCHERINO — VICOLO OFF · Muro spettacoli · Tutte le locandine della pagina corrente (in blocco,
    anche con una sola) -> --s4-slide2-wall-{scale|x|y} */
