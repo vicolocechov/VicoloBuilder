@@ -1045,7 +1045,9 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-pages{width:100%}
 .s4-slide2-page{display:none;width:100%;overflow:hidden}
 .s4-slide2-page.is-active{display:block}
-.s4-slide2-wall{width:min(1040px,90vw);margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:center;overflow:visible;min-height:120px}
+/* MASCHERINO — VICOLO OFF · Muro spettacoli · Tutte le locandine della pagina corrente (in blocco,
+   anche con una sola) -> --s4-slide2-wall-{scale|x|y} */
+.s4-slide2-wall{width:min(1040px,90vw);margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:center;overflow:visible;min-height:120px;transform:translate(var(--s4-slide2-wall-x,0px),var(--s4-slide2-wall-y,0px)) scale(var(--s4-slide2-wall-scale,1));transform-origin:center center}
 .s4-slide2-wall-empty{grid-column:1/-1;text-align:center;color:#8f8f8f;font:13px/1.5 'Montserrat',sans-serif;padding:40px 10px}
 .s4-slide2-poster-slot{width:100%;min-width:0;position:relative;overflow:visible}
 /* overflow:hidden qui - non sull'immagine - cosi' il riquadro (la "cornice" della locandina nel

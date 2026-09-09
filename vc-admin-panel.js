@@ -715,6 +715,7 @@
     if(f==='headerblocco') return '★ Header (tutto insieme)';
     if(f==='cardblocco') return '★ Tutte le card (blocco intero)';
     if(f==='detailblocco') return '★ Tutta la scheda (in blocco)';
+    if(f==='wall') return '★ Tutte le locandine (in blocco)';
     if(f==='logo') return 'Logo Vicolo Cechov';
     if(f==='logo-vicoloff') return 'Logo Vicolo Off';
     var _cm=f.match(/^cardblocco(\d+)$/); if(_cm) return '★ Card '+_cm[1]+' (intera)';
