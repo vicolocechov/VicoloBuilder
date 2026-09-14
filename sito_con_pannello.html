@@ -114,7 +114,12 @@ html,body{font-family:'Montserrat',sans-serif;color:#1b1b1b}
 .site-header{position:fixed;top:0;left:0;right:0;z-index:1000;background:transparent;padding:18px 44px;padding-top:calc(18px + env(safe-area-inset-top));padding-left:calc(44px + env(safe-area-inset-left));padding-right:calc(44px + env(safe-area-inset-right));
   /* forza un layer di compositing separato: su iOS Safari un header fixed sopra un contenitore
      scorrevole interno può altrimenti "sparire" a scatti durante lo scroll (bug noto del motore) */
-  transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;backface-visibility:hidden}
+  transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;backface-visibility:hidden;
+  /* l'header e' fixed e copre la fascia superiore di OGNI schermata: un tocco che parte li' (molto
+     comune sulle slide centrate con tanto spazio vuoto sopra il testo) deve comportarsi come sullo
+     stage sottostante, non innescare un pull-to-refresh/bounce nativo */
+  touch-action:pinch-zoom;
+}
 .header-inner{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
 /* Con la scheda-spettacolo aperta l'header non deve intercettare i click: vive in un
    layer di compositing separato (per il motivo spiegato sopra) e nessun z-index dato
@@ -1680,13 +1685,20 @@ if (manoImg && !manoImg.complete) manoImg.addEventListener('load', () => { fitTi
    3) ResizeObserver su menu e toggle: si ricalcola ogni volta che CAMBIANO DAVVERO le loro
       dimensioni, indipendentemente da quale evento lo ha causato ---- */
 function riposiziona(){ muoviIndic(); muoviPill(toggle.querySelector('.sede-btn.is-active')); fitTitle(); fitSub(); }
-window.addEventListener('resize', riposiziona);
+/* su iOS, nei primi istanti dopo il caricamento (o subito dopo il primo swipe) la barra degli
+   indirizzi/toolbar si nasconde con una sua animazione, e durante quella animazione window.resize
+   + visualViewport "resize"/"scroll" possono scattare a raffica: senza un debounce, ogni scatto
+   rifà layout sincrono (getBoundingClientRect/clientWidth/scrollWidth) proprio mentre l'utente sta
+   trascinando, dando la sensazione che il sito "si sblocchi" solo dopo i primi swipe. */
+function vcDebounce(fn, wait){ let id=null; return function(...a){ clearTimeout(id); id=setTimeout(()=>fn.apply(this,a), wait); }; }
+const riposizionaDeb = vcDebounce(riposiziona, 90);
+window.addEventListener('resize', riposizionaDeb);
 window.addEventListener('orientationchange', riposiziona);
 window.addEventListener('orientationchange', ()=>setTimeout(riposiziona, 150));   /* ricalcolo di sicurezza a rotazione conclusa */
 setTimeout(riposiziona, 300);                                                     /* ricalcolo di sicurezza dopo il primo layout/font */
 if (window.visualViewport){
-  visualViewport.addEventListener('resize', riposiziona);
-  visualViewport.addEventListener('scroll', riposiziona);
+  visualViewport.addEventListener('resize', riposizionaDeb);
+  visualViewport.addEventListener('scroll', riposizionaDeb);
 }
 if (window.ResizeObserver){
   const ro = new ResizeObserver(()=>riposiziona());
@@ -1820,28 +1832,42 @@ requestAnimationFrame(riposiziona);
   }
   function taOf(el){ try{ return getComputedStyle(el).touchAction; }catch(e){ return '?'; } }
 
-  stage.addEventListener('touchstart', e=>{
+  /* Il tocco puo' partire anche dall'header (position:fixed, non e' un discendente di #vcStage):
+     su slide centrate con molto spazio vuoto sopra il testo (Chi Siamo, Tolfama, Contatti) e'
+     proprio li' che l'utente appoggia il dito per lo swipe. Prima i listener erano solo su
+     "stage", quindi un tocco che iniziava sull'header non veniva MAI visto dal motore (non e'
+     un problema di touch-action: l'evento non arriva proprio, perche' header e stage sono
+     fratelli, non antenato/discendente - il bubbling non li collega). Registrando gli stessi
+     handler anche su header il touch resta "agganciato" al suo elemento di partenza per tutta
+     la durata del gesto (touchmove/touchend seguono sempre il target del touchstart), quindi
+     non serve altro. */
+  function onTouchStart(origine){ return e=>{
     if(schedaAperta()){ uno=false; return; }
     uno=(e.touches.length===1);
     if(uno){
-      tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
+      tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason=''; origineGesto=origine;
       tStart0=performance.now();
       scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
     }
-  }, {passive:true});
+  }; }
+  let origineGesto='stage';
+  stage.addEventListener('touchstart', onTouchStart('stage'), {passive:true});
+  header.addEventListener('touchstart', onTouchStart('header'), {passive:true});
 
-  stage.addEventListener('touchmove', e=>{
+  function onTouchMove(e){
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
       uno=false; return;
     }
     e.preventDefault(); tmoved=true;
-  }, {passive:false});
+  }
+  stage.addEventListener('touchmove', onTouchMove, {passive:false});
+  header.addEventListener('touchmove', onTouchMove, {passive:false});
 
-  stage.addEventListener('touchend', e=>{
+  function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
     if(!uno||!tmoved||zoomato()){
-      vcLog({ t:Date.now(), panel:panelId, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':'zoom-attivo'), durataMs: Math.round(performance.now()-tStart0) });
+      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':'zoom-attivo'), durataMs: Math.round(performance.now()-tStart0) });
       return;
     }
     const dx=e.changedTouches[0].clientX-tx0, dy=e.changedTouches[0].clientY-ty0;
@@ -1855,13 +1881,15 @@ requestAnimationFrame(riposiziona);
     if(Math.abs(dx)>Math.abs(dy)){
       const fire=Math.abs(dx)>=28;
       if(fire){ e.preventDefault(); stepPannello(dx<0?1:-1); }
-      vcLog({ t:Date.now(), panel:panelId, esito: fire?'ORIZZONTALE-OK':'ORIZZONTALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello, nuovoPanel: fire?panelIds[correntePanel]:null });
+      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito: fire?'ORIZZONTALE-OK':'ORIZZONTALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello, nuovoPanel: fire?panelIds[correntePanel]:null });
     } else {
       const fire=Math.abs(dy)>=24;
       if(fire){ e.preventDefault(); stepScena(dy<0?1:-1); }
-      vcLog({ t:Date.now(), panel:panelId, esito: fire?'VERTICALE-OK':'VERTICALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello });
+      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito: fire?'VERTICALE-OK':'VERTICALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello });
     }
-  });
+  }
+  stage.addEventListener('touchend', onTouchEnd);
+  header.addEventListener('touchend', onTouchEnd);
 
   document.addEventListener('sedechange', ()=>{
     /* Il bivio esiste solo a Civitavecchia. Ogni cambio sede nella sezione Corsi
@@ -1882,10 +1910,14 @@ requestAnimationFrame(riposiziona);
     if(s[correnteScena[correntePanel]]) panels[correntePanel].scrollTop=s[correnteScena[correntePanel]].offsetTop;
     requestAnimationFrame(aggiornaColoreHeader);
   }
-  addEventListener('resize', reflow);
+  /* stesso motivo del debounce su riposiziona() (vedi sopra): senza, una raffica di resize/
+     visualViewport durante l'animazione della barra indirizzi iOS forza ripetutamente scrollTop
+     e transform, potendo anche interrompere/far scattare un'animazione di swipe in corso. */
+  const reflowDeb = vcDebounce(reflow, 90);
+  addEventListener('resize', reflowDeb);
   addEventListener('orientationchange', reflow);
   addEventListener('orientationchange', ()=>setTimeout(reflow,150));   /* ricalcolo di sicurezza a rotazione conclusa */
-  if (window.visualViewport) visualViewport.addEventListener('resize', reflow);
+  if (window.visualViewport) visualViewport.addEventListener('resize', reflowDeb);
 
   /* ---- avvio: se l'URL ha già un'ancora, apri direttamente lì (nessuno scatto visibile) ---- */
   const hashId=location.hash.slice(1);
@@ -1929,8 +1961,9 @@ requestAnimationFrame(riposiziona);
   document.body.appendChild(panel); document.body.appendChild(btn);
 
   function fmt(o){
-    if(o.esito==='NESSUN-GESTO') return `[${new Date(o.t).toLocaleTimeString()}] ${o.panel} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
-    const base=`[${new Date(o.t).toLocaleTimeString()}] ${o.panel} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
+    const origine = o.origine ? ` (partito da: ${o.origine})` : '';
+    if(o.esito==='NESSUN-GESTO') return `[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
+    const base=`[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
     const extra=` · scrollTop ${o.scrollTopPrima}->${o.scrollTopDopo} · touch-action=${o.touchAction} · blocco=${o.bloccoPannello?'SI':'no'}`;
     const nuovo = o.nuovoPanel ? ` · nuovo pannello=${o.nuovoPanel}` : '';
     return base+extra+nuovo;
