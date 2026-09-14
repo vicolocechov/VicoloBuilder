@@ -102,6 +102,12 @@ html,body{font-family:'Montserrat',sans-serif;color:#1b1b1b}
   position:relative;min-height:100svh;
   display:flex;flex-direction:column;justify-content:center;align-items:center;
   padding:calc(var(--header-h,104px) + 12px) 6vw 40px;text-align:center;
+  /* ridondante con .vc-panel/.vc-stage ma dichiarato anche qui, sulla scena stessa: se il
+     pannello (es. Tolfama/Contatti, una sola scena) non ha overflow verticale reale, alcuni
+     motori mobile possono non trattarlo come "nodo di scroll" e non applicare in modo
+     affidabile il touch-action ereditato dall'antenato - qui e' esplicito sull'elemento
+     effettivamente toccato, senza ambiguita'. */
+  touch-action:pinch-zoom;
 }
 
 /* ======================= HEADER (trasparente, sempre in alto) ======================= */
@@ -238,7 +244,7 @@ html.sede-monte.sezione-vicolo-off .site-header.header-chiaro         .logo-off-
    Scorre solo il "pannello". Ogni schermata è una .vc-scena alta come lo schermo. */
 body{overflow:hidden}
 /* Sezioni affiancate in orizzontale (come la demo): .vc-stage scorre in X, ogni .vc-panel scorre in Y al suo interno */
-.vc-stage{display:flex;width:100%;height:100svh;will-change:transform;transition:transform var(--scorr,.36s cubic-bezier(.34,1.12,.5,1))}
+.vc-stage{display:flex;width:100%;height:100svh;will-change:transform;transition:transform var(--scorr,.36s cubic-bezier(.34,1.12,.5,1));touch-action:pinch-zoom}
 .vc-stage.trascina{transition:none}
 /* touch-action:pinch-zoom (niente pan nativo, ma il pinch-zoom resta possibile, gia' gestito
    a parte da zoomato()) - dichiarato qui cosi' il motore gesture del browser decide PRIMA
@@ -1795,21 +1801,65 @@ requestAnimationFrame(riposiziona);
   addEventListener('wheel', e=>{ e.preventDefault(); if(Math.abs(e.deltaY)<6) return; stepScena(e.deltaY>0?1:-1); }, {passive:false});
 
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
-  let tx0=0,ty0=0,tmoved=false,uno=false;
+  let tx0=0,ty0=0,tmoved=false,uno=false,tStart0=0,scrollTopStart=0,bailReason='';
   function zoomato(){ return window.visualViewport && window.visualViewport.scale > 1.01; }   // pinch-zoom attivo?
   /* con la scheda-spettacolo aperta (body.s4-poster-modal-open) il tocco deve poter scorrere
      nativamente il suo contenuto interno (.s4-slide2-detail, che ha overflow-y:auto proprio):
      il motore di swipe sezione/scena si disattiva del tutto finche' resta aperta. */
   function schedaAperta(){ return document.body.classList.contains('s4-poster-modal-open'); }
-  stage.addEventListener('touchstart', e=>{ if(schedaAperta()){ uno=false; return; } uno=(e.touches.length===1); if(uno){tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;tmoved=false;} }, {passive:true});
-  stage.addEventListener('touchmove', e=>{ if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){ uno=false; return; } e.preventDefault(); tmoved=true; }, {passive:false});
+
+  /* ===== OVERLAY DIAGNOSTICO TEMPORANEO (Bug 2/3/5 - swipe orizzontale su sezioni specifiche) =====
+     Registra ogni gesto in window.__vcTouchLog (ring buffer), letto dal pannellino "🐞" in fondo
+     alla pagina. Solo osservazione: non chiama mai preventDefault/stopPropagation, non altera in
+     alcun modo la logica di swipe sopra - va rimosso una volta chiuso il bug. */
+  window.__vcTouchLog = window.__vcTouchLog || [];
+  function vcLog(o){
+    const log = window.__vcTouchLog;
+    log.push(o); if(log.length>120) log.shift();
+    if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush(o);
+  }
+  function taOf(el){ try{ return getComputedStyle(el).touchAction; }catch(e){ return '?'; } }
+
+  stage.addEventListener('touchstart', e=>{
+    if(schedaAperta()){ uno=false; return; }
+    uno=(e.touches.length===1);
+    if(uno){
+      tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
+      tStart0=performance.now();
+      scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
+    }
+  }, {passive:true});
+
+  stage.addEventListener('touchmove', e=>{
+    if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
+      if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
+      uno=false; return;
+    }
+    e.preventDefault(); tmoved=true;
+  }, {passive:false});
+
   stage.addEventListener('touchend', e=>{
-    if(!uno||!tmoved||zoomato()) return;
+    const panelId = panelIds[correntePanel] || '?';
+    if(!uno||!tmoved||zoomato()){
+      vcLog({ t:Date.now(), panel:panelId, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':'zoom-attivo'), durataMs: Math.round(performance.now()-tStart0) });
+      return;
+    }
     const dx=e.changedTouches[0].clientX-tx0, dy=e.changedTouches[0].clientY-ty0;
+    const durataMs = Math.round(performance.now()-tStart0);
+    const scrollTopEnd = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
+    const taPanel = taOf(panels[correntePanel]);
+    /* soglia orizzontale allineata a quella verticale (prima 40px contro 24px: un trascinamento
+       chiaramente piu' orizzontale che verticale ma sotto i 40px (es. dx=30,dy=15) non faceva
+       scattare NE' il cambio sezione (dx<40) NE' quello di scena (dx>dy, quindi il ramo verticale
+       non veniva nemmeno provato) - gesto "inghiottito" senza alcun effetto visibile. */
     if(Math.abs(dx)>Math.abs(dy)){
-      if(Math.abs(dx)>=40){ e.preventDefault(); stepPannello(dx<0?1:-1); }
+      const fire=Math.abs(dx)>=28;
+      if(fire){ e.preventDefault(); stepPannello(dx<0?1:-1); }
+      vcLog({ t:Date.now(), panel:panelId, esito: fire?'ORIZZONTALE-OK':'ORIZZONTALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello, nuovoPanel: fire?panelIds[correntePanel]:null });
     } else {
-      if(Math.abs(dy)>=24){ e.preventDefault(); stepScena(dy<0?1:-1); }
+      const fire=Math.abs(dy)>=24;
+      if(fire){ e.preventDefault(); stepScena(dy<0?1:-1); }
+      vcLog({ t:Date.now(), panel:panelId, esito: fire?'VERTICALE-OK':'VERTICALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello });
     }
   });
 
@@ -1855,6 +1905,61 @@ requestAnimationFrame(riposiziona);
   const paure=[...document.querySelectorAll('#paure .paura')]; if(!paure.length) return;
   let pi=1;
   setInterval(()=>{ paure.forEach(x=>x.classList.remove('viva')); paure[pi%paure.length].classList.add('viva'); pi++; }, 1500);
+})();
+
+/* ===== OVERLAY DIAGNOSTICO TEMPORANEO — swipe orizzontale (Bug 2/3/5) =====
+   Pannellino "🐞" in basso a sinistra: mostra in tempo reale ogni gesto orizzontale/verticale
+   registrato dal motore di scroll (vedi window.__vcTouchLog, popolato piu' sopra). Serve solo
+   per isolare da dispositivo reale perche' lo swipe orizzontale resta difficoltoso su
+   Chi Siamo / Tolfama / Contatti. TEMPORANEO: da rimuovere una volta chiuso il bug. */
+(function(){
+  const btn=document.createElement('button');
+  btn.textContent='🐞'; btn.setAttribute('aria-label','Debug swipe');
+  btn.style.cssText='position:fixed;left:10px;bottom:10px;z-index:999999;width:40px;height:40px;border-radius:50%;border:none;background:#1b1b1b;color:#fff;font-size:18px;box-shadow:0 2px 10px rgba(0,0,0,.35);opacity:.55';
+  const panel=document.createElement('div');
+  panel.style.cssText='position:fixed;left:10px;right:10px;bottom:58px;z-index:999999;max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#111;color:#0f0;font:11px/1.5 ui-monospace,Menlo,monospace;padding:10px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;white-space:pre-wrap;word-break:break-all';
+  const bar=document.createElement('div');
+  bar.style.cssText='display:flex;gap:8px;margin-bottom:8px';
+  const copyBtn=document.createElement('button'); copyBtn.textContent='Copia log';
+  const clearBtn=document.createElement('button'); clearBtn.textContent='Pulisci';
+  [copyBtn,clearBtn].forEach(b=>{ b.style.cssText='font:11px ui-monospace,Menlo,monospace;padding:6px 10px;border-radius:6px;border:1px solid #444;background:#222;color:#0f0'; });
+  bar.appendChild(copyBtn); bar.appendChild(clearBtn);
+  const list=document.createElement('div');
+  panel.appendChild(bar); panel.appendChild(list);
+  document.body.appendChild(panel); document.body.appendChild(btn);
+
+  function fmt(o){
+    if(o.esito==='NESSUN-GESTO') return `[${new Date(o.t).toLocaleTimeString()}] ${o.panel} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
+    const base=`[${new Date(o.t).toLocaleTimeString()}] ${o.panel} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
+    const extra=` · scrollTop ${o.scrollTopPrima}->${o.scrollTopDopo} · touch-action=${o.touchAction} · blocco=${o.bloccoPannello?'SI':'no'}`;
+    const nuovo = o.nuovoPanel ? ` · nuovo pannello=${o.nuovoPanel}` : '';
+    return base+extra+nuovo;
+  }
+  function render(){
+    list.textContent = (window.__vcTouchLog||[]).map(fmt).join('\n') || '(nessun gesto registrato ancora)';
+    list.scrollTop = list.scrollHeight;
+  }
+  window.__vcTouchLogPanelPush = ()=>{ if(panel.style.display!=='none') render(); };
+
+  btn.addEventListener('click', ()=>{
+    const show = panel.style.display==='none';
+    panel.style.display = show ? 'block' : 'none';
+    if(show) render();
+  });
+  copyBtn.addEventListener('click', ()=>{
+    const text = (window.__vcTouchLog||[]).map(fmt).join('\n') || '(vuoto)';
+    const done = ()=>{ copyBtn.textContent='Copiato!'; setTimeout(()=>copyBtn.textContent='Copia log',1200); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+    } else fallbackCopy(text,done);
+  });
+  function fallbackCopy(text,done){
+    const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;top:-9999px';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  clearBtn.addEventListener('click', ()=>{ window.__vcTouchLog=[]; render(); });
 })();
 
 /* ===== CORSI · Bivio (#s3-slide1): accordion mobile verticale — tap sulla testa apre/chiude
