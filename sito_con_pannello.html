@@ -240,7 +240,13 @@ body{overflow:hidden}
 /* Sezioni affiancate in orizzontale (come la demo): .vc-stage scorre in X, ogni .vc-panel scorre in Y al suo interno */
 .vc-stage{display:flex;width:100%;height:100svh;will-change:transform;transition:transform var(--scorr,.36s cubic-bezier(.34,1.12,.5,1))}
 .vc-stage.trascina{transition:none}
-.vc-panel{width:100vw;flex-shrink:0;height:100svh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+/* touch-action:pinch-zoom (niente pan nativo, ma il pinch-zoom resta possibile, gia' gestito
+   a parte da zoomato()) - dichiarato qui cosi' il motore gesture del browser decide PRIMA
+   del touchmove (a differenza di preventDefault(), che su iOS puo' arrivare troppo tardi e
+   perdere la "gara" contro lo scroll nativo su trascinamenti lenti: causa dei bug di swipe
+   verticale/orizzontale non intercettato). Il pan-y viene poi riabilitato punto per punto
+   dentro alla scheda-spettacolo (.s4-slide2-detail), che deve restare scorrevole nativamente. */
+.vc-panel{width:100vw;flex-shrink:0;height:100svh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pinch-zoom}
 .vc-panel::-webkit-scrollbar{display:none}
 .vc-dots{position:fixed;right:calc(16px + env(safe-area-inset-right));top:50%;transform:translateY(-50%);z-index:110;display:flex;flex-direction:column;gap:10px;pointer-events:none}
 .vc-dots i{width:7px;height:7px;border-radius:50%;background:#e2e0da;transition:background .25s,transform .25s}
@@ -1110,7 +1116,7 @@ html.sede-monte #s3-slide1{display:none}
    invece di lasciarlo scorrere fino in fondo - un bottone come "Prenota" restava cosi'
    irraggiungibile. La scheda resta comunque centrata nell'overlay (che la centra lui stesso),
    qui serve solo che il proprio contenuto parta dall'alto quando serve scorrere. */
-.s4-slide2-detail{width:min(1040px,94vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;position:relative;padding:6px}
+.s4-slide2-detail{width:min(1040px,94vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;display:flex;flex-direction:column;justify-content:flex-start;gap:22px;position:relative;padding:6px;touch-action:pan-y}
 .s4-slide2-detail::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-detail-head{max-width:720px;text-align:center;margin:0 auto}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Titolo -> --s4-slide2-detail-titolo-{scale|x|y|lh|ls|color} */
@@ -1791,8 +1797,12 @@ requestAnimationFrame(riposiziona);
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
   let tx0=0,ty0=0,tmoved=false,uno=false;
   function zoomato(){ return window.visualViewport && window.visualViewport.scale > 1.01; }   // pinch-zoom attivo?
-  stage.addEventListener('touchstart', e=>{ uno=(e.touches.length===1); if(uno){tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;tmoved=false;} }, {passive:true});
-  stage.addEventListener('touchmove', e=>{ if(e.touches.length!==1 || zoomato()){uno=false;return;} e.preventDefault(); tmoved=true; }, {passive:false});
+  /* con la scheda-spettacolo aperta (body.s4-poster-modal-open) il tocco deve poter scorrere
+     nativamente il suo contenuto interno (.s4-slide2-detail, che ha overflow-y:auto proprio):
+     il motore di swipe sezione/scena si disattiva del tutto finche' resta aperta. */
+  function schedaAperta(){ return document.body.classList.contains('s4-poster-modal-open'); }
+  stage.addEventListener('touchstart', e=>{ if(schedaAperta()){ uno=false; return; } uno=(e.touches.length===1); if(uno){tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;tmoved=false;} }, {passive:true});
+  stage.addEventListener('touchmove', e=>{ if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){ uno=false; return; } e.preventDefault(); tmoved=true; }, {passive:false});
   stage.addEventListener('touchend', e=>{
     if(!uno||!tmoved||zoomato()) return;
     const dx=e.changedTouches[0].clientX-tx0, dy=e.changedTouches[0].clientY-ty0;
