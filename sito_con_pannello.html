@@ -1832,27 +1832,35 @@ requestAnimationFrame(riposiziona);
   }
   function taOf(el){ try{ return getComputedStyle(el).touchAction; }catch(e){ return '?'; } }
 
-  /* Il tocco puo' partire anche dall'header (position:fixed, non e' un discendente di #vcStage):
-     su slide centrate con molto spazio vuoto sopra il testo (Chi Siamo, Tolfama, Contatti) e'
-     proprio li' che l'utente appoggia il dito per lo swipe. Prima i listener erano solo su
-     "stage", quindi un tocco che iniziava sull'header non veniva MAI visto dal motore (non e'
-     un problema di touch-action: l'evento non arriva proprio, perche' header e stage sono
-     fratelli, non antenato/discendente - il bubbling non li collega). Registrando gli stessi
-     handler anche su header il touch resta "agganciato" al suo elemento di partenza per tutta
-     la durata del gesto (touchmove/touchend seguono sempre il target del touchstart), quindi
-     non serve altro. */
-  function onTouchStart(origine){ return e=>{
-    if(schedaAperta()){ uno=false; return; }
+  /* Ascolto su document, non solo su stage+header: il fix dell'header (v. commit precedente) ha
+     risolto SOLO i tocchi che partono li', ma su dispositivo reale (non riproducibile qui, dove
+     Chromium non ha una toolbar che si nasconde) restano zone morte anche altrove - es. sotto il
+     testo, verso il fondo schermo, su slide centrate con molto spazio vuoto (Chi Siamo, Tolfama,
+     Contatti). Una scansione elementFromPoint sull'intera colonna verticale non mostra alcun
+     elemento "estraneo" nella gerarchia statica (tutto risulta discendente di stage/header anche
+     li'), quindi il sospetto principale e' che dopo la comparsa/scomparsa della barra indirizzi
+     di Safari il viewport visibile diventi temporaneamente piu' alto di quanto #vcStage (100svh,
+     per costruzione la misura PIU' PICCOLA possibile) copre, lasciando una fascia scoperta che
+     nessun elemento del DOM statico occupa. Ascoltare su document invece che sui singoli
+     contenitori rende la copertura indipendente da QUALE elemento (o nessuno) si trovi sotto il
+     dito in quella fascia. Due soli casi da escludere esplicitamente, perche' non devono mai
+     essere trattati come inizio-swipe: il pannello admin (#vc-admin-host, shadow DOM) e questo
+     stesso overlay diagnostico (#vcDebugOverlayRoot). */
+  function fuoriDalMotore(target){
+    return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot')));
+  }
+  function onTouchStart(e){
+    if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
     uno=(e.touches.length===1);
     if(uno){
-      tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason=''; origineGesto=origine;
+      tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
+      origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
       tStart0=performance.now();
       scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
     }
-  }; }
+  }
   let origineGesto='stage';
-  stage.addEventListener('touchstart', onTouchStart('stage'), {passive:true});
-  header.addEventListener('touchstart', onTouchStart('header'), {passive:true});
+  document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
@@ -1861,8 +1869,7 @@ requestAnimationFrame(riposiziona);
     }
     e.preventDefault(); tmoved=true;
   }
-  stage.addEventListener('touchmove', onTouchMove, {passive:false});
-  header.addEventListener('touchmove', onTouchMove, {passive:false});
+  document.addEventListener('touchmove', onTouchMove, {passive:false});
 
   function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
@@ -1888,8 +1895,7 @@ requestAnimationFrame(riposiziona);
       vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito: fire?'VERTICALE-OK':'VERTICALE-SOTTO-SOGLIA', dx:Math.round(dx), dy:Math.round(dy), durataMs, scrollTopPrima:scrollTopStart, scrollTopDopo:scrollTopEnd, touchAction:taPanel, bloccoPannello });
     }
   }
-  stage.addEventListener('touchend', onTouchEnd);
-  header.addEventListener('touchend', onTouchEnd);
+  document.addEventListener('touchend', onTouchEnd);
 
   document.addEventListener('sedechange', ()=>{
     /* Il bivio esiste solo a Civitavecchia. Ogni cambio sede nella sezione Corsi
@@ -1958,7 +1964,9 @@ requestAnimationFrame(riposiziona);
   bar.appendChild(copyBtn); bar.appendChild(clearBtn);
   const list=document.createElement('div');
   panel.appendChild(bar); panel.appendChild(list);
-  document.body.appendChild(panel); document.body.appendChild(btn);
+  const root=document.createElement('div'); root.id='vcDebugOverlayRoot'; // escluso esplicitamente dal motore di swipe (vedi fuoriDalMotore())
+  root.appendChild(panel); root.appendChild(btn);
+  document.body.appendChild(root);
 
   function fmt(o){
     const origine = o.origine ? ` (partito da: ${o.origine})` : '';
