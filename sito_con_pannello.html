@@ -648,6 +648,27 @@ body{overflow:hidden}
   }
   .porta-testo{line-height:1.35}
   .scena-porte{padding-left:34px;padding-right:34px}   /* spazio per non toccare i pallini a destra */
+
+  /* SLIDE 4/5 CORSI (Impro Adulti: "Si entra..." + "Non impari solo...") — stessa disposizione
+     generica gia' presente (eyebrow/titolo/corpo/griglia card/bottone, card impilate a 1 colonna,
+     .porta gia' compatta come sopra), ma titolo/corpo/testo card dimensionati apposta per la
+     larghezza verticale mobile: non e' il blocco desktop rimpicciolito */
+  #s3-slide4,#s3-slide5{padding-bottom:calc(4px + env(safe-area-inset-bottom))}
+  :root{
+    --s3-slide4-titolo-fs-base:clamp(26px,7.5vw,38px);--s3-slide5-titolo-fs-base:clamp(26px,7.5vw,38px);
+    --s3-slide4-corpo-fs-base:clamp(13px,3.4vw,15px);--s3-slide5-corpo-fs-base:clamp(13px,3.4vw,15px);
+    --s3-slide4-cards-tit-fs-base:clamp(17px,4.6vw,20px);--s3-slide5-cards-tit-fs-base:clamp(17px,4.6vw,20px);
+    --s3-slide4-cards-testo-fs-base:clamp(12px,3vw,13px);--s3-slide5-cards-testo-fs-base:clamp(12px,3vw,13px);
+    --s3-slide4-cards-num-fs-base:9.5px;--s3-slide5-cards-num-fs-base:9.5px;
+    --s3-slide4-btn-fs-base:13.5px;--s3-slide5-btn-fs-base:13.5px;
+  }
+  #s3-slide4 .s3-slide4-corpo,#s3-slide5 .s3-slide5-corpo{margin-top:4px}
+  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{margin-top:6px;gap:10px}
+  #s3-slide4 [class$="-card1-tit"],#s3-slide4 [class$="-card2-tit"],#s3-slide4 [class$="-card3-tit"],
+  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:5px}
+  #s3-slide4 [class$="-card1-testo"],#s3-slide4 [class$="-card2-testo"],#s3-slide4 [class$="-card3-testo"],
+  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:6px}
+  #s3-slide4 .spazio-btn,#s3-slide5 .spazio-btn{margin-top:6px}
 }
 
 
@@ -726,6 +747,30 @@ body{overflow:hidden}
   .s3-slide1-card1-testo,.s3-slide1-card2-testo,.s3-slide1-card3-testo{line-height:1.2}
   .s3-slide1-card1-nota,.s3-slide1-card2-nota,.s3-slide1-card3-nota{line-height:1.1}
   .s3-slide1-card1-btn,.s3-slide1-card2-btn,.s3-slide1-card3-btn{padding:3px 9px;margin-top:2px}
+
+  /* SLIDE 4/5 CORSI (Impro Adulti: "Si entra..." + "Non impari solo...") — eyebrow+titolo+corpo+
+     griglia 3 card+bottone, tutto ridimensionato apposta per l'altezza landscape reale (le card
+     restano affiancate come nel desktop: .porta e' gia' compatta dalla regola condivisa sopra) */
+  #s3-slide4,#s3-slide5{padding-top:calc(var(--header-h,46px) + 2px);padding-bottom:2px}
+  #s3-slide4 .scena-inner,#s3-slide5 .scena-inner{gap:0}
+  #s3-slide4 .s3-slide4-card,#s3-slide5 .s3-slide5-card{min-height:0}
+  :root{
+    --s3-slide4-eyebrow-fs-base:9px;--s3-slide5-eyebrow-fs-base:9px;
+    --s3-slide4-titolo-fs-base:16px;--s3-slide5-titolo-fs-base:16px;
+    --s3-slide4-corpo-fs-base:9px;--s3-slide5-corpo-fs-base:9px;
+    --s3-slide4-cards-tit-fs-base:11px;--s3-slide5-cards-tit-fs-base:11px;
+    --s3-slide4-cards-testo-fs-base:8px;--s3-slide5-cards-testo-fs-base:8px;
+    --s3-slide4-cards-num-fs-base:7.5px;--s3-slide5-cards-num-fs-base:7.5px;
+    --s3-slide4-btn-fs-base:9px;--s3-slide5-btn-fs-base:9px;
+  }
+  #s3-slide4 .s3-slide4-corpo,#s3-slide5 .s3-slide5-corpo{margin-top:3px;line-height:1.25}
+  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{margin-top:5px;gap:8px}
+  #s3-slide4 [class$="-card1-tit"],#s3-slide4 [class$="-card2-tit"],#s3-slide4 [class$="-card3-tit"],
+  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:2px}
+  #s3-slide4 [class$="-card1-testo"],#s3-slide4 [class$="-card2-testo"],#s3-slide4 [class$="-card3-testo"],
+  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:2px;line-height:1.2}
+  #s3-slide4 .spazio-btn,#s3-slide5 .spazio-btn{margin-top:5px}
+  #s3-slide4 .s3-slide4-btn,#s3-slide5 .s3-slide5-btn{padding:5px 12px}
 }
 
 /* ===== DESKTOP/LAPTOP ORIZZONTALE >=1200 — solo paure ===== */
@@ -987,67 +1032,67 @@ html.sede-monte #s3-slide1{display:none}
 /* ===== SEZIONE 3 CORSI · SLIDE 4 — Impro Adulti · Cosa succede in una lezione ===== */
 #s3-slide4 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — CORSI · Slide 4 (Cosa succede in una lezione) · Occhiello "Dentro una lezione" -> --s3-slide4-eyebrow-{scale|x|y|lh|ls|color} */
-.s3-slide4-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s3-slide4-eyebrow-scale,1));line-height:var(--s3-slide4-eyebrow-lh,1);letter-spacing:var(--s3-slide4-eyebrow-ls,2px);color:var(--s3-slide4-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide4-eyebrow-x,0px),var(--s3-slide4-eyebrow-y,0px));}
+.s3-slide4-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide4-eyebrow-fs-base,clamp(11px,1vw,14px)) * var(--s3-slide4-eyebrow-scale,1));line-height:var(--s3-slide4-eyebrow-lh,1);letter-spacing:var(--s3-slide4-eyebrow-ls,2px);color:var(--s3-slide4-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide4-eyebrow-x,0px),var(--s3-slide4-eyebrow-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 (Cosa succede in una lezione) · Titolo "Si entra. Si gioca. Si crea." -> --s3-slide4-titolo-{scale|x|y|lh|ls|color} */
-.s3-slide4-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s3-slide4-titolo-scale,1));line-height:var(--s3-slide4-titolo-lh,1.05);letter-spacing:var(--s3-slide4-titolo-ls,0px);color:var(--s3-slide4-titolo-color,#1b1b1b);transform:translate(var(--s3-slide4-titolo-x,0px),var(--s3-slide4-titolo-y,0px));}
+.s3-slide4-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide4-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s3-slide4-titolo-scale,1));line-height:var(--s3-slide4-titolo-lh,1.05);letter-spacing:var(--s3-slide4-titolo-ls,0px);color:var(--s3-slide4-titolo-color,#1b1b1b);transform:translate(var(--s3-slide4-titolo-x,0px),var(--s3-slide4-titolo-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 (Cosa succede in una lezione) · Paragrafo descrittivo -> --s3-slide4-corpo-{scale|x|y|lh|ls|color} */
-.s3-slide4-corpo{font-family:'Montserrat',sans-serif;margin:0;max-width:780px;font-size:calc(clamp(14px,1.3vw,17px) * var(--s3-slide4-corpo-scale,1));line-height:var(--s3-slide4-corpo-lh,1.7);letter-spacing:var(--s3-slide4-corpo-ls,0px);color:var(--s3-slide4-corpo-color,#6f6f6f);transform:translate(var(--s3-slide4-corpo-x,0px),var(--s3-slide4-corpo-y,0px));margin-top:14px}
+.s3-slide4-corpo{font-family:'Montserrat',sans-serif;margin:0;max-width:780px;font-size:calc(var(--s3-slide4-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s3-slide4-corpo-scale,1));line-height:var(--s3-slide4-corpo-lh,1.7);letter-spacing:var(--s3-slide4-corpo-ls,0px);color:var(--s3-slide4-corpo-color,#6f6f6f);transform:translate(var(--s3-slide4-corpo-x,0px),var(--s3-slide4-corpo-y,0px));margin-top:14px}
 /* MASCHERINO — CORSI · Slide 4 · Griglia 3 card — spaziatura */
 .s3-slide4-card-grid{margin-top:28px}
 .s3-slide4-card{min-height:210px}
 /* MASCHERINO — CORSI · Slide 4 · Card 1 "01 · Ascolto" — etichetta -> --s3-slide4-card1-num-{scale|x|y|lh|ls|color} */
-.s3-slide4-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide4-card1-num-scale,1));line-height:var(--s3-slide4-card1-num-lh,1);letter-spacing:var(--s3-slide4-card1-num-ls,.5px);color:var(--s3-slide4-card1-num-color,var(--sede));transform:translate(var(--s3-slide4-card1-num-x,0px),var(--s3-slide4-card1-num-y,0px));}
+.s3-slide4-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide4-cards-num-fs-base,10.5px) * var(--s3-slide4-card1-num-scale,1));line-height:var(--s3-slide4-card1-num-lh,1);letter-spacing:var(--s3-slide4-card1-num-ls,.5px);color:var(--s3-slide4-card1-num-color,var(--sede));transform:translate(var(--s3-slide4-card1-num-x,0px),var(--s3-slide4-card1-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 1 "Prendi il ritmo" — titolo -> --s3-slide4-card1-tit-{scale|x|y|lh|ls|color} */
-.s3-slide4-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide4-card1-tit-scale,1));line-height:var(--s3-slide4-card1-tit-lh,1);letter-spacing:var(--s3-slide4-card1-tit-ls,1px);color:var(--s3-slide4-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card1-tit-x,0px),var(--s3-slide4-card1-tit-y,0px));}
+.s3-slide4-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide4-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide4-card1-tit-scale,1));line-height:var(--s3-slide4-card1-tit-lh,1);letter-spacing:var(--s3-slide4-card1-tit-ls,1px);color:var(--s3-slide4-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card1-tit-x,0px),var(--s3-slide4-card1-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 1 — testo -> --s3-slide4-card1-testo-{scale|x|y|lh|ls|color} */
-.s3-slide4-card1-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide4-card1-testo-scale,1));line-height:var(--s3-slide4-card1-testo-lh,1.6);letter-spacing:var(--s3-slide4-card1-testo-ls,0px);color:var(--s3-slide4-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card1-testo-x,0px),var(--s3-slide4-card1-testo-y,0px));}
+.s3-slide4-card1-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide4-cards-testo-fs-base,14px) * var(--s3-slide4-card1-testo-scale,1));line-height:var(--s3-slide4-card1-testo-lh,1.6);letter-spacing:var(--s3-slide4-card1-testo-ls,0px);color:var(--s3-slide4-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card1-testo-x,0px),var(--s3-slide4-card1-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 2 "02 · Gioco" — etichetta -> --s3-slide4-card2-num-{scale|x|y|lh|ls|color} */
-.s3-slide4-card2-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide4-card2-num-scale,1));line-height:var(--s3-slide4-card2-num-lh,1);letter-spacing:var(--s3-slide4-card2-num-ls,.5px);color:var(--s3-slide4-card2-num-color,var(--sede));transform:translate(var(--s3-slide4-card2-num-x,0px),var(--s3-slide4-card2-num-y,0px));}
+.s3-slide4-card2-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide4-cards-num-fs-base,10.5px) * var(--s3-slide4-card2-num-scale,1));line-height:var(--s3-slide4-card2-num-lh,1);letter-spacing:var(--s3-slide4-card2-num-ls,.5px);color:var(--s3-slide4-card2-num-color,var(--sede));transform:translate(var(--s3-slide4-card2-num-x,0px),var(--s3-slide4-card2-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 2 "Ti butti" — titolo -> --s3-slide4-card2-tit-{scale|x|y|lh|ls|color} */
-.s3-slide4-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide4-card2-tit-scale,1));line-height:var(--s3-slide4-card2-tit-lh,1);letter-spacing:var(--s3-slide4-card2-tit-ls,1px);color:var(--s3-slide4-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card2-tit-x,0px),var(--s3-slide4-card2-tit-y,0px));}
+.s3-slide4-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide4-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide4-card2-tit-scale,1));line-height:var(--s3-slide4-card2-tit-lh,1);letter-spacing:var(--s3-slide4-card2-tit-ls,1px);color:var(--s3-slide4-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card2-tit-x,0px),var(--s3-slide4-card2-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 2 — testo -> --s3-slide4-card2-testo-{scale|x|y|lh|ls|color} */
-.s3-slide4-card2-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide4-card2-testo-scale,1));line-height:var(--s3-slide4-card2-testo-lh,1.6);letter-spacing:var(--s3-slide4-card2-testo-ls,0px);color:var(--s3-slide4-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card2-testo-x,0px),var(--s3-slide4-card2-testo-y,0px));}
+.s3-slide4-card2-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide4-cards-testo-fs-base,14px) * var(--s3-slide4-card2-testo-scale,1));line-height:var(--s3-slide4-card2-testo-lh,1.6);letter-spacing:var(--s3-slide4-card2-testo-ls,0px);color:var(--s3-slide4-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card2-testo-x,0px),var(--s3-slide4-card2-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 3 "03 · Scena" — etichetta -> --s3-slide4-card3-num-{scale|x|y|lh|ls|color} */
-.s3-slide4-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide4-card3-num-scale,1));line-height:var(--s3-slide4-card3-num-lh,1);letter-spacing:var(--s3-slide4-card3-num-ls,.5px);color:var(--s3-slide4-card3-num-color,var(--sede));transform:translate(var(--s3-slide4-card3-num-x,0px),var(--s3-slide4-card3-num-y,0px));}
+.s3-slide4-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide4-cards-num-fs-base,10.5px) * var(--s3-slide4-card3-num-scale,1));line-height:var(--s3-slide4-card3-num-lh,1);letter-spacing:var(--s3-slide4-card3-num-ls,.5px);color:var(--s3-slide4-card3-num-color,var(--sede));transform:translate(var(--s3-slide4-card3-num-x,0px),var(--s3-slide4-card3-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 3 "Costruisci insieme" — titolo -> --s3-slide4-card3-tit-{scale|x|y|lh|ls|color} */
-.s3-slide4-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide4-card3-tit-scale,1));line-height:var(--s3-slide4-card3-tit-lh,1);letter-spacing:var(--s3-slide4-card3-tit-ls,1px);color:var(--s3-slide4-card3-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card3-tit-x,0px),var(--s3-slide4-card3-tit-y,0px));}
+.s3-slide4-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide4-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide4-card3-tit-scale,1));line-height:var(--s3-slide4-card3-tit-lh,1);letter-spacing:var(--s3-slide4-card3-tit-ls,1px);color:var(--s3-slide4-card3-tit-color,#1b1b1b);transform:translate(var(--s3-slide4-card3-tit-x,0px),var(--s3-slide4-card3-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Card 3 — testo -> --s3-slide4-card3-testo-{scale|x|y|lh|ls|color} */
-.s3-slide4-card3-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide4-card3-testo-scale,1));line-height:var(--s3-slide4-card3-testo-lh,1.6);letter-spacing:var(--s3-slide4-card3-testo-ls,0px);color:var(--s3-slide4-card3-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card3-testo-x,0px),var(--s3-slide4-card3-testo-y,0px));}
+.s3-slide4-card3-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide4-cards-testo-fs-base,14px) * var(--s3-slide4-card3-testo-scale,1));line-height:var(--s3-slide4-card3-testo-lh,1.6);letter-spacing:var(--s3-slide4-card3-testo-ls,0px);color:var(--s3-slide4-card3-testo-color,#6f6f6f);transform:translate(var(--s3-slide4-card3-testo-x,0px),var(--s3-slide4-card3-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 4 · Bottone "E poi cosa mi porto a casa?" -> --s3-slide4-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s3-slide4-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s3-slide4-btn-scale,1));padding:calc(18px * var(--s3-slide4-btn-scale,1)) calc(22px * var(--s3-slide4-btn-scale,1));line-height:var(--s3-slide4-btn-lh,1);letter-spacing:var(--s3-slide4-btn-ls,0px);color:var(--s3-slide4-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide4-btn-x,0px),var(--s3-slide4-btn-y,0px));}.s3-slide4-btn:hover{transform:translateY(-2px) translate(var(--s3-slide4-btn-x,0px),var(--s3-slide4-btn-y,0px))}
+.s3-slide4-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(var(--s3-slide4-btn-fs-base,16px) * var(--s3-slide4-btn-scale,1));padding:calc(18px * var(--s3-slide4-btn-scale,1)) calc(22px * var(--s3-slide4-btn-scale,1));line-height:var(--s3-slide4-btn-lh,1);letter-spacing:var(--s3-slide4-btn-ls,0px);color:var(--s3-slide4-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide4-btn-x,0px),var(--s3-slide4-btn-y,0px));}.s3-slide4-btn:hover{transform:translateY(-2px) translate(var(--s3-slide4-btn-x,0px),var(--s3-slide4-btn-y,0px))}
 .s3-slide4-btn:hover{background:transparent;color:var(--sede)}
 
 /* ===== SEZIONE 3 CORSI · SLIDE 5 — Impro Adulti · Cosa impari ===== */
 #s3-slide5 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — CORSI · Slide 5 (Cosa impari) · Occhiello "Quello che resta" -> --s3-slide5-eyebrow-{scale|x|y|lh|ls|color} */
-.s3-slide5-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s3-slide5-eyebrow-scale,1));line-height:var(--s3-slide5-eyebrow-lh,1);letter-spacing:var(--s3-slide5-eyebrow-ls,2px);color:var(--s3-slide5-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide5-eyebrow-x,0px),var(--s3-slide5-eyebrow-y,0px));}
+.s3-slide5-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide5-eyebrow-fs-base,clamp(11px,1vw,14px)) * var(--s3-slide5-eyebrow-scale,1));line-height:var(--s3-slide5-eyebrow-lh,1);letter-spacing:var(--s3-slide5-eyebrow-ls,2px);color:var(--s3-slide5-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide5-eyebrow-x,0px),var(--s3-slide5-eyebrow-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 (Cosa impari) · Titolo "Non impari solo a improvvisare." -> --s3-slide5-titolo-{scale|x|y|lh|ls|color} */
-.s3-slide5-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s3-slide5-titolo-scale,1));line-height:var(--s3-slide5-titolo-lh,1.05);letter-spacing:var(--s3-slide5-titolo-ls,0px);color:var(--s3-slide5-titolo-color,#1b1b1b);transform:translate(var(--s3-slide5-titolo-x,0px),var(--s3-slide5-titolo-y,0px));}
+.s3-slide5-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide5-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s3-slide5-titolo-scale,1));line-height:var(--s3-slide5-titolo-lh,1.05);letter-spacing:var(--s3-slide5-titolo-ls,0px);color:var(--s3-slide5-titolo-color,#1b1b1b);transform:translate(var(--s3-slide5-titolo-x,0px),var(--s3-slide5-titolo-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 (Cosa impari) · Paragrafo descrittivo -> --s3-slide5-corpo-{scale|x|y|lh|ls|color} */
-.s3-slide5-corpo{font-family:'Montserrat',sans-serif;margin:0;max-width:780px;font-size:calc(clamp(14px,1.3vw,17px) * var(--s3-slide5-corpo-scale,1));line-height:var(--s3-slide5-corpo-lh,1.7);letter-spacing:var(--s3-slide5-corpo-ls,0px);color:var(--s3-slide5-corpo-color,#6f6f6f);transform:translate(var(--s3-slide5-corpo-x,0px),var(--s3-slide5-corpo-y,0px));margin-top:14px}
+.s3-slide5-corpo{font-family:'Montserrat',sans-serif;margin:0;max-width:780px;font-size:calc(var(--s3-slide5-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s3-slide5-corpo-scale,1));line-height:var(--s3-slide5-corpo-lh,1.7);letter-spacing:var(--s3-slide5-corpo-ls,0px);color:var(--s3-slide5-corpo-color,#6f6f6f);transform:translate(var(--s3-slide5-corpo-x,0px),var(--s3-slide5-corpo-y,0px));margin-top:14px}
 /* MASCHERINO — CORSI · Slide 5 · Griglia 3 card — spaziatura */
 .s3-slide5-card-grid{margin-top:28px}
 .s3-slide5-card{min-height:210px}
 /* MASCHERINO — CORSI · Slide 5 · Card 1 "Ascolto" — etichetta -> --s3-slide5-card1-num-{scale|x|y|lh|ls|color} */
-.s3-slide5-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide5-card1-num-scale,1));line-height:var(--s3-slide5-card1-num-lh,1);letter-spacing:var(--s3-slide5-card1-num-ls,.5px);color:var(--s3-slide5-card1-num-color,var(--sede));transform:translate(var(--s3-slide5-card1-num-x,0px),var(--s3-slide5-card1-num-y,0px));}
+.s3-slide5-card1-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide5-cards-num-fs-base,10.5px) * var(--s3-slide5-card1-num-scale,1));line-height:var(--s3-slide5-card1-num-lh,1);letter-spacing:var(--s3-slide5-card1-num-ls,.5px);color:var(--s3-slide5-card1-num-color,var(--sede));transform:translate(var(--s3-slide5-card1-num-x,0px),var(--s3-slide5-card1-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 1 "Essere presente" — titolo -> --s3-slide5-card1-tit-{scale|x|y|lh|ls|color} */
-.s3-slide5-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide5-card1-tit-scale,1));line-height:var(--s3-slide5-card1-tit-lh,1);letter-spacing:var(--s3-slide5-card1-tit-ls,1px);color:var(--s3-slide5-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card1-tit-x,0px),var(--s3-slide5-card1-tit-y,0px));}
+.s3-slide5-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide5-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide5-card1-tit-scale,1));line-height:var(--s3-slide5-card1-tit-lh,1);letter-spacing:var(--s3-slide5-card1-tit-ls,1px);color:var(--s3-slide5-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card1-tit-x,0px),var(--s3-slide5-card1-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 1 — testo -> --s3-slide5-card1-testo-{scale|x|y|lh|ls|color} */
-.s3-slide5-card1-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide5-card1-testo-scale,1));line-height:var(--s3-slide5-card1-testo-lh,1.6);letter-spacing:var(--s3-slide5-card1-testo-ls,0px);color:var(--s3-slide5-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card1-testo-x,0px),var(--s3-slide5-card1-testo-y,0px));}
+.s3-slide5-card1-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide5-cards-testo-fs-base,14px) * var(--s3-slide5-card1-testo-scale,1));line-height:var(--s3-slide5-card1-testo-lh,1.6);letter-spacing:var(--s3-slide5-card1-testo-ls,0px);color:var(--s3-slide5-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card1-testo-x,0px),var(--s3-slide5-card1-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 2 "Coraggio" — etichetta -> --s3-slide5-card2-num-{scale|x|y|lh|ls|color} */
-.s3-slide5-card2-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide5-card2-num-scale,1));line-height:var(--s3-slide5-card2-num-lh,1);letter-spacing:var(--s3-slide5-card2-num-ls,.5px);color:var(--s3-slide5-card2-num-color,var(--sede));transform:translate(var(--s3-slide5-card2-num-x,0px),var(--s3-slide5-card2-num-y,0px));}
+.s3-slide5-card2-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide5-cards-num-fs-base,10.5px) * var(--s3-slide5-card2-num-scale,1));line-height:var(--s3-slide5-card2-num-lh,1);letter-spacing:var(--s3-slide5-card2-num-ls,.5px);color:var(--s3-slide5-card2-num-color,var(--sede));transform:translate(var(--s3-slide5-card2-num-x,0px),var(--s3-slide5-card2-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 2 "Lasciarti andare" — titolo -> --s3-slide5-card2-tit-{scale|x|y|lh|ls|color} */
-.s3-slide5-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide5-card2-tit-scale,1));line-height:var(--s3-slide5-card2-tit-lh,1);letter-spacing:var(--s3-slide5-card2-tit-ls,1px);color:var(--s3-slide5-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card2-tit-x,0px),var(--s3-slide5-card2-tit-y,0px));}
+.s3-slide5-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide5-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide5-card2-tit-scale,1));line-height:var(--s3-slide5-card2-tit-lh,1);letter-spacing:var(--s3-slide5-card2-tit-ls,1px);color:var(--s3-slide5-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card2-tit-x,0px),var(--s3-slide5-card2-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 2 — testo -> --s3-slide5-card2-testo-{scale|x|y|lh|ls|color} */
-.s3-slide5-card2-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide5-card2-testo-scale,1));line-height:var(--s3-slide5-card2-testo-lh,1.6);letter-spacing:var(--s3-slide5-card2-testo-ls,0px);color:var(--s3-slide5-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card2-testo-x,0px),var(--s3-slide5-card2-testo-y,0px));}
+.s3-slide5-card2-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide5-cards-testo-fs-base,14px) * var(--s3-slide5-card2-testo-scale,1));line-height:var(--s3-slide5-card2-testo-lh,1.6);letter-spacing:var(--s3-slide5-card2-testo-ls,0px);color:var(--s3-slide5-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card2-testo-x,0px),var(--s3-slide5-card2-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 3 "Gruppo" — etichetta -> --s3-slide5-card3-num-{scale|x|y|lh|ls|color} */
-.s3-slide5-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide5-card3-num-scale,1));line-height:var(--s3-slide5-card3-num-lh,1);letter-spacing:var(--s3-slide5-card3-num-ls,.5px);color:var(--s3-slide5-card3-num-color,var(--sede));transform:translate(var(--s3-slide5-card3-num-x,0px),var(--s3-slide5-card3-num-y,0px));}
+.s3-slide5-card3-num{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide5-cards-num-fs-base,10.5px) * var(--s3-slide5-card3-num-scale,1));line-height:var(--s3-slide5-card3-num-lh,1);letter-spacing:var(--s3-slide5-card3-num-ls,.5px);color:var(--s3-slide5-card3-num-color,var(--sede));transform:translate(var(--s3-slide5-card3-num-x,0px),var(--s3-slide5-card3-num-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 3 "Sentirti parte" — titolo -> --s3-slide5-card3-tit-{scale|x|y|lh|ls|color} */
-.s3-slide5-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide5-card3-tit-scale,1));line-height:var(--s3-slide5-card3-tit-lh,1);letter-spacing:var(--s3-slide5-card3-tit-ls,1px);color:var(--s3-slide5-card3-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card3-tit-x,0px),var(--s3-slide5-card3-tit-y,0px));}
+.s3-slide5-card3-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:8px 0 0;font-size:calc(var(--s3-slide5-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide5-card3-tit-scale,1));line-height:var(--s3-slide5-card3-tit-lh,1);letter-spacing:var(--s3-slide5-card3-tit-ls,1px);color:var(--s3-slide5-card3-tit-color,#1b1b1b);transform:translate(var(--s3-slide5-card3-tit-x,0px),var(--s3-slide5-card3-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Card 3 — testo -> --s3-slide5-card3-testo-{scale|x|y|lh|ls|color} */
-.s3-slide5-card3-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(14px * var(--s3-slide5-card3-testo-scale,1));line-height:var(--s3-slide5-card3-testo-lh,1.6);letter-spacing:var(--s3-slide5-card3-testo-ls,0px);color:var(--s3-slide5-card3-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card3-testo-x,0px),var(--s3-slide5-card3-testo-y,0px));}
+.s3-slide5-card3-testo{font-family:'Montserrat',sans-serif;margin:14px 0 0;font-size:calc(var(--s3-slide5-cards-testo-fs-base,14px) * var(--s3-slide5-card3-testo-scale,1));line-height:var(--s3-slide5-card3-testo-lh,1.6);letter-spacing:var(--s3-slide5-card3-testo-ls,0px);color:var(--s3-slide5-card3-testo-color,#6f6f6f);transform:translate(var(--s3-slide5-card3-testo-x,0px),var(--s3-slide5-card3-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 5 · Bottone "Prova una lezione" -> --s3-slide5-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s3-slide5-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s3-slide5-btn-scale,1));padding:calc(18px * var(--s3-slide5-btn-scale,1)) calc(22px * var(--s3-slide5-btn-scale,1));line-height:var(--s3-slide5-btn-lh,1);letter-spacing:var(--s3-slide5-btn-ls,0px);color:var(--s3-slide5-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide5-btn-x,0px),var(--s3-slide5-btn-y,0px));}.s3-slide5-btn:hover{transform:translateY(-2px) translate(var(--s3-slide5-btn-x,0px),var(--s3-slide5-btn-y,0px))}
+.s3-slide5-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(var(--s3-slide5-btn-fs-base,16px) * var(--s3-slide5-btn-scale,1));padding:calc(18px * var(--s3-slide5-btn-scale,1)) calc(22px * var(--s3-slide5-btn-scale,1));line-height:var(--s3-slide5-btn-lh,1);letter-spacing:var(--s3-slide5-btn-ls,0px);color:var(--s3-slide5-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide5-btn-x,0px),var(--s3-slide5-btn-y,0px));}.s3-slide5-btn:hover{transform:translateY(-2px) translate(var(--s3-slide5-btn-x,0px),var(--s3-slide5-btn-y,0px))}
 .s3-slide5-btn:hover{background:transparent;color:var(--sede)}
 
 /* ===== SEZIONE 3 CORSI · SLIDE 6 — Prima si prova, poi si decide ===== */
