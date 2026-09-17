@@ -607,20 +607,20 @@ body{overflow:hidden}
   .main-nav a{font-size:clamp(10px,3vw,15px);letter-spacing:.4px;white-space:nowrap}
   .nav-indicatore{bottom:-7px;height:2.5px}
   /* SLIDE 1 hero */
-  .hero{--header-h:118px;justify-content:flex-start;padding:calc(var(--header-h) + 8px) 18px calc(22px + env(safe-area-inset-bottom))}
+  .hero{--header-h:118px;justify-content:flex-start;padding:calc(var(--header-h) + 4px) 18px calc(10px + env(safe-area-inset-bottom))}
   .hero-inner{align-items:center;width:100%}
   .hero-title{line-height:var(--s1-slide1-titolo-lh,.76);text-align:center;width:100%}
   :root{--s1-slide1-titolo-fs-base:clamp(60px,37vw,230px)}
   .hero-l1,.hero-l2{display:contents}
   .tw{display:block}
   .hero-l2 .tw + .tw{margin-left:0}
-  .hero-l1 .tw:last-child{margin-top:6px}
+  .hero-l1 .tw:last-child{margin-top:2px}
   .virgola{font-size:.55em}
   .br-body{display:none}
-  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;margin-top:4px;text-align:center;width:100%}
-  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.5);max-width:100%;margin-top:16px;text-align:center}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;margin-top:2px;text-align:center;width:100%}
+  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.5);max-width:100%;margin-top:8px;text-align:center}
   :root{--s1-slide1-sub-fs-base:clamp(12px,3.6vw,20px);--s1-slide1-corpo-fs-base:clamp(10px,3vw,14px)}
-  .hero-btn{margin-top:18px;align-self:center}
+  .hero-btn{margin-top:10px;align-self:center}
   :root{--s1-slide1-btn-fs-base:14px;--s1-slide1-btn-pad-v-base:11px;--s1-slide1-btn-pad-h-base:20px}
   /* SLIDE 2 domanda */
   .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05);transform:translate(var(--s1-slide2-titolo-x,0px),calc(-30px + var(--s1-slide2-titolo-y,0px)))} .domanda-titolo .blocco{display:block} .domanda-testo{margin-top:22px}
@@ -751,26 +751,85 @@ body{overflow:hidden}
   /* SLIDE 4/5 CORSI (Impro Adulti: "Si entra..." + "Non impari solo...") — eyebrow+titolo+corpo+
      griglia 3 card+bottone, tutto ridimensionato apposta per l'altezza landscape reale (le card
      restano affiancate come nel desktop: .porta e' gia' compatta dalla regola condivisa sopra) */
-  #s3-slide4,#s3-slide5{padding-top:calc(var(--header-h,46px) + 2px);padding-bottom:2px}
+  #s3-slide4,#s3-slide5{padding-top:calc(var(--header-h,46px) + 2px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
   #s3-slide4 .scena-inner,#s3-slide5 .scena-inner{gap:0}
   #s3-slide4 .s3-slide4-card,#s3-slide5 .s3-slide5-card{min-height:0}
+  /* la larghezza reale in landscape su iPhone (~750-926px secondo il modello) supera spesso i
+     768px della regola generica da tablet, che altrimenti porterebbe la griglia a 2 colonne
+     (col terzo elemento orfano sotto) invece delle 3 card affiancate volute */
+  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px;gap:10px}
   :root{
     --s3-slide4-eyebrow-fs-base:9px;--s3-slide5-eyebrow-fs-base:9px;
-    --s3-slide4-titolo-fs-base:16px;--s3-slide5-titolo-fs-base:16px;
-    --s3-slide4-corpo-fs-base:9px;--s3-slide5-corpo-fs-base:9px;
-    --s3-slide4-cards-tit-fs-base:11px;--s3-slide5-cards-tit-fs-base:11px;
-    --s3-slide4-cards-testo-fs-base:8px;--s3-slide5-cards-testo-fs-base:8px;
-    --s3-slide4-cards-num-fs-base:7.5px;--s3-slide5-cards-num-fs-base:7.5px;
-    --s3-slide4-btn-fs-base:9px;--s3-slide5-btn-fs-base:9px;
+    /* gerarchia: il titolo deve dominare come sul desktop, il testo delle card resta leggibile
+       ma chiaramente secondario - prima erano quasi allo stesso livello */
+    --s3-slide4-titolo-fs-base:26px;--s3-slide5-titolo-fs-base:26px;
+    --s3-slide4-corpo-fs-base:10px;--s3-slide5-corpo-fs-base:10px;
+    --s3-slide4-cards-tit-fs-base:13px;--s3-slide5-cards-tit-fs-base:13px;
+    --s3-slide4-cards-testo-fs-base:9px;--s3-slide5-cards-testo-fs-base:9px;
+    --s3-slide4-cards-num-fs-base:8px;--s3-slide5-cards-num-fs-base:8px;
+    --s3-slide4-btn-fs-base:11px;--s3-slide5-btn-fs-base:11px;
   }
-  #s3-slide4 .s3-slide4-corpo,#s3-slide5 .s3-slide5-corpo{margin-top:3px;line-height:1.25}
-  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{margin-top:5px;gap:8px}
+  #s3-slide4 .s3-slide4-corpo,#s3-slide5 .s3-slide5-corpo{margin-top:4px;line-height:1.25}
+  /* card quasi quadrate come nel desktop, non rettangoli stretti: piu' padding orizzontale che
+     verticale, gap ridotto tra le righe interne */
+  #s3-slide4 .s3-slide4-card,#s3-slide5 .s3-slide5-card{padding:12px 14px;gap:4px}
   #s3-slide4 [class$="-card1-tit"],#s3-slide4 [class$="-card2-tit"],#s3-slide4 [class$="-card3-tit"],
-  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:2px}
+  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:3px}
   #s3-slide4 [class$="-card1-testo"],#s3-slide4 [class$="-card2-testo"],#s3-slide4 [class$="-card3-testo"],
-  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:2px;line-height:1.2}
-  #s3-slide4 .spazio-btn,#s3-slide5 .spazio-btn{margin-top:5px}
-  #s3-slide4 .s3-slide4-btn,#s3-slide5 .s3-slide5-btn{padding:5px 12px}
+  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:4px;line-height:1.25}
+  #s3-slide4 .spazio-btn,#s3-slide5 .spazio-btn{margin-top:8px}
+  #s3-slide4 .s3-slide4-btn,#s3-slide5 .s3-slide5-btn{padding:6px 14px}
+
+  /* SLIDE 6 HOME "La comunità" — generalizza alla larghezza landscape reale (750px, iPhone 12) la
+     disposizione a 3 card affiancate gia' validata per il breakpoint esatto width:844px (iPhone 12
+     Pro, sotto in questo stesso foglio) - qui c'e' pero' 50px di altezza in meno (340 contro 390),
+     quindi titolo/corpo/card sono compattati ulteriormente rispetto a quella versione. */
+  #s1-slide6{padding-top:calc(var(--header-h,46px) + 2px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  :root{
+    --s1-slide6-titolo-fs-base:24px;
+    --s1-slide6-corpo-fs-base:10px;
+  }
+  #s1-slide6 .s1-slide6-corpo{margin-top:4px;line-height:1.25}
+  #s1-slide6 .voci-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;margin-top:10px}
+  #s1-slide6 .voce{min-width:0;padding:10px;gap:8px}
+  #s1-slide6 .voce-foto{width:34px;height:34px;outline-width:1.5px}
+  #s1-slide6 .voce-nome{font-size:10px}
+  #s1-slide6 .voce-testo{font-size:9px;line-height:1.25;margin-top:3px}
+
+  /* SLIDE 7 HOME (fascia gialla "La tua nuova prima volta...") — solo titolo grande + bottone,
+     titolo comunque dominante ma dimensionato per l'altezza landscape reale */
+  #s1-slide7{padding-top:calc(var(--header-h,46px) + 4px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  :root{--s1-slide7-titolo-fs-base:clamp(28px,7vw,50px)}
+  #s1-slide7 .s1-slide7-titolo{line-height:.98}
+  #s1-slide7 .spazio-btn{margin-top:10px}
+
+  /* SLIDE 2 CHI SIAMO "Perché il Vicolo" / SLIDE 3 CORSI "Impro Adulti" / TOLFAMA — stessa
+     disposizione minima (eyebrow+titolo+corpo+bottone): titolo resta l'elemento dominante, corpo
+     secondario, margine di sicurezza sul bottone */
+  #s2-slide2,#s3-slide3,#tolfama-slide1{padding-top:calc(var(--header-h,46px) + 4px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  :root{
+    --s2-slide2-titolo-fs-base:clamp(28px,6.5vw,44px);--s3-slide3-titolo-fs-base:clamp(28px,6.5vw,44px);--s5-slide1-titolo-fs-base:clamp(28px,6.5vw,44px);
+    --s2-slide2-corpo-fs-base:11px;--s3-slide3-corpo-fs-base:11px;--s5-slide1-corpo-fs-base:11px;
+  }
+  #s2-slide2 .s2-slide2-corpo,#s3-slide3 .s3-slide3-corpo,#tolfama-slide1 .s5-slide1-corpo{margin-top:6px;line-height:1.3}
+  #s2-slide2 .spazio-btn,#s3-slide3 .spazio-btn,#tolfama-slide1 .spazio-btn{margin-top:10px}
+
+  /* SLIDE 2 CORSI "Improvvisazione" (2 card Adulti/Bambini affiancate, gia' 2 colonne a tutte le
+     larghezze - qui solo compattazione, non serve forzare grid-template-columns) */
+  #s3-slide2{padding-top:calc(var(--header-h,46px) + 4px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  :root{
+    --s3-slide2-titolo-fs-base:clamp(26px,6vw,40px);
+    --s3-slide2-cards-tit-fs-base:15px;
+    --s3-slide2-cards-meta-fs-base:8.5px;
+    --s3-slide2-cards-testo-fs-base:9.5px;
+    --s3-slide2-cards-btn-fs-base:10px;
+  }
+  #s3-slide2 .card-grid{margin-top:8px;gap:10px;max-width:100%}
+  #s3-slide2 .porta{padding:12px 14px;gap:4px}
+  #s3-slide2 .porta-tit{margin-top:0}
+  #s3-slide2 .card-meta{margin-bottom:2px}
+  #s3-slide2 .porta-testo{line-height:1.25}
+  #s3-slide2 .porta-btn{margin-top:6px;padding:5px 12px}
 }
 
 /* ===== DESKTOP/LAPTOP ORIZZONTALE >=1200 — solo paure ===== */
@@ -865,9 +924,9 @@ body{overflow:hidden}
 
 /* ===== SEZIONE 1 HOME · SLIDE 6 — La comunità ===== */
 /* MASCHERINO — HOME · Slide 6 (La comunità) · Titolo "Non sei un numero" -> --s1-slide6-titolo-{scale|x|y|lh|ls|color} */
-.s1-slide6-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s1-slide6-titolo-scale,1));line-height:var(--s1-slide6-titolo-lh,1.05);letter-spacing:var(--s1-slide6-titolo-ls,0px);color:var(--s1-slide6-titolo-color,#1b1b1b);transform:translate(var(--s1-slide6-titolo-x,0px),var(--s1-slide6-titolo-y,0px));}
+.s1-slide6-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s1-slide6-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s1-slide6-titolo-scale,1));line-height:var(--s1-slide6-titolo-lh,1.05);letter-spacing:var(--s1-slide6-titolo-ls,0px);color:var(--s1-slide6-titolo-color,#1b1b1b);transform:translate(var(--s1-slide6-titolo-x,0px),var(--s1-slide6-titolo-y,0px));}
 /* MASCHERINO — HOME · Slide 6 (La comunità) · Paragrafo "Qui le persone arrivano…" -> --s1-slide6-corpo-{scale|x|y|lh|ls|color} */
-.s1-slide6-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s1-slide6-corpo-scale,1));line-height:var(--s1-slide6-corpo-lh,1.7);letter-spacing:var(--s1-slide6-corpo-ls,0px);color:var(--s1-slide6-corpo-color,#6f6f6f);transform:translate(var(--s1-slide6-corpo-x,0px),var(--s1-slide6-corpo-y,0px));margin-top:14px;position:relative;z-index:3}
+.s1-slide6-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s1-slide6-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s1-slide6-corpo-scale,1));line-height:var(--s1-slide6-corpo-lh,1.7);letter-spacing:var(--s1-slide6-corpo-ls,0px);color:var(--s1-slide6-corpo-color,#6f6f6f);transform:translate(var(--s1-slide6-corpo-x,0px),var(--s1-slide6-corpo-y,0px));margin-top:14px;position:relative;z-index:3}
 /* MASCHERINO — HOME · Slide 6 (La comunità) · Nome testimonianza 1 "Giulia, 34" -> --s1-slide6-voce1-nome-{scale|x|y|lh|ls|color} */
 .s1-slide6-voce1-nome{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(11.5px * var(--s1-slide6-voce1-nome-scale,1));line-height:var(--s1-slide6-voce1-nome-lh,1);letter-spacing:var(--s1-slide6-voce1-nome-ls,0.5px);color:var(--s1-slide6-voce1-nome-color,#1b1b1b);transform:translate(var(--s1-slide6-voce1-nome-x,0px),var(--s1-slide6-voce1-nome-y,0px));}
 /* MASCHERINO — HOME · Slide 6 (La comunità) · Testo testimonianza 1 (Giulia) -> --s1-slide6-voce1-testo-{scale|x|y|lh|ls|color} */
@@ -887,7 +946,7 @@ body{overflow:hidden}
    quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
 #s1-slide7 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Titolo "La prima volta può iniziare qui" -> --s1-slide7-titolo-{scale|x|y|lh|ls|color} */
-.s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(44px,8vw,120px) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#1b1b1b);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
+.s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s1-slide7-titolo-fs-base,clamp(44px,8vw,120px)) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#1b1b1b);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Bottone "Vieni a provare" -> --s1-slide7-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s1-slide7-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s1-slide7-btn-scale,1));padding:calc(18px * var(--s1-slide7-btn-scale,1)) calc(22px * var(--s1-slide7-btn-scale,1));line-height:var(--s1-slide7-btn-lh,1);letter-spacing:var(--s1-slide7-btn-ls,0px);color:var(--s1-slide7-btn-color,#1b1b1b);background:#1b1b1b;border:2px solid #1b1b1b;transition:transform .2s,background .2s,color .2s;transform:translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px));}.s1-slide7-btn:hover{transform:translateY(-2px) translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px))}
 .s1-slide7-btn{background:#1b1b1b;color:#fff;border-color:#1b1b1b} .s1-slide7-btn:hover{background:transparent;color:#1b1b1b}
@@ -926,9 +985,9 @@ body{overflow:hidden}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Occhiello "Chi siamo" -> --s2-slide2-eyebrow-{scale|x|y|lh|ls|color} */
 .s2-slide2-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s2-slide2-eyebrow-scale,1));line-height:var(--s2-slide2-eyebrow-lh,1);letter-spacing:var(--s2-slide2-eyebrow-ls,2px);color:var(--s2-slide2-eyebrow-color,#8a8a8a);transform:translate(var(--s2-slide2-eyebrow-x,0px),var(--s2-slide2-eyebrow-y,0px));}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Titolo "Perché il Vicolo" -> --s2-slide2-titolo-{scale|x|y|lh|ls|color} */
-.s2-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s2-slide2-titolo-scale,1));line-height:var(--s2-slide2-titolo-lh,1.05);letter-spacing:var(--s2-slide2-titolo-ls,0px);color:var(--s2-slide2-titolo-color,#1b1b1b);transform:translate(var(--s2-slide2-titolo-x,0px),var(--s2-slide2-titolo-y,0px));}
+.s2-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s2-slide2-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s2-slide2-titolo-scale,1));line-height:var(--s2-slide2-titolo-lh,1.05);letter-spacing:var(--s2-slide2-titolo-ls,0px);color:var(--s2-slide2-titolo-color,#1b1b1b);transform:translate(var(--s2-slide2-titolo-x,0px),var(--s2-slide2-titolo-y,0px));}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Paragrafo "Due sedi, un solo Vicolo…" -> --s2-slide2-corpo-{scale|x|y|lh|ls|color} */
-.s2-slide2-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s2-slide2-corpo-scale,1));line-height:var(--s2-slide2-corpo-lh,1.7);letter-spacing:var(--s2-slide2-corpo-ls,0px);color:var(--s2-slide2-corpo-color,#6f6f6f);transform:translate(var(--s2-slide2-corpo-x,0px),var(--s2-slide2-corpo-y,0px));margin-top:16px;position:relative;z-index:3}
+.s2-slide2-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s2-slide2-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s2-slide2-corpo-scale,1));line-height:var(--s2-slide2-corpo-lh,1.7);letter-spacing:var(--s2-slide2-corpo-ls,0px);color:var(--s2-slide2-corpo-color,#6f6f6f);transform:translate(var(--s2-slide2-corpo-x,0px),var(--s2-slide2-corpo-y,0px));margin-top:16px;position:relative;z-index:3}
 /* MASCHERINO — CHI SIAMO · Slide 2 · Bottone "Vieni a conoscerci" -> --s2-slide2-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s2-slide2-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s2-slide2-btn-scale,1));padding:calc(18px * var(--s2-slide2-btn-scale,1)) calc(22px * var(--s2-slide2-btn-scale,1));line-height:var(--s2-slide2-btn-lh,1);letter-spacing:var(--s2-slide2-btn-ls,0px);color:var(--s2-slide2-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s2-slide2-btn-x,0px),var(--s2-slide2-btn-y,0px));}.s2-slide2-btn:hover{transform:translateY(-2px) translate(var(--s2-slide2-btn-x,0px),var(--s2-slide2-btn-y,0px))}
 .s2-slide2-btn:hover{background:transparent;color:var(--sede)}
@@ -994,24 +1053,24 @@ html.sede-monte #s3-slide1{display:none}
 /* MASCHERINO — CORSI · Slide 2 (Improvvisazione) · Occhiello "I nostri percorsi" -> --s3-slide2-eyebrow-{scale|x|y|lh|ls|color} */
 .s3-slide2-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s3-slide2-eyebrow-scale,1));line-height:var(--s3-slide2-eyebrow-lh,1);letter-spacing:var(--s3-slide2-eyebrow-ls,2px);color:var(--s3-slide2-eyebrow-color,#8a8a8a);transform:translate(var(--s3-slide2-eyebrow-x,0px),var(--s3-slide2-eyebrow-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 (Improvvisazione) · Titolo "Improvvisazione" -> --s3-slide2-titolo-{scale|x|y|lh|ls|color} */
-.s3-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s3-slide2-titolo-scale,1));line-height:var(--s3-slide2-titolo-lh,1.05);letter-spacing:var(--s3-slide2-titolo-ls,0px);color:var(--s3-slide2-titolo-color,#1b1b1b);transform:translate(var(--s3-slide2-titolo-x,0px),var(--s3-slide2-titolo-y,0px));}
+.s3-slide2-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide2-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s3-slide2-titolo-scale,1));line-height:var(--s3-slide2-titolo-lh,1.05);letter-spacing:var(--s3-slide2-titolo-ls,0px);color:var(--s3-slide2-titolo-color,#1b1b1b);transform:translate(var(--s3-slide2-titolo-x,0px),var(--s3-slide2-titolo-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — titolo -> --s3-slide2-card1-tit-{scale|x|y|lh|ls|color} */
-.s3-slide2-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card1-tit-scale,1));line-height:var(--s3-slide2-card1-tit-lh,1);letter-spacing:var(--s3-slide2-card1-tit-ls,1px);color:var(--s3-slide2-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card1-tit-x,0px),var(--s3-slide2-card1-tit-y,0px));}
+.s3-slide2-card1-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide2-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide2-card1-tit-scale,1));line-height:var(--s3-slide2-card1-tit-lh,1);letter-spacing:var(--s3-slide2-card1-tit-ls,1px);color:var(--s3-slide2-card1-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card1-tit-x,0px),var(--s3-slide2-card1-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — fascia età "18+ anni" -> --s3-slide2-card1-meta-{scale|x|y|lh|ls|color} */
-.s3-slide2-card1-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide2-card1-meta-scale,1));line-height:var(--s3-slide2-card1-meta-lh,1);letter-spacing:var(--s3-slide2-card1-meta-ls,0.5px);color:var(--s3-slide2-card1-meta-color,#999);transform:translate(var(--s3-slide2-card1-meta-x,0px),var(--s3-slide2-card1-meta-y,0px));}
+.s3-slide2-card1-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide2-cards-meta-fs-base,10.5px) * var(--s3-slide2-card1-meta-scale,1));line-height:var(--s3-slide2-card1-meta-lh,1);letter-spacing:var(--s3-slide2-card1-meta-ls,0.5px);color:var(--s3-slide2-card1-meta-color,#999);transform:translate(var(--s3-slide2-card1-meta-x,0px),var(--s3-slide2-card1-meta-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — testo -> --s3-slide2-card1-testo-{scale|x|y|lh|ls|color} */
-.s3-slide2-card1-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13.5px * var(--s3-slide2-card1-testo-scale,1));line-height:var(--s3-slide2-card1-testo-lh,1.6);letter-spacing:var(--s3-slide2-card1-testo-ls,0px);color:var(--s3-slide2-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card1-testo-x,0px),var(--s3-slide2-card1-testo-y,0px));}
+.s3-slide2-card1-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s3-slide2-cards-testo-fs-base,13.5px) * var(--s3-slide2-card1-testo-scale,1));line-height:var(--s3-slide2-card1-testo-lh,1.6);letter-spacing:var(--s3-slide2-card1-testo-ls,0px);color:var(--s3-slide2-card1-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card1-testo-x,0px),var(--s3-slide2-card1-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Adulti" — bottone "Scopri il corso" -> --s3-slide2-card1-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s3-slide2-card1-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(13px * var(--s3-slide2-card1-btn-scale,1));padding:calc(9px * var(--s3-slide2-card1-btn-scale,1)) calc(15px * var(--s3-slide2-card1-btn-scale,1));line-height:var(--s3-slide2-card1-btn-lh,1);letter-spacing:var(--s3-slide2-card1-btn-ls,0px);color:var(--s3-slide2-card1-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px));}.s3-slide2-card1-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px))}
+.s3-slide2-card1-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(var(--s3-slide2-cards-btn-fs-base,13px) * var(--s3-slide2-card1-btn-scale,1));padding:calc(9px * var(--s3-slide2-card1-btn-scale,1)) calc(15px * var(--s3-slide2-card1-btn-scale,1));line-height:var(--s3-slide2-card1-btn-lh,1);letter-spacing:var(--s3-slide2-card1-btn-ls,0px);color:var(--s3-slide2-card1-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px));}.s3-slide2-card1-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card1-btn-x,0px),var(--s3-slide2-card1-btn-y,0px))}
 .s3-slide2-card1-btn:hover{background:transparent;color:#1b1b1b}
 /* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — titolo -> --s3-slide2-card2-tit-{scale|x|y|lh|ls|color} */
-.s3-slide2-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(20px,1.7vw,30px) * var(--s3-slide2-card2-tit-scale,1));line-height:var(--s3-slide2-card2-tit-lh,1);letter-spacing:var(--s3-slide2-card2-tit-ls,1px);color:var(--s3-slide2-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card2-tit-x,0px),var(--s3-slide2-card2-tit-y,0px));}
+.s3-slide2-card2-tit{font-family:'AkkPorte',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide2-cards-tit-fs-base,clamp(20px,1.7vw,30px)) * var(--s3-slide2-card2-tit-scale,1));line-height:var(--s3-slide2-card2-tit-lh,1);letter-spacing:var(--s3-slide2-card2-tit-ls,1px);color:var(--s3-slide2-card2-tit-color,#1b1b1b);transform:translate(var(--s3-slide2-card2-tit-x,0px),var(--s3-slide2-card2-tit-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — fascia età "4–17 anni" -> --s3-slide2-card2-meta-{scale|x|y|lh|ls|color} */
-.s3-slide2-card2-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(10.5px * var(--s3-slide2-card2-meta-scale,1));line-height:var(--s3-slide2-card2-meta-lh,1);letter-spacing:var(--s3-slide2-card2-meta-ls,0.5px);color:var(--s3-slide2-card2-meta-color,#999);transform:translate(var(--s3-slide2-card2-meta-x,0px),var(--s3-slide2-card2-meta-y,0px));}
+.s3-slide2-card2-meta{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide2-cards-meta-fs-base,10.5px) * var(--s3-slide2-card2-meta-scale,1));line-height:var(--s3-slide2-card2-meta-lh,1);letter-spacing:var(--s3-slide2-card2-meta-ls,0.5px);color:var(--s3-slide2-card2-meta-color,#999);transform:translate(var(--s3-slide2-card2-meta-x,0px),var(--s3-slide2-card2-meta-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — testo -> --s3-slide2-card2-testo-{scale|x|y|lh|ls|color} */
-.s3-slide2-card2-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(13.5px * var(--s3-slide2-card2-testo-scale,1));line-height:var(--s3-slide2-card2-testo-lh,1.6);letter-spacing:var(--s3-slide2-card2-testo-ls,0px);color:var(--s3-slide2-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card2-testo-x,0px),var(--s3-slide2-card2-testo-y,0px));}
+.s3-slide2-card2-testo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s3-slide2-cards-testo-fs-base,13.5px) * var(--s3-slide2-card2-testo-scale,1));line-height:var(--s3-slide2-card2-testo-lh,1.6);letter-spacing:var(--s3-slide2-card2-testo-ls,0px);color:var(--s3-slide2-card2-testo-color,#6f6f6f);transform:translate(var(--s3-slide2-card2-testo-x,0px),var(--s3-slide2-card2-testo-y,0px));}
 /* MASCHERINO — CORSI · Slide 2 · Card "Bambini/e · Ragazzi/e" — bottone "Scopri il corso" -> --s3-slide2-card2-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s3-slide2-card2-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(13px * var(--s3-slide2-card2-btn-scale,1));padding:calc(9px * var(--s3-slide2-card2-btn-scale,1)) calc(15px * var(--s3-slide2-card2-btn-scale,1));line-height:var(--s3-slide2-card2-btn-lh,1);letter-spacing:var(--s3-slide2-card2-btn-ls,0px);color:var(--s3-slide2-card2-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px));}.s3-slide2-card2-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px))}
+.s3-slide2-card2-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(var(--s3-slide2-cards-btn-fs-base,13px) * var(--s3-slide2-card2-btn-scale,1));padding:calc(9px * var(--s3-slide2-card2-btn-scale,1)) calc(15px * var(--s3-slide2-card2-btn-scale,1));line-height:var(--s3-slide2-card2-btn-lh,1);letter-spacing:var(--s3-slide2-card2-btn-ls,0px);color:var(--s3-slide2-card2-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px));}.s3-slide2-card2-btn:hover{transform:translateY(-2px) translate(var(--s3-slide2-card2-btn-x,0px),var(--s3-slide2-card2-btn-y,0px))}
 .s3-slide2-card2-btn:hover{background:transparent;color:#1b1b1b}
 
 /* ===== SEZIONE 3 CORSI · SLIDE 3 — Impro Adulti ===== */
@@ -1022,9 +1081,9 @@ html.sede-monte #s3-slide1{display:none}
 /* MASCHERINO — CORSI · Slide 3 (Impro Adulti) · Occhiello "Impro Adulti · 18–99 anni · [Sede]" -> --s3-slide3-eyebrow-{scale|x|y|lh|ls|color} */
 .s3-slide3-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s3-slide3-eyebrow-scale,1));line-height:var(--s3-slide3-eyebrow-lh,1);letter-spacing:var(--s3-slide3-eyebrow-ls,2px);color:var(--s3-slide3-eyebrow-color,#fff);transform:translate(var(--s3-slide3-eyebrow-x,0px),var(--s3-slide3-eyebrow-y,0px));}
 /* MASCHERINO — CORSI · Slide 3 (Impro Adulti) · Titolo "Impro Adulti" -> --s3-slide3-titolo-{scale|x|y|lh|ls|color} */
-.s3-slide3-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s3-slide3-titolo-scale,1));line-height:var(--s3-slide3-titolo-lh,1.05);letter-spacing:var(--s3-slide3-titolo-ls,0px);color:var(--s3-slide3-titolo-color,var(--sede));transform:translate(var(--s3-slide3-titolo-x,0px),var(--s3-slide3-titolo-y,0px));}
+.s3-slide3-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s3-slide3-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s3-slide3-titolo-scale,1));line-height:var(--s3-slide3-titolo-lh,1.05);letter-spacing:var(--s3-slide3-titolo-ls,0px);color:var(--s3-slide3-titolo-color,var(--sede));transform:translate(var(--s3-slide3-titolo-x,0px),var(--s3-slide3-titolo-y,0px));}
 /* MASCHERINO — CORSI · Slide 3 (Impro Adulti) · Paragrafo descrittivo -> --s3-slide3-corpo-{scale|x|y|lh|ls|color} */
-.s3-slide3-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s3-slide3-corpo-scale,1));line-height:var(--s3-slide3-corpo-lh,1.7);letter-spacing:var(--s3-slide3-corpo-ls,0px);color:var(--s3-slide3-corpo-color,#6f6f6f);transform:translate(var(--s3-slide3-corpo-x,0px),var(--s3-slide3-corpo-y,0px));margin-top:14px}
+.s3-slide3-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s3-slide3-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s3-slide3-corpo-scale,1));line-height:var(--s3-slide3-corpo-lh,1.7);letter-spacing:var(--s3-slide3-corpo-ls,0px);color:var(--s3-slide3-corpo-color,#6f6f6f);transform:translate(var(--s3-slide3-corpo-x,0px),var(--s3-slide3-corpo-y,0px));margin-top:14px}
 /* MASCHERINO — CORSI · Slide 3 (Impro Adulti) · Bottone "Scopri cosa succede in una lezione" -> --s3-slide3-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s3-slide3-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s3-slide3-btn-scale,1));padding:calc(18px * var(--s3-slide3-btn-scale,1)) calc(22px * var(--s3-slide3-btn-scale,1));line-height:var(--s3-slide3-btn-lh,1);letter-spacing:var(--s3-slide3-btn-ls,0px);color:var(--s3-slide3-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s3-slide3-btn-x,0px),var(--s3-slide3-btn-y,0px));}.s3-slide3-btn:hover{transform:translateY(-2px) translate(var(--s3-slide3-btn-x,0px),var(--s3-slide3-btn-y,0px))}
 .s3-slide3-btn:hover{background:transparent;color:var(--sede)}
@@ -1230,9 +1289,9 @@ html.sede-monte #s3-slide1{display:none}
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
 .s5-slide1-eyebrow{font-family:'Poppins',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(11px,1vw,14px) * var(--s5-slide1-eyebrow-scale,1));line-height:var(--s5-slide1-eyebrow-lh,1);letter-spacing:var(--s5-slide1-eyebrow-ls,2px);color:var(--s5-slide1-eyebrow-color,#8a8a8a);transform:translate(var(--s5-slide1-eyebrow-x,0px),var(--s5-slide1-eyebrow-y,0px));}
 /* MASCHERINO — TOLFAMA · Slide 1 · Titolo "Tolfama" -> --s5-slide1-titolo-{scale|x|y|lh|ls|color} */
-.s5-slide1-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(36px,5.5vw,76px) * var(--s5-slide1-titolo-scale,1));line-height:var(--s5-slide1-titolo-lh,1.05);letter-spacing:var(--s5-slide1-titolo-ls,0px);color:var(--s5-slide1-titolo-color,#1b1b1b);transform:translate(var(--s5-slide1-titolo-x,0px),var(--s5-slide1-titolo-y,0px));}
+.s5-slide1-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s5-slide1-titolo-fs-base,clamp(36px,5.5vw,76px)) * var(--s5-slide1-titolo-scale,1));line-height:var(--s5-slide1-titolo-lh,1.05);letter-spacing:var(--s5-slide1-titolo-ls,0px);color:var(--s5-slide1-titolo-color,#1b1b1b);transform:translate(var(--s5-slide1-titolo-x,0px),var(--s5-slide1-titolo-y,0px));}
 /* MASCHERINO — TOLFAMA · Slide 1 · Paragrafo "Il teatro che esce dal teatro…" -> --s5-slide1-corpo-{scale|x|y|lh|ls|color} */
-.s5-slide1-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s5-slide1-corpo-scale,1));line-height:var(--s5-slide1-corpo-lh,1.7);letter-spacing:var(--s5-slide1-corpo-ls,0px);color:var(--s5-slide1-corpo-color,#6f6f6f);transform:translate(var(--s5-slide1-corpo-x,0px),var(--s5-slide1-corpo-y,0px));margin-top:14px}
+.s5-slide1-corpo{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(var(--s5-slide1-corpo-fs-base,clamp(14px,1.3vw,17px)) * var(--s5-slide1-corpo-scale,1));line-height:var(--s5-slide1-corpo-lh,1.7);letter-spacing:var(--s5-slide1-corpo-ls,0px);color:var(--s5-slide1-corpo-color,#6f6f6f);transform:translate(var(--s5-slide1-corpo-x,0px),var(--s5-slide1-corpo-y,0px));margin-top:14px}
 /* MASCHERINO — TOLFAMA · Slide 1 · Bottone "Iscriviti a un workshop" -> --s5-slide1-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s5-slide1-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s5-slide1-btn-scale,1));padding:calc(18px * var(--s5-slide1-btn-scale,1)) calc(22px * var(--s5-slide1-btn-scale,1));line-height:var(--s5-slide1-btn-lh,1);letter-spacing:var(--s5-slide1-btn-ls,0px);color:var(--s5-slide1-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s5-slide1-btn-x,0px),var(--s5-slide1-btn-y,0px));}.s5-slide1-btn:hover{transform:translateY(-2px) translate(var(--s5-slide1-btn-x,0px),var(--s5-slide1-btn-y,0px))}
 .s5-slide1-btn:hover{background:transparent;color:var(--sede)}
