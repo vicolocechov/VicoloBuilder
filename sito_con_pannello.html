@@ -2015,8 +2015,18 @@ requestAnimationFrame(riposiziona);
   function fuoriDalMotore(target){
     return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot')));
   }
+  /* Traccia RAW (solo eventi multi-touch/zoom, per non intasare il log normale dello swipe a un
+     dito): registra ogni touchstart/touchmove con 2+ dita o a zoom attivo, con lo stato uno/tmoved
+     di PRIMA di essere eventualmente azzerato in questo stesso evento - serve a vedere, gesto per
+     gesto su device reale, esattamente cosa succede durante un pinch (evento per evento, non solo
+     l'esito finale a touchend/touchcancel). TEMPORANEO come il resto dell'overlay. */
+  function vcLogRaw(fase, e){
+    const panelId = panelIds[correntePanel] || '?';
+    vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'RAW-'+fase, motivo:`touches=${e.touches.length} zoom=${zoomato()?'SI('+window.visualViewport.scale.toFixed(2)+')':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
+  }
   function onTouchStart(e){
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
+    if(e.touches.length>1) vcLogRaw('touchstart', e);
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
        resettato lo zoom), un nuovo tocco a un dito e' quasi certamente un pan dentro lo zoom, non
        l'inizio di uno swipe di navigazione - non tracciarlo come tale. */
@@ -2026,15 +2036,21 @@ requestAnimationFrame(riposiziona);
       origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
       tStart0=performance.now();
       scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
+    } else if(e.touches.length>1){
+      /* multi-touch iniziato: azzera comunque tmoved, cosi' anche se questo touchstart non
+         azzera "uno" (gia' false da prima) non resta traccia di un dx/dy accumulato dal singolo
+         dito precedente che potrebbe rientrare in gioco piu' avanti nello stesso gesto. */
+      tmoved=false;
     }
   }
   let origineGesto='stage';
   document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
+    if(e.touches.length>1 || zoomato()) vcLogRaw('touchmove', e);
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
-      uno=false; return;
+      uno=false; tmoved=false; return;
     }
     e.preventDefault(); tmoved=true;
   }
@@ -2049,7 +2065,7 @@ requestAnimationFrame(riposiziona);
      indesiderata subito dopo l'inizio dello zoom. Trattalo esattamente come un gesto annullato. */
   function onTouchCancel(e){
     const panelId = panelIds[correntePanel] || '?';
-    if(uno) vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'ANNULLATO(touchcancel)', motivo: zoomato()?'zoom-attivo':'cancel-nativo', durataMs: Math.round(performance.now()-tStart0) });
+    vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'TOUCHCANCEL', motivo:`touches-residue=${e.touches.length} zoom=${zoomato()?'SI':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
     uno=false; tmoved=false;
   }
   document.addEventListener('touchcancel', onTouchCancel, {passive:true});
@@ -2057,7 +2073,7 @@ requestAnimationFrame(riposiziona);
   function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
     if(!uno||!tmoved||zoomato()||e.touches.length>0){
-      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':(zoomato()?'zoom-attivo':'dita-residue')), durataMs: Math.round(performance.now()-tStart0) });
+      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: `${!uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':(zoomato()?'zoom-attivo':'dita-residue'))} (touches-residue=${e.touches.length})`, durataMs: Math.round(performance.now()-tStart0) });
       uno=false;
       return;
     }
@@ -2094,19 +2110,45 @@ requestAnimationFrame(riposiziona);
 
   panels.forEach(p=>p.addEventListener('scroll', ()=>{ if(p===panels[correntePanel]) aggiornaColoreHeader(); }, {passive:true}));
 
+  /* reflow() riposiziona SEMPRE lo stage senza l'animazione .36s di .vc-stage (disattivata e poi
+     ripristinata): .vc-stage ha la transizione attiva di default, quindi senza questo un semplice
+     resize/orientationchange faceva SCORRERE visibilmente lo stage verso la nuova posizione invece
+     di scattarci sopra - normalmente impercettibile (basePos() dipende solo dalla LARGHEZZA, che un
+     resize di sola altezza come la barra indirizzi Safari non cambia), ma durante una vera rotazione
+     device la differenza di larghezza e' enorme e quello scorrimento animato mostrava per centinaia
+     di ms una posizione intermedia sbagliata: due sezioni visibili mescolate a meta'. */
   function reflow(){
+    const t = stage.style.transition;
+    stage.style.transition = 'none';
     posiziona(basePos());
     const s=sceneDi(correntePanel);
     if(s[correnteScena[correntePanel]]) panels[correntePanel].scrollTop=s[correnteScena[correntePanel]].offsetTop;
-    requestAnimationFrame(aggiornaColoreHeader);
+    requestAnimationFrame(()=>{ stage.style.transition = t; requestAnimationFrame(aggiornaColoreHeader); });
   }
   /* stesso motivo del debounce su riposiziona() (vedi sopra): senza, una raffica di resize/
      visualViewport durante l'animazione della barra indirizzi iOS forza ripetutamente scrollTop
      e transform, potendo anche interrompere/far scattare un'animazione di swipe in corso. */
   const reflowDeb = vcDebounce(reflow, 90);
   addEventListener('resize', reflowDeb);
-  addEventListener('orientationchange', reflow);
-  addEventListener('orientationchange', ()=>setTimeout(reflow,150));   /* ricalcolo di sicurezza a rotazione conclusa */
+  /* ROTAZIONE DEVICE (orientationchange): su iOS il primo scatto dell'evento puo' arrivare con
+     window.innerWidth ancora transitorio (non ancora assestato sulla nuova orientazione) - un
+     reflow() immediato rischia quindi di calcolare basePos() con una larghezza sbagliata, e anche
+     scattando invece di scorrere (fix sopra) l'utente vedrebbe comunque un fotogramma nella
+     posizione sbagliata prima della correzione di sicurezza a 150ms. Per azzerare anche quel
+     singolo fotogramma, lo stage viene nascosto (opacity:0, transizione disattivata) per tutta la
+     finestra di rotazione e reso di nuovo visibile SOLO dopo il ricalcolo finale assestato: mai
+     alcuno stato intermedio/sovrapposto visibile, nemmeno per un istante. */
+  function onOrientationChange(){
+    /* solo opacity qui: la transizione la disattiva e ripristina gia' reflow() stesso (sotto) -
+       farlo anche qui rischierebbe di far leggere a reflow() 'none' come valore "originale" da
+       ripristinare, lasciando la transizione disattivata per sempre dopo la rotazione. */
+    stage.style.opacity = '0';
+    setTimeout(()=>{
+      reflow();
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
+    }, 150);
+  }
+  addEventListener('orientationchange', onOrientationChange);
   if (window.visualViewport) visualViewport.addEventListener('resize', reflowDeb);
 
   /* ---- avvio: se l'URL ha già un'ancora, apri direttamente lì (nessuno scatto visibile) ---- */
