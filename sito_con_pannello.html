@@ -688,21 +688,23 @@ body{overflow:hidden}
   .sede-btn{font-size:10px;padding:4px 10px}
   .main-nav{gap:clamp(12px,1.3vw,26px);transform:translateX(-20px)}
   .nav-indicatore{bottom:-7px;height:2.5px}
-  /* SLIDE 1 hero (titolo su UNA riga) */
-  .hero{--header-h:46px;justify-content:center;padding:calc(var(--header-h) + 6px) 18px 12px}
+  /* SLIDE 1 hero (titolo su UNA riga) — compresso per la fascia reale peggiore (Safari a chrome
+     pieno, ~249-314px di altezza utile): prima restava centrato in verticale in un box piu' alto
+     del disponibile, tagliando il corpo testo e nascondendo del tutto il bottone. */
+  .hero{--header-h:46px;justify-content:flex-start;padding:calc(var(--header-h) + 3px) 18px calc(6px + env(safe-area-inset-bottom))}
   .hero-inner{flex-direction:column;align-items:center;width:100%}
   .hero-title{display:block;white-space:nowrap;text-align:center;width:100%;line-height:var(--s1-slide1-titolo-lh,1)}
-  :root{--s1-slide1-titolo-fs-base:8.5vw}
+  :root{--s1-slide1-titolo-fs-base:clamp(20px,6vw,34px)}
   .hero-l1,.hero-l2{display:inline}
   .hero-l1{font-size:1em}
   .tw{display:inline-block}
   .hero-testo{display:contents}
-  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;text-align:center;margin:5px 0 0}
-  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.45);text-align:center;max-width:720px;margin:8px auto 0}
-  :root{--s1-slide1-sub-fs-base:clamp(11px,2.2vw,18px);--s1-slide1-corpo-fs-base:clamp(16px,1.7vw,8px)}
+  .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;text-align:center;margin:4px 0 0}
+  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.3);text-align:center;max-width:640px;margin:5px auto 0}
+  :root{--s1-slide1-sub-fs-base:clamp(10px,1.8vw,14px);--s1-slide1-corpo-fs-base:clamp(9px,1.4vw,12px)}
   .br-body{display:none}
-  .hero-btn{margin-top:10px;align-self:center}
-  :root{--s1-slide1-btn-fs-base:12px;--s1-slide1-btn-pad-v-base:8px;--s1-slide1-btn-pad-h-base:18px}
+  .hero-btn{margin-top:8px;align-self:center}
+  :root{--s1-slide1-btn-fs-base:11px;--s1-slide1-btn-pad-v-base:6px;--s1-slide1-btn-pad-h-base:14px}
   /* SLIDE 2 domanda */
   .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05)} .domanda-titolo .blocco{display:inline} .domanda-testo{margin-top:8px} .scena-domanda{padding:calc(var(--header-h,46px) + 8px) 6vw 14px}
   :root{--s1-slide2-titolo-fs-base:clamp(20px,7vw,54px);--s1-slide2-corpo-fs-base:clamp(10px,2vw,13px)}
@@ -736,24 +738,31 @@ body{overflow:hidden}
 
   /* SLIDE 1 CORSI (bivio) — 3 card affiancate come nel desktop, MA disegnate apposta per
      l'altezza landscape reale (non e' il blocco desktop scalato/rimpicciolito) */
-  #s3-slide1{padding-top:calc(var(--header-h,46px) + 1px);padding-bottom:0}
-  .s3-slide1-titolo{margin:0 0 1px}
+  #s3-slide1{padding-top:var(--header-h,46px);padding-bottom:0}
+  #s3-slide1 .s3-slide1-titolo{margin:0 0 2px}
+  /* prima font fissi troppo piccoli (10/10/7px, illeggibili su schermo reale): ora scale che
+     crescono con lo spazio davvero disponibile (piu' largo il device, anche piu' alto in questo
+     modello), restando comunque dentro la fascia 249-314px al caso peggiore */
   :root{
-    --s3-slide1-titolo-fs-base:10px;
-    --s3-slide1-cards-tit-fs-base:10px;
-    --s3-slide1-cards-testo-fs-base:7px;
+    --s3-slide1-titolo-fs-base:clamp(17px,2.4vw,22px);
+    --s3-slide1-cards-tit-fs-base:clamp(16px,2.2vw,20px);
+    --s3-slide1-cards-testo-fs-base:clamp(11px,1.7vw,14px);
     --s3-slide1-cards-nota-fs-base:0px;
-    --s3-slide1-cards-btn-fs-base:8px;
+    --s3-slide1-cards-btn-fs-base:clamp(10.5px,1.4vw,13px);
   }
-  .s3-slide1-card-grid{gap:5px}
-  .s3-slide1-card{padding:3px 8px;gap:0px;border-radius:8px}
-  .s3-slide1-card1-nota,.s3-slide1-card2-nota,.s3-slide1-card3-nota{display:none}
-  .s3-slide1-card1-num,.s3-slide1-card2-num,.s3-slide1-card3-num{display:none}
-  .s3-slide1-card-head{gap:0}
-  .s3-slide1-card-body{gap:1px}
-  .s3-slide1-card1-testo,.s3-slide1-card2-testo,.s3-slide1-card3-testo{line-height:1.15}
-  .s3-slide1-card1-nota,.s3-slide1-card2-nota,.s3-slide1-card3-nota{line-height:1.05}
-  .s3-slide1-card1-btn,.s3-slide1-card2-btn,.s3-slide1-card3-btn{padding:2px 8px;margin-top:1px}
+  /* selettori con #s3-slide1 davanti: la regola base (desktop, senza media query, righe ~1020+)
+     viene DOPO questo blocco nel file - a parita' di specificita' vincerebbe lei nonostante il
+     media query non corrisponda in landscape. Con #s3-slide1 la specificita' e' piu' alta e
+     queste regole vincono sempre, indipendentemente dall'ordine nel file. */
+  #s3-slide1 .s3-slide1-card-grid{gap:8px}
+  #s3-slide1 .s3-slide1-card{padding:9px 13px;gap:0px;border-radius:10px}
+  #s3-slide1 .s3-slide1-card1-nota,#s3-slide1 .s3-slide1-card2-nota,#s3-slide1 .s3-slide1-card3-nota{display:none}
+  #s3-slide1 .s3-slide1-card1-num,#s3-slide1 .s3-slide1-card2-num,#s3-slide1 .s3-slide1-card3-num{display:none}
+  #s3-slide1 .s3-slide1-card-head{gap:0}
+  #s3-slide1 .s3-slide1-card-body{gap:4px}
+  #s3-slide1 .s3-slide1-card1-testo,#s3-slide1 .s3-slide1-card2-testo,#s3-slide1 .s3-slide1-card3-testo{line-height:1.2}
+  #s3-slide1 .s3-slide1-card1-nota,#s3-slide1 .s3-slide1-card2-nota,#s3-slide1 .s3-slide1-card3-nota{line-height:1.05}
+  #s3-slide1 .s3-slide1-card1-btn,#s3-slide1 .s3-slide1-card2-btn,#s3-slide1 .s3-slide1-card3-btn{padding:5px 11px;margin-top:4px}
 
   /* SLIDE 4/5 CORSI (Impro Adulti: "Si entra..." + "Non impari solo...") — eyebrow+titolo+corpo+
      griglia 3 card+bottone, tutto ridimensionato apposta per l'altezza landscape reale (le card
@@ -2008,7 +2017,10 @@ requestAnimationFrame(riposiziona);
   }
   function onTouchStart(e){
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
-    uno=(e.touches.length===1);
+    /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
+       resettato lo zoom), un nuovo tocco a un dito e' quasi certamente un pan dentro lo zoom, non
+       l'inizio di uno swipe di navigazione - non tracciarlo come tale. */
+    uno=(e.touches.length===1 && !zoomato());
     if(uno){
       tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
       origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
@@ -2028,10 +2040,25 @@ requestAnimationFrame(riposiziona);
   }
   document.addEventListener('touchmove', onTouchMove, {passive:false});
 
+  /* iOS, quando riconosce un pinch-zoom a due dita, spesso annulla con touchcancel (non touchend)
+     la sequenza a un dito che il motore stava gia' seguendo (il primo dito, mosso prima che il
+     secondo toccasse lo schermo) - il gesto che il motore nativo "si prende" per lo zoom. Senza
+     questo listener lo stato (uno/tmoved/tx0/ty0) restava congelato a PRIMA dello zoom, e il
+     touchend reale che arrivava al rilascio delle dita calcolava un dx/dy enorme contro quella
+     posizione ormai vecchia, superando quasi sempre la soglia e facendo scattare una navigazione
+     indesiderata subito dopo l'inizio dello zoom. Trattalo esattamente come un gesto annullato. */
+  function onTouchCancel(e){
+    const panelId = panelIds[correntePanel] || '?';
+    if(uno) vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'ANNULLATO(touchcancel)', motivo: zoomato()?'zoom-attivo':'cancel-nativo', durataMs: Math.round(performance.now()-tStart0) });
+    uno=false; tmoved=false;
+  }
+  document.addEventListener('touchcancel', onTouchCancel, {passive:true});
+
   function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
-    if(!uno||!tmoved||zoomato()){
-      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':'zoom-attivo'), durataMs: Math.round(performance.now()-tStart0) });
+    if(!uno||!tmoved||zoomato()||e.touches.length>0){
+      vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: !uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':(zoomato()?'zoom-attivo':'dita-residue')), durataMs: Math.round(performance.now()-tStart0) });
+      uno=false;
       return;
     }
     const dx=e.changedTouches[0].clientX-tx0, dy=e.changedTouches[0].clientY-ty0;
