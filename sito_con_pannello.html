@@ -2054,16 +2054,7 @@ requestAnimationFrame(riposiziona);
     const panelId = panelIds[correntePanel] || '?';
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'RAW-'+fase, motivo:`touches=${e.touches.length} zoom=${zoomato()?'SI('+window.visualViewport.scale.toFixed(2)+')':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
   }
-  /* Numero di dita davvero a contatto con lo schermo IN QUESTO MOMENTO, aggiornato a ogni evento
-     touch indipendentemente da uno/tmoved/gestoMultiTouch - serve a reflow() (vedi sotto) per
-     sapere se e' sicuro ricalcolare la posizione: subito dopo che lo zoom finisce ma prima che le
-     dita si sollevino, visualViewport.width puo' ancora restituire un valore non ancora assestato
-     (osservato su device reale: 590/592px invece del valore vero, prima di una terza chiamata
-     finalmente corretta) - aspettare anche diteAttive===0, non solo zoom concluso, elimina quella
-     finestra di rischio. */
-  let diteAttive=0;
   function onTouchStart(e){
-    diteAttive=e.touches.length;
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
     if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); gestoMultiTouch=true; }
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
@@ -2099,7 +2090,6 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
-    diteAttive=e.touches.length;
     if(e.touches.length>1 || zoomato()) { vcLogRaw('touchmove', e); segnalaPinch(); gestoMultiTouch=true; }
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
@@ -2117,7 +2107,6 @@ requestAnimationFrame(riposiziona);
      posizione ormai vecchia, superando quasi sempre la soglia e facendo scattare una navigazione
      indesiderata subito dopo l'inizio dello zoom. Trattalo esattamente come un gesto annullato. */
   function onTouchCancel(e){
-    diteAttive=e.touches.length;
     const panelId = panelIds[correntePanel] || '?';
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'TOUCHCANCEL', motivo:`touches-residue=${e.touches.length} zoom=${zoomato()?'SI':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
     segnalaPinch(); gestoMultiTouch=true;   /* un cancel nativo e' quasi sempre legato a un gesto multi-touch/zoom */
@@ -2126,7 +2115,6 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('touchcancel', onTouchCancel, {passive:true});
 
   function onTouchEnd(e){
-    diteAttive=e.touches.length;
     const panelId = panelIds[correntePanel] || '?';
     /* rinfresca la finestra di soppressione anche qui (non solo sui touchmove intermedi): vedi
        il commento su gestoMultiTouch piu' sopra. Se questo era l'ultimo dito (touches.length===0),
@@ -2186,19 +2174,15 @@ requestAnimationFrame(riposiziona);
      mai: la variabile "dove sei" restava corretta, ma il transform applicato no - da qui la
      sezione visivamente sbagliata durante/subito dopo il pinch. Fix: se lo zoom e' attivo, reflow()
      non tocca affatto la posizione (si limita a segnalare che e' in sospeso, vedi anche il
-     commento sul debounce piu' sotto per come si autocorregge da sola a zoom concluso).
-     RINFORZO (da test reale): subito dopo che lo zoom finisce ma PRIMA che le dita si sollevino,
-     visualViewport.width puo' ancora restituire un valore non ancora assestato (osservato: 590/592
-     invece del vero valore, con reflow() richiamata 3 volte prima che la terza finalmente arrivasse
-     con il dato corretto) - "zoom=no" da solo non basta, va aspettato anche diteAttive===0. */
+     commento sul debounce piu' sotto per come si autocorregge da sola a zoom concluso). */
   let reflowInSospesoPerZoom=false;
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
     const posPrima = stage.style.transform;
-    if(!forza && (zoomato() || diteAttive>0)){
+    if(!forza && zoomato()){
       reflowInSospesoPerZoom=true;
-      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-SALTATO(zoom-o-dita-attive)', motivo:`da=${origineChiamata||'?'} zoom=${zoomato()?'SI':'no'} diteAttive=${diteAttive} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'}`, durataMs:0 });
+      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-SALTATO(zoom-attivo)', motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'}`, durataMs:0 });
       return;
     }
     reflowInSospesoPerZoom=false;
