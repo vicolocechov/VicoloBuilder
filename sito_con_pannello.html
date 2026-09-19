@@ -1901,8 +1901,17 @@ requestAnimationFrame(riposiziona);
   function segnalaPinch(){
     pinchAttivoORecente=true;
     clearTimeout(pinchClearId);
-    pinchClearId=setTimeout(()=>{ pinchAttivoORecente=false; }, 500);
+    pinchClearId=setTimeout(()=>{ pinchAttivoORecente=false; }, 700);
   }
+  /* true se la sequenza di tocco IN CORSO ha mai avuto 2+ dita (o zoom attivo) in un qualunque
+     momento - a differenza di pinchAttivoORecente (che scade dopo 700ms dall'ultimo evento) questo
+     resta vero per TUTTA la durata del gesto, cosi' da poter rinfrescare la finestra di
+     soppressione anche al touchend finale (non solo sui touchmove intermedi): un dito "quasi
+     fermo" durante il pinch puo' smettere di generare touchmove ben prima di sollevarsi
+     effettivamente, e senza questo rinfresco finale la finestra poteva scadere PRIMA che Safari
+     sintetizzasse il click ritardato (~300ms dopo il touchend, sulle pagine con zoom abilitato),
+     lasciandolo passare. Si azzera solo quando riparte un gesto pulito a un dito. */
+  let gestoMultiTouch=false;
 
   const sceneDi=(pIdx)=>[...panels[pIdx].querySelectorAll('.vc-scena')].filter(scena => {
     const saltaBivio = panels[pIdx].id === 'corsi' && document.documentElement.classList.contains('sede-monte') && scena.id === 's3-slide1';
@@ -2047,7 +2056,7 @@ requestAnimationFrame(riposiziona);
   }
   function onTouchStart(e){
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
-    if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); }
+    if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); gestoMultiTouch=true; }
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
        resettato lo zoom), un nuovo tocco a un dito e' quasi certamente un pan dentro lo zoom, non
        l'inizio di uno swipe di navigazione - non tracciarlo come tale. */
@@ -2057,6 +2066,7 @@ requestAnimationFrame(riposiziona);
       origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
       tStart0=performance.now();
       scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
+      gestoMultiTouch=false;   /* gesto pulito a un dito che riparte: azzera il flag del gesto precedente */
     } else if(e.touches.length>1){
       /* multi-touch iniziato: azzera comunque tmoved, cosi' anche se questo touchstart non
          azzera "uno" (gia' false da prima) non resta traccia di un dx/dy accumulato dal singolo
@@ -2068,7 +2078,7 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
-    if(e.touches.length>1 || zoomato()) { vcLogRaw('touchmove', e); segnalaPinch(); }
+    if(e.touches.length>1 || zoomato()) { vcLogRaw('touchmove', e); segnalaPinch(); gestoMultiTouch=true; }
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
       uno=false; tmoved=false; return;
@@ -2087,13 +2097,18 @@ requestAnimationFrame(riposiziona);
   function onTouchCancel(e){
     const panelId = panelIds[correntePanel] || '?';
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'TOUCHCANCEL', motivo:`touches-residue=${e.touches.length} zoom=${zoomato()?'SI':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
-    segnalaPinch();   /* un cancel nativo e' quasi sempre legato a un gesto multi-touch/zoom */
+    segnalaPinch(); gestoMultiTouch=true;   /* un cancel nativo e' quasi sempre legato a un gesto multi-touch/zoom */
     uno=false; tmoved=false;
   }
   document.addEventListener('touchcancel', onTouchCancel, {passive:true});
 
   function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
+    /* rinfresca la finestra di soppressione anche qui (non solo sui touchmove intermedi): vedi
+       il commento su gestoMultiTouch piu' sopra. Se questo era l'ultimo dito (touches.length===0),
+       il gesto e' concluso e puo' ripartire pulito al prossimo touchstart. */
+    if(gestoMultiTouch || zoomato()) segnalaPinch();
+    if(e.touches.length===0) gestoMultiTouch=false;
     if(!uno||!tmoved||zoomato()||e.touches.length>0){
       vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: `${!uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':(zoomato()?'zoom-attivo':'dita-residue'))} (touches-residue=${e.touches.length})`, durataMs: Math.round(performance.now()-tStart0) });
       uno=false;
