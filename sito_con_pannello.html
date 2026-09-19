@@ -91,7 +91,7 @@
   --logo-h:clamp(44px,2.9vw,54px);  /* logo: 54 su schermi larghi, si restringe sotto */
   --menu-size:clamp(14px,1.05vw,19px);/* menu: 19 su schermi larghi, si restringe sotto */
   --testo:#1b1b1b;
-  --scorr:.36s cubic-bezier(.34,1.12,.5,1);  /* movimento morbido e "soddisfacente" */
+  --scorr:.26s cubic-bezier(.34,1.12,.5,1);  /* movimento morbido e "soddisfacente" */
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{font-family:'Montserrat',sans-serif;color:#1b1b1b}
@@ -249,7 +249,7 @@ html.sede-monte.sezione-vicolo-off .site-header.header-chiaro         .logo-off-
    Scorre solo il "pannello". Ogni schermata è una .vc-scena alta come lo schermo. */
 body{overflow:hidden}
 /* Sezioni affiancate in orizzontale (come la demo): .vc-stage scorre in X, ogni .vc-panel scorre in Y al suo interno */
-.vc-stage{display:flex;width:100%;height:100svh;will-change:transform;transition:transform var(--scorr,.36s cubic-bezier(.34,1.12,.5,1));touch-action:pinch-zoom}
+.vc-stage{display:flex;width:100%;height:100svh;will-change:transform;transition:transform var(--scorr,.26s cubic-bezier(.34,1.12,.5,1));touch-action:pinch-zoom}
 .vc-stage.trascina{transition:none}
 /* touch-action:pinch-zoom (niente pan nativo, ma il pinch-zoom resta possibile, gia' gestito
    a parte da zoomato()) - dichiarato qui cosi' il motore gesture del browser decide PRIMA
@@ -1068,9 +1068,9 @@ html.sede-monte #s3-slide1{display:none}
   .s3-slide1-card-grid{grid-template-columns:1fr;gap:5px;max-width:460px}
   .s3-slide1-card{padding:8px 14px;gap:0}
   .s3-slide1-card-head{flex-direction:row;align-items:center;gap:10px}
-  .s3-slide1-card-caret{display:block;flex-shrink:0;margin-left:auto;width:10px;height:10px;border-right:2px solid var(--sede);border-bottom:2px solid var(--sede);transform:rotate(45deg);transition:transform .25s ease}
+  .s3-slide1-card-caret{display:block;flex-shrink:0;margin-left:auto;width:10px;height:10px;border-right:2px solid var(--sede);border-bottom:2px solid var(--sede);transform:rotate(45deg);transition:transform .18s ease}
   .s3-slide1-card.is-open .s3-slide1-card-caret{transform:rotate(-135deg)}
-  .s3-slide1-card-body{max-height:0;overflow:hidden;opacity:0;gap:6px;margin-top:0;transition:max-height .35s ease,opacity .25s ease,margin-top .35s ease}
+  .s3-slide1-card-body{max-height:0;overflow:hidden;opacity:0;gap:6px;margin-top:0;transition:max-height .22s ease,opacity .16s ease,margin-top .22s ease}
   .s3-slide1-card.is-open .s3-slide1-card-body{max-height:600px;opacity:1;margin-top:8px}
   .s3-slide1-card1-testo,.s3-slide1-card2-testo,.s3-slide1-card3-testo{line-height:1.3}
   .s3-slide1-card1-btn,.s3-slide1-card2-btn,.s3-slide1-card3-btn{padding:7px 14px;margin-top:6px}
@@ -1933,7 +1933,7 @@ requestAnimationFrame(riposiziona);
     cancelAnimationFrame(animId);
     const from=panel.scrollTop, dist=to-from;
     if(ridotto || Math.abs(dist)<2){ panel.scrollTop=to; return; }
-    const dur=420, t0=performance.now();      // ⏱️ durata glide (ms): più alto = più dolce, più basso = più secco
+    const dur=260, t0=performance.now();      // ⏱️ durata glide (ms): più alto = più dolce, più basso = più secco
     (function f(t){ const p=Math.min((t-t0)/dur,1);
       const e = p<.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;   // easeInOut: parte e arriva morbido
       panel.scrollTop=from+dist*e;
@@ -1973,7 +1973,7 @@ requestAnimationFrame(riposiziona);
     const link=links.find(a=>(a.getAttribute('href')||'').slice(1)===panelIds[i]);
     if(link){ links.forEach(x=>x.classList.remove('is-active')); link.classList.add('is-active'); attivo=link; muoviIndic(); }
     /* un solo scatto orizzontale alla volta: uno swipe/click = UNA schermata, mai più di una */
-    if(cambiaSezione){ bloccoPannello=true; setTimeout(()=>{ bloccoPannello=false; }, 420); }
+    if(cambiaSezione){ bloccoPannello=true; setTimeout(()=>{ bloccoPannello=false; }, 280); }
   }
   function stepPannello(dir){ vaiPannello(correntePanel+dir, 0); }
 
@@ -1994,7 +1994,12 @@ requestAnimationFrame(riposiziona);
     }
     if(pIdx===-1) return;
     e.preventDefault();
-    vaiPannello(pIdx, sIdx);
+    /* stessa sezione (es. i bottoni "prosegui" che incatenano piu' vc-scena dentro allo stesso
+       vc-panel, come il percorso del bivio Corsi): vaiScena() anima lo scorrimento verticale come
+       fa lo swipe, invece del salto istantaneo di salta() dentro vaiPannello() - pensato solo per
+       posizionare una scena ANCORA FUORI SCHERMO durante un vero cambio di sezione orizzontale */
+    if(pIdx===correntePanel){ vaiScena(sIdx); }
+    else{ vaiPannello(pIdx, sIdx); }
   });
 
   /* ---- tastiera: sinistra/destra = sezione, su/giù = slide dentro la sezione ---- */
@@ -2159,7 +2164,7 @@ requestAnimationFrame(riposiziona);
 
   panels.forEach(p=>p.addEventListener('scroll', ()=>{ if(p===panels[correntePanel]) aggiornaColoreHeader(); }, {passive:true}));
 
-  /* reflow() riposiziona SEMPRE lo stage senza l'animazione .36s di .vc-stage (disattivata e poi
+  /* reflow() riposiziona SEMPRE lo stage senza l'animazione .26s di .vc-stage (disattivata e poi
      ripristinata): .vc-stage ha la transizione attiva di default, quindi senza questo un semplice
      resize/orientationchange faceva SCORRERE visibilmente lo stage verso la nuova posizione invece
      di scattarci sopra - normalmente impercettibile (basePos() dipende solo dalla LARGHEZZA, che un
