@@ -1887,6 +1887,23 @@ requestAnimationFrame(riposiziona);
   let correntePanel=0, animId=null, ultimoStep=0;
   const correnteScena=panels.map(()=>0);
 
+  /* PINCH-ZOOM CHE CAMBIA SEZIONE - causa piu' probabile: le card del bivio Corsi (e altre) sono
+     interamente avvolte in <a href="#...">, esattamente dove si tocca per pinch-zoomare il testo.
+     Durante un pinch, se uno dei due diti si sposta poco rispetto al proprio punto di partenza,
+     Safari puo' sintetizzare un click "fantasma" su quel dito (la sintesi touch->click nativa, con
+     il ritardo tipico ~300ms che Safari mantiene sulle pagine con lo zoom abilitato) - quel click
+     cade sull'elemento sotto quel dito, spesso proprio la card-link, e il listener piu' sotto lo
+     naviga con vaiPannello() SENZA passare dal motore di swipe (che infatti nei log diagnostici
+     reali non mostra mai la chiamata corrispondente). Soppresso qui: qualunque click che arrivi
+     durante o poco dopo un gesto con 2+ dita/zoom attivo viene ignorato - un tap reale a un dito
+     non puo' mai coincidere con quella finestra. */
+  let pinchAttivoORecente=false, pinchClearId=null;
+  function segnalaPinch(){
+    pinchAttivoORecente=true;
+    clearTimeout(pinchClearId);
+    pinchClearId=setTimeout(()=>{ pinchAttivoORecente=false; }, 500);
+  }
+
   const sceneDi=(pIdx)=>[...panels[pIdx].querySelectorAll('.vc-scena')].filter(scena => {
     const saltaBivio = panels[pIdx].id === 'corsi' && document.documentElement.classList.contains('sede-monte') && scena.id === 's3-slide1';
     return !saltaBivio;
@@ -1953,6 +1970,10 @@ requestAnimationFrame(riposiziona);
 
   /* ---- click su qualunque link #ancora: naviga al pannello giusto, ed eventualmente alla slide giusta dentro ---- */
   document.addEventListener('click', e=>{
+    if(pinchAttivoORecente){
+      if(window.__vcTouchLog){ const t=e.target.closest('a,button'); window.__vcTouchLog.push({ t:Date.now(), panel:'-', esito:'CLICK-SOPPRESSO', motivo:`bersaglio=${t?(t.tagName+(t.getAttribute('href')?'['+t.getAttribute('href')+']':'')):'?'}`, durataMs:0 }); if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush(); }
+      e.preventDefault(); e.stopPropagation(); return;
+    }
     const a=e.target.closest('a[href^="#"]'); if(!a) return;
     const id=(a.getAttribute('href')||'').slice(1); if(!id) return;
     let pIdx=panelIds.indexOf(id), sIdx=0;
@@ -2026,7 +2047,7 @@ requestAnimationFrame(riposiziona);
   }
   function onTouchStart(e){
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
-    if(e.touches.length>1) vcLogRaw('touchstart', e);
+    if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); }
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
        resettato lo zoom), un nuovo tocco a un dito e' quasi certamente un pan dentro lo zoom, non
        l'inizio di uno swipe di navigazione - non tracciarlo come tale. */
@@ -2047,7 +2068,7 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
-    if(e.touches.length>1 || zoomato()) vcLogRaw('touchmove', e);
+    if(e.touches.length>1 || zoomato()) { vcLogRaw('touchmove', e); segnalaPinch(); }
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
       uno=false; tmoved=false; return;
@@ -2066,6 +2087,7 @@ requestAnimationFrame(riposiziona);
   function onTouchCancel(e){
     const panelId = panelIds[correntePanel] || '?';
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'TOUCHCANCEL', motivo:`touches-residue=${e.touches.length} zoom=${zoomato()?'SI':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
+    segnalaPinch();   /* un cancel nativo e' quasi sempre legato a un gesto multi-touch/zoom */
     uno=false; tmoved=false;
   }
   document.addEventListener('touchcancel', onTouchCancel, {passive:true});
@@ -2196,8 +2218,13 @@ requestAnimationFrame(riposiziona);
 
   function fmt(o){
     const origine = o.origine ? ` (partito da: ${o.origine})` : '';
-    if(o.esito==='NESSUN-GESTO') return `[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
-    const base=`[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
+    const testa = `[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine}`;
+    if(o.esito==='NESSUN-GESTO') return `${testa} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
+    /* RAW-touchstart/RAW-touchmove/TOUCHCANCEL non hanno dx/dy (non sono l'esito finale di un
+       gesto): il campo utile e' motivo (dita, zoom, stato uno/tmoved) - prima veniva scartato e
+       si vedeva solo "dx=undefined dy=undefined". */
+    if(o.esito.startsWith('RAW-') || o.esito==='TOUCHCANCEL') return `${testa} · ${o.esito} (${o.motivo}, ${o.durataMs}ms)`;
+    const base=`${testa} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
     const extra=` · scrollTop ${o.scrollTopPrima}->${o.scrollTopDopo} · touch-action=${o.touchAction} · blocco=${o.bloccoPannello?'SI':'no'}`;
     const nuovo = o.nuovoPanel ? ` · nuovo pannello=${o.nuovoPanel}` : '';
     return base+extra+nuovo;
