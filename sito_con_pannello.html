@@ -2166,7 +2166,15 @@ requestAnimationFrame(riposiziona);
      resize di sola altezza come la barra indirizzi Safari non cambia), ma durante una vera rotazione
      device la differenza di larghezza e' enorme e quello scorrimento animato mostrava per centinaia
      di ms una posizione intermedia sbagliata: due sezioni visibili mescolate a meta'. */
-  function reflow(){
+  /* LOGGING DIAGNOSTICO TEMPORANEO (ipotesi reflow/visualViewport durante il pinch) - registra
+     OGNI chiamata di reflow() (chi l'ha chiamata, con quali valori grezzi) cosi' il prossimo test
+     reale mostra se e' questo il percorso del bug invece di continuare a ipotizzare. Da rimuovere
+     insieme al resto dell'overlay una volta chiuso il bug. */
+  function reflow(origineChiamata){
+    const vv = window.visualViewport;
+    const panelIdPrima = panelIds[correntePanel] || '?';
+    const posPrima = stage.style.transform;
+    vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima}`, durataMs:0 });
     const t = stage.style.transition;
     stage.style.transition = 'none';
     posiziona(basePos());
@@ -2177,8 +2185,12 @@ requestAnimationFrame(riposiziona);
   /* stesso motivo del debounce su riposiziona() (vedi sopra): senza, una raffica di resize/
      visualViewport durante l'animazione della barra indirizzi iOS forza ripetutamente scrollTop
      e transform, potendo anche interrompere/far scattare un'animazione di swipe in corso. */
-  const reflowDeb = vcDebounce(reflow, 90);
-  addEventListener('resize', reflowDeb);
+  const reflowDeb = vcDebounce(()=>reflow('resize/vv-debounced'), 90);
+  addEventListener('resize', (e)=>{ vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`window.resize innerWidth=${window.innerWidth} innerHeight=${window.innerHeight}`, durataMs:0 }); reflowDeb(); });
+  if (window.visualViewport){
+    visualViewport.addEventListener('resize', ()=>{ const vv=window.visualViewport; vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`visualViewport.resize vvWidth=${Math.round(vv.width)} vvScale=${vv.scale.toFixed(3)} vvOffsetLeft=${Math.round(vv.offsetLeft)} innerWidth=${window.innerWidth}`, durataMs:0 }); reflowDeb(); });
+    visualViewport.addEventListener('scroll', ()=>{ const vv=window.visualViewport; vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`visualViewport.scroll vvWidth=${Math.round(vv.width)} vvScale=${vv.scale.toFixed(3)} vvOffsetLeft=${Math.round(vv.offsetLeft)} innerWidth=${window.innerWidth}`, durataMs:0 }); });
+  }
   /* ROTAZIONE DEVICE (orientationchange): su iOS il primo scatto dell'evento puo' arrivare con
      window.innerWidth ancora transitorio (non ancora assestato sulla nuova orientazione) - un
      reflow() immediato rischia quindi di calcolare basePos() con una larghezza sbagliata, e anche
@@ -2193,12 +2205,11 @@ requestAnimationFrame(riposiziona);
        ripristinare, lasciando la transizione disattivata per sempre dopo la rotazione. */
     stage.style.opacity = '0';
     setTimeout(()=>{
-      reflow();
+      reflow('orientationchange');
       requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
     }, 150);
   }
   addEventListener('orientationchange', onOrientationChange);
-  if (window.visualViewport) visualViewport.addEventListener('resize', reflowDeb);
 
   /* ---- avvio: se l'URL ha già un'ancora, apri direttamente lì (nessuno scatto visibile) ---- */
   const hashId=location.hash.slice(1);
