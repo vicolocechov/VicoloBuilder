@@ -2059,8 +2059,16 @@ requestAnimationFrame(riposiziona);
     if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); gestoMultiTouch=true; }
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
        resettato lo zoom), un nuovo tocco a un dito e' quasi certamente un pan dentro lo zoom, non
-       l'inizio di uno swipe di navigazione - non tracciarlo come tale. */
-    uno=(e.touches.length===1 && !zoomato());
+       l'inizio di uno swipe di navigazione - non tracciarlo come tale.
+       !pinchAttivoORecente: durante un pinch, se un dito parte vicino al bordo sinistro, iOS puo'
+       "contendersi" quel tocco con l'edge-swipe di sistema (va indietro nella cronologia) e
+       cancellare SOLO quel dito, lasciando l'altro attivo - quel dito residuo genera poi un
+       touchstart perfettamente "pulito" a un dito, che il motore (per le sue regole) tratterebbe
+       come uno swipe intenzionale, spesso verso destra (le dita di un pinch si allontanano) =
+       "vai alla sezione precedente". Nella stessa finestra usata per sopprimere i click fantasma,
+       blocca anche l'avvio di un nuovo gesto a un dito: un tocco pulito e intenzionale dell'utente
+       non capita mai a ridosso di un pinch appena concluso. */
+    uno=(e.touches.length===1 && !zoomato() && !pinchAttivoORecente);
     if(uno){
       tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
       origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
@@ -2072,6 +2080,10 @@ requestAnimationFrame(riposiziona);
          azzera "uno" (gia' false da prima) non resta traccia di un dx/dy accumulato dal singolo
          dito precedente che potrebbe rientrare in gioco piu' avanti nello stesso gesto. */
       tmoved=false;
+    } else if(e.touches.length===1 && pinchAttivoORecente && !zoomato()){
+      /* proprio il caso "dito residuo dopo un pinch appena concluso" descritto sopra - lo
+         registriamo esplicitamente per confermarlo (o smentirlo) sul prossimo test reale. */
+      vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:(stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)')), esito:'TOUCHSTART-SOPPRESSO(dito-residuo-pinch)', motivo:`x=${Math.round(e.touches[0].clientX)}`, durataMs:0 });
     }
   }
   let origineGesto='stage';
@@ -2235,10 +2247,12 @@ requestAnimationFrame(riposiziona);
     const origine = o.origine ? ` (partito da: ${o.origine})` : '';
     const testa = `[${new Date(o.t).toLocaleTimeString()}] ${o.panel}${origine}`;
     if(o.esito==='NESSUN-GESTO') return `${testa} · GESTO IGNORATO (${o.motivo}, ${o.durataMs}ms)`;
-    /* RAW-touchstart/RAW-touchmove/TOUCHCANCEL non hanno dx/dy (non sono l'esito finale di un
-       gesto): il campo utile e' motivo (dita, zoom, stato uno/tmoved) - prima veniva scartato e
-       si vedeva solo "dx=undefined dy=undefined". */
-    if(o.esito.startsWith('RAW-') || o.esito==='TOUCHCANCEL') return `${testa} · ${o.esito} (${o.motivo}, ${o.durataMs}ms)`;
+    /* Qualunque voce diagnostica senza dx/dy (RAW-touchstart/RAW-touchmove/TOUCHCANCEL/
+       CLICK-SOPPRESSO/TOUCHSTART-SOPPRESSO/...) non e' l'esito finale di un gesto: il campo utile
+       e' motivo (dita, zoom, stato uno/tmoved, bersaglio) - controllare o.dx===undefined invece di
+       elencare ogni singolo nome di evento evita che un futuro tipo di voce ripeta lo stesso bug
+       (mostrare "dx=undefined dy=undefined" invece dei dati veri gia' registrati in motivo). */
+    if(o.dx===undefined) return `${testa} · ${o.esito} (${o.motivo}, ${o.durataMs}ms)`;
     const base=`${testa} · dx=${o.dx} dy=${o.dy} ${o.durataMs}ms · ${o.esito}`;
     const extra=` · scrollTop ${o.scrollTopPrima}->${o.scrollTopDopo} · touch-action=${o.touchAction} · blocco=${o.bloccoPannello?'SI':'no'}`;
     const nuovo = o.nuovoPanel ? ` · nuovo pannello=${o.nuovoPanel}` : '';
