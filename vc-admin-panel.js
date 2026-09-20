@@ -120,6 +120,7 @@
     ]},
     { cat:'Apple iPhone', items:[
       {id:'ipse',  label:'iPhone SE (375x667)',        w:375, h:667, kind:'phone'},
+      {id:'ip12',  label:'iPhone 12 (390x844)',        w:390, h:844, kind:'phone'},
       {id:'ip16',  label:'iPhone 16 / 15 / 14 (390x844)', w:390, h:844, kind:'phone', island:true},
       {id:'ip15p', label:'iPhone 15 Pro (393x852)',    w:393, h:852, kind:'phone', island:true},
       {id:'ip16p', label:'iPhone 16 Pro (402x874)',    w:402, h:874, kind:'phone', island:true},
@@ -148,6 +149,22 @@
     ]}
   ];
   function findDevice(id){ for(var i=0;i<CATS.length;i++){ for(var j=0;j<CATS[i].items.length;j++){ if(CATS[i].items[j].id===id) return CATS[i].items[j]; } } return null; }
+
+  /* ---- Area realmente utilizzabile (al netto delle barre Safari) ----
+     Numeri misurati da screenshot REALI su iPhone 12 (fissi su questo device: le barre non si
+     riducono scrollando), confermati dall'utente. NON stimati per altri device: l'altezza delle
+     barre Safari e' comportamento del browser, non dello schermo, e Apple non la documenta - va
+     misurata su ciascun device reale prima di aggiungerla qui. Finche' un device non ha una voce
+     qui, l'anteprima resta quella "schermo intero" di sempre (nessun cambiamento per gli altri). */
+  var SAFE_AREA = {
+    ip12: {
+      portrait:  { top:47,  bottom:98, sideSafe:0  }, // area utile: 390x699
+      /* sideSafe ricalcolato da screenshot reale annotato dall'utente (linee rosse sul confine
+         sicuro): riga sinistra e destra misurate a ~81px/~1918px su un'immagine di 2000px larga
+         (fattore scala 2000/844=2.3697) -> margine reale ~34.6px/lato, arrotondato a 35 */
+      landscape: { top:100, bottom:0,  sideSafe:35 }  // area utile: 844x290 (774px "sicuro" al netto del notch)
+    }
+  };
 
   var SLIDE_NAMI = { 1:'Hero',2:'La domanda',3:'Le paure',4:'Posto giusto',5:'Le porte',6:'Voci',7:'Slide 7',8:'Slide 8' };
   var PROP_INFO = {
@@ -564,7 +581,7 @@
   var root=host.attachShadow({mode:'open'});
   root.innerHTML =
     '<style>'+PANEL_CSS()+'</style>'+
-    '<div id="stage" class="hidden"><div id="frameScaler"><div id="chromeTop" class="chrome top"></div><iframe id="frame" title="Anteprima"></iframe><div id="chromeBottom" class="chrome bottom"></div></div><div id="stagelabel"></div></div>'+
+    '<div id="stage" class="hidden"><div id="frameScaler"><div id="chromeTop" class="chrome top"></div><iframe id="frame" title="Anteprima"></iframe><div id="chromeBottom" class="chrome bottom"></div><div id="chromeSideL" class="chromeside left hidden"></div><div id="chromeSideR" class="chromeside right hidden"></div></div><div id="stagelabel"></div></div>'+
     '<button id="fab" title="Pannello (Ctrl+Shift+E per nascondere)">\u2699</button>'+
     '<div id="drawer" class="closed">'+
       '<header><div class="ttl">Pannello di controllo</div><button id="close">\u2715</button></header>'+
@@ -648,29 +665,74 @@
     if(frame.getAttribute('data-src')!==src){ frame.setAttribute('data-src',src); frame.src=src; }
     scaler.dataset.w=w; scaler.dataset.h=h; scaler.dataset.kind=d.kind||''; scaler.dataset.island=d.island?'1':''; scaler.dataset.hole=d.hole?'1':'';
     drawChrome();
-    $('#stagelabel').textContent=d.label+'  -  '+zoneLabel(currentZone);
+    var safe=SAFE_AREA[currentDevice], sa=safe?(orientation==='landscape'?safe.landscape:safe.portrait):null;
+    var safeTxt=sa?('  ·  area utile '+w+'x'+(h-sa.top-sa.bottom)+(sa.sideSafe?' (zona sicura laterale '+sa.sideSafe+'px/lato)':'')):'';
+    $('#stagelabel').textContent=d.label+'  -  '+zoneLabel(currentZone)+safeTxt;
     $('#zonechip').textContent='Modifichi: '+zoneLabel(currentZone);
     frame.onload=function(){ syncFrame(); };
   }
   function closeStage(){ stage.classList.add('hidden'); $('#zonechip').textContent=''; }
   function fitStage(w,h){ var availW=window.innerWidth-360-48, availH=window.innerHeight-80; var k=Math.min(1, availW/w, availH/h); scaler.style.transform='scale('+k+')'; scaler.style.width=w+'px'; scaler.style.height=h+'px'; }
   window.addEventListener('resize', function(){ if(currentDevice!=='live'){ drawChrome(); } });
+  /* --vc-safe-* (vedi :root nel sito) e' l'unico modo per far vedere nell'iframe di anteprima
+     l'area sicura REALE attorno al notch: env(safe-area-inset-*) non e' sovrascrivibile da CSS e
+     in un iframe di un browser normale (nessun device reale sotto) vale comunque 0, quindi senza
+     questo i puntini/testata del sito nell'anteprima non si spostano mai - risultando in posizione
+     diversa da quella vera sul device (bug segnalato: i puntini finivano dentro la fascia
+     disegnata invece di restarne fuori come nella foto reale). Il sito vero, fuori da qui, non e'
+     toccato: la variabile resta sempre uguale a env() finche' nessuno la sovrascrive cosi'. */
+  function safeAreaOverrideCss(){
+    /* SOLO left/right: sono il vero "safe-area-inset" (intrusione fisica del notch quando il
+       device e' ruotato). top/bottom qui NON sono safe-area-inset - sono l'altezza della barra
+       Safari (gia' rappresentata a parte dalle fasce chromeTop/chromeBottom, FUORI dall'iframe):
+       sovrascriverli anche come --vc-safe-top/bottom raddoppierebbe lo spazio gia' tolto
+       riducendo l'iframe, spingendo il contenuto ancora piu' in basso per errore. */
+    var safe=SAFE_AREA[currentDevice], sa=safe?(orientation==='landscape'?safe.landscape:safe.portrait):null;
+    if(!sa || !sa.sideSafe) return '';
+    return ':root{--vc-safe-left:'+sa.sideSafe+'px;--vc-safe-right:'+sa.sideSafe+'px;}';
+  }
   function syncFrame(){ if(currentDevice==='live') return; try{
-    frame.contentWindow.postMessage({__vc:'css', css:(BASECSS||'')+'\n'+buildCss()}, '*');
+    frame.contentWindow.postMessage({__vc:'css', css:(BASECSS||'')+'\n'+buildCss()+'\n'+safeAreaOverrideCss()}, '*');
     frame.contentWindow.postMessage({__vc:'pickmap', map:SELMAP}, '*');
     frame.contentWindow.postMessage({__vc:'textmap', text:textOverrides, words:wordSplits}, '*');
     Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; frame.contentWindow.postMessage({__vc:'settext', sel:o.sel, text:o.text}, '*'); });
     Object.keys(fragText).forEach(function(fk){ var o=fragText[fk]; frame.contentWindow.postMessage({__vc:'setfrag', sel:o.sel, path:o.path, text:o.text}, '*'); });
   }catch(e){} }
 
-  /* ---- Anteprima: schermo INTERO del device alla misura reale, senza barre ---- */
+  /* ---- Anteprima: schermo INTERO del device alla misura reale (default), oppure - solo per i
+     device con una voce in SAFE_AREA - l'area REALMENTE utilizzabile al netto delle barre Safari:
+     l'iframe del sito viene ridotto a quella altezza (non e' un'etichetta decorativa: il sito
+     dentro l'iframe vede davvero quella finestra, quindi 100svh/100dvh e i breakpoint rispondono
+     esattamente come sul device reale con le barre visibili), con le fasce Safari disegnate sopra
+     e sotto per farlo vedere a colpo d'occhio. ---- */
   function drawChrome(){
     if(currentDevice==='live') return;
     var w=+scaler.dataset.w, h=+scaler.dataset.h;
-    var ct=$('#chromeTop'), cb=$('#chromeBottom');
-    if(ct){ ct.style.display='none'; ct.innerHTML=''; ct.style.height='0'; }
-    if(cb){ cb.style.display='none'; cb.innerHTML=''; cb.style.height='0'; }
-    frame.style.width=w+'px'; frame.style.height=h+'px';
+    var ct=$('#chromeTop'), cb=$('#chromeBottom'), sl=$('#chromeSideL'), sr=$('#chromeSideR');
+    var safe=SAFE_AREA[currentDevice], sa=safe?(orientation==='landscape'?safe.landscape:safe.portrait):null;
+    if(sa){
+      ct.style.display='flex'; ct.style.height=sa.top+'px'; ct.innerHTML=''; ct.classList.add('safearea');
+      var labT=document.createElement('span'); labT.className='safearea-label'; labT.textContent='Safari · '+sa.top+'px'; ct.appendChild(labT);
+      if(sa.bottom>0){
+        cb.style.display='flex'; cb.style.height=sa.bottom+'px'; cb.innerHTML=''; cb.classList.add('safearea');
+        var labB=document.createElement('span'); labB.className='safearea-label'; labB.textContent='Safari · '+sa.bottom+'px'; cb.appendChild(labB);
+      } else {
+        cb.style.display='none'; cb.innerHTML=''; cb.style.height='0'; cb.classList.remove('safearea');
+      }
+      var frameH=h-sa.top-sa.bottom;
+      frame.style.width=w+'px'; frame.style.height=frameH+'px';
+      if(sa.sideSafe){
+        sl.style.top=sa.top+'px'; sl.style.bottom=sa.bottom+'px'; sl.style.width=sa.sideSafe+'px'; sl.classList.remove('hidden');
+        sr.style.top=sa.top+'px'; sr.style.bottom=sa.bottom+'px'; sr.style.width=sa.sideSafe+'px'; sr.classList.remove('hidden');
+      } else {
+        sl.classList.add('hidden'); sr.classList.add('hidden');
+      }
+    } else {
+      ct.style.display='none'; ct.innerHTML=''; ct.style.height='0'; ct.classList.remove('safearea');
+      cb.style.display='none'; cb.innerHTML=''; cb.style.height='0'; cb.classList.remove('safearea');
+      sl.classList.add('hidden'); sr.classList.add('hidden');
+      frame.style.width=w+'px'; frame.style.height=h+'px';
+    }
     scaler.style.width=w+'px'; scaler.style.height=h+'px';
     fitStage(w,h);
   }
@@ -1514,6 +1576,16 @@
     '.chrome.bottom .nav{color:#555;font-size:20px}'+
     '.chrome.bottom .homebar{width:130px;height:5px;background:#111;border-radius:3px;opacity:.85}'+
     '#frame{border:0;display:block;width:100%;background:#fff;flex:0 0 auto}'+
+    /* fasce "area realmente utilizzabile" (solo per i device misurati, es. iPhone 12): rappresentano
+       lo spazio davvero occupato da Safari (barra indirizzi/schede), NON un mockup estetico -
+       colore neutro chiaro, ben distinto dal contenuto ma non invasivo */
+    '.chrome.safearea{background:repeating-linear-gradient(135deg,#eef0f3,#eef0f3 6px,#e3e5e9 6px,#e3e5e9 12px);display:flex;align-items:center;justify-content:center;border-bottom:1px dashed #b9bcc4}'+
+    '.chrome.bottom.safearea{border-bottom:0;border-top:1px dashed #b9bcc4}'+
+    '.safearea-label{font:600 10.5px system-ui;letter-spacing:.2px;color:#5b5e66;background:rgba(255,255,255,.85);padding:2px 8px;border-radius:999px}'+
+    '.chromeside{position:absolute;width:47px;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(238,240,243,.55),rgba(238,240,243,.55) 6px,rgba(227,229,233,.55) 6px,rgba(227,229,233,.55) 12px);pointer-events:none;z-index:5}'+
+    '.chromeside.left{left:0;border-right:1px dashed rgba(150,153,161,.7)}'+
+    '.chromeside.right{right:0;border-left:1px dashed rgba(150,153,161,.7)}'+
+    '.chromeside.hidden{display:none}'+
     '#stagelabel{position:fixed;top:10px;left:16px;color:#fcc454;font-family:system-ui,Arial;font-size:12px;background:#1b1b1b;padding:5px 10px;border-radius:999px}'+
     '#modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}#modal.hidden{display:none}'+
     '.sheet{width:660px;max-width:92vw;max-height:82vh;background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;font-family:system-ui,Arial,sans-serif}'+
