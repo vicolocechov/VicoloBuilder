@@ -731,7 +731,9 @@ body{overflow:hidden}
   }
   .porte-eyebrow{margin-bottom:3px;transform:translate(var(--s1-slide5-eyebrow-x,0px),var(--s1-slide5-eyebrow-y,0px))}
   .porte-titolo{margin-bottom:5px;transform:translate(var(--s1-slide5-titolo-x,0px),var(--s1-slide5-titolo-y,0px))}
-  .porte-cards{gap:6px;width:100%;max-width:900px}
+  /* larghezza ridotta per lasciare libero il corridoio dei puntini a destra (.vc-dots) - stesso
+     motivo delle altre griglie a card corrette in questo blocco. */
+  .porte-cards{gap:6px;width:calc(100% - 28px - var(--vc-safe-right));max-width:900px}
   .porta{padding:6px 8px 7px;gap:3px;border-radius:8px}
   .porta-btn{height:24px;min-height:24px;margin-top:auto;padding:0 6px}
   :root{
@@ -764,7 +766,12 @@ body{overflow:hidden}
      viene DOPO questo blocco nel file - a parita' di specificita' vincerebbe lei nonostante il
      media query non corrisponda in landscape. Con #s3-slide1 la specificita' e' piu' alta e
      queste regole vincono sempre, indipendentemente dall'ordine nel file. */
-  #s3-slide1 .s3-slide1-card-grid{gap:8px}
+  /* larghezza ridotta apposta (non piu' width:100% della regola base) per lasciare libero il
+     corridoio dei puntini di navigazione a destra (.vc-dots, position:fixed) - 16px+diametro
+     pallino+margine di respiro, piu' l'eventuale area sicura del notch: senza, il testo della
+     terza card (piu' lunga) può arrivare a toccarli/passarci sotto, riprodotto sia su iPhone 12
+     reale sia nell'anteprima del pannello. */
+  #s3-slide1 .s3-slide1-card-grid{gap:8px;width:calc(100% - 28px - var(--vc-safe-right))}
   #s3-slide1 .s3-slide1-card{padding:9px 13px;gap:0px;border-radius:10px}
   #s3-slide1 .s3-slide1-card1-nota,#s3-slide1 .s3-slide1-card2-nota,#s3-slide1 .s3-slide1-card3-nota{display:none}
   #s3-slide1 .s3-slide1-card1-num,#s3-slide1 .s3-slide1-card2-num,#s3-slide1 .s3-slide1-card3-num{display:none}
@@ -783,7 +790,9 @@ body{overflow:hidden}
   /* la larghezza reale in landscape su iPhone (~750-926px secondo il modello) supera spesso i
      768px della regola generica da tablet, che altrimenti porterebbe la griglia a 2 colonne
      (col terzo elemento orfano sotto) invece delle 3 card affiancate volute */
-  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px;gap:10px}
+  /* stessa correzione di #s3-slide1 sopra: larghezza ridotta per lasciare libero il corridoio
+     dei puntini a destra (.vc-dots), altrimenti la terza card puo' arrivare a toccarli. */
+  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:8px;gap:10px;width:calc(100% - 28px - var(--vc-safe-right))}
   :root{
     --s3-slide4-eyebrow-fs-base:9px;--s3-slide5-eyebrow-fs-base:9px;
     /* gerarchia: il titolo deve dominare come sul desktop, il testo delle card resta leggibile
@@ -816,7 +825,10 @@ body{overflow:hidden}
     --s1-slide6-corpo-fs-base:10px;
   }
   #s1-slide6 .s1-slide6-corpo{margin-top:4px;line-height:1.25}
-  #s1-slide6 .voci-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;margin-top:10px}
+  /* larghezza ridotta per lasciare libero il corridoio dei puntini a destra (.vc-dots) - stesso
+     motivo/valore del bivio Corsi e "Si entra si gioca si crea" poco sopra: qui la terza card
+     ("voce" di testimonianza) arrivava a toccarli. */
+  #s1-slide6 .voci-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:calc(100% - 28px - var(--vc-safe-right));margin-top:10px}
   #s1-slide6 .voce{min-width:0;padding:10px;gap:8px}
   #s1-slide6 .voce-foto{width:34px;height:34px;outline-width:1.5px}
   #s1-slide6 .voce-nome{font-size:10px}
@@ -850,7 +862,8 @@ body{overflow:hidden}
     --s3-slide2-cards-testo-fs-base:9.5px;
     --s3-slide2-cards-btn-fs-base:10px;
   }
-  #s3-slide2 .card-grid{margin-top:8px;gap:10px;max-width:100%}
+  /* stesso motivo delle altre griglie corrette in questo blocco: libera il corridoio dei puntini. */
+  #s3-slide2 .card-grid{margin-top:8px;gap:10px;max-width:calc(100% - 28px - var(--vc-safe-right))}
   #s3-slide2 .porta{padding:12px 14px;gap:4px}
   #s3-slide2 .porta-tit{margin-top:0}
   #s3-slide2 .card-meta{margin-bottom:2px}
@@ -876,11 +889,13 @@ body{overflow:hidden}
 @media (width:390px) and (orientation:portrait){ /* iPhone 12 Pro · VERTICALE (390×844) */ }
 @media (width:844px) and (orientation:landscape) and (max-height:390px){ /* iPhone 12 Pro · ORIZZONTALE (844×390) */ }
 @media (width:844px) and (orientation:landscape) and (max-height:390px){
-  /* iPhone 12 Pro landscape: la slide 6 deve mantenere tutte e 3 le testimonianze in una riga, come il layout compatto del 14 Pro Max. */
+  /* iPhone 12 Pro landscape: la slide 6 deve mantenere tutte e 3 le testimonianze in una riga, come il layout compatto del 14 Pro Max.
+     width ridotta (non piu' 100%) per lasciare libero il corridoio dei puntini a destra (.vc-dots) - questa regola,
+     essendo su un breakpoint a larghezza esatta, vince su quella generica sopra e la sovrascriveva. */
   #s1-slide6 .voci-grid{
     grid-template-columns:repeat(3,minmax(0,1fr));
     gap:10px;
-    width:100%;
+    width:calc(100% - 28px - var(--vc-safe-right));
   }
   #s1-slide6 .voce{
     min-width:0;
@@ -2037,6 +2052,19 @@ requestAnimationFrame(riposiziona);
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
   let tx0=0,ty0=0,tmoved=false,uno=false,tStart0=0,scrollTopStart=0,bailReason='';
   function zoomato(){ return window.visualViewport && window.visualViewport.scale > 1.01; }   // pinch-zoom attivo?
+  /* zoomato()===false (scale tornata ~1) NON basta a garantire che window.innerWidth sia gia'
+     stabile: dati reali mostrano che subito dopo la fine di un pinch, per un paio di eventi,
+     visualViewport.offsetLeft puo' restare diverso da 0 (il viewport visuale non ha ancora
+     "riagganciato" quello di layout) mentre vvWidth/innerWidth riportano ancora un valore
+     transitorio (es. 457 invece di 390) - se reflow() gira in quella finestra calcola un
+     basePos() sbagliato con quel valore. offsetLeft!==0 e' il segnale che il riassestamento
+     non e' ancora concluso, indipendentemente dallo zoom: si azzera solo a riassestamento
+     davvero finito (confermato dal log reale: la chiamata successiva, con offsetLeft=0, porta
+     gia' il valore corretto). */
+  function viewportInstabile(){
+    const vv=window.visualViewport; if(!vv) return false;
+    return Math.abs(vv.offsetLeft)>0.5 || Math.abs(vv.offsetTop)>0.5;
+  }
   /* con la scheda-spettacolo aperta (body.s4-poster-modal-open) il tocco deve poter scorrere
      nativamente il suo contenuto interno (.s4-slide2-detail, che ha overflow-y:auto proprio):
      il motore di swipe sezione/scena si disattiva del tutto finche' resta aperta. */
@@ -2206,9 +2234,10 @@ requestAnimationFrame(riposiziona);
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
     const posPrima = stage.style.transform;
-    if(!forza && zoomato()){
+    if(!forza && (zoomato() || viewportInstabile())){
       reflowInSospesoPerZoom=true;
-      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-SALTATO(zoom-attivo)', motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'}`, durataMs:0 });
+      const motivoSalto=zoomato()?'zoom-attivo':'viewport-instabile';
+      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:`REFLOW-SALTATO(${motivoSalto})`, motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'}`, durataMs:0 });
       return;
     }
     reflowInSospesoPerZoom=false;
