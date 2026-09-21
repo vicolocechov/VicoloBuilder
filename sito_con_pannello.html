@@ -104,6 +104,12 @@
   --vc-safe-right:env(safe-area-inset-right);
 }
 *{margin:0;padding:0;box-sizing:border-box}
+/* Disattiva il "text inflation" automatico di Safari iOS (ingrandisce da solo il testo in
+   colonne strette, per accessibilita', ignorando il font-size dichiarato nel CSS) - senza
+   questo, lo stesso file/stessa larghezza puo' renderizzare testo piu' grande e con a capo
+   diversi su Safari reale rispetto a qualunque altro browser/ambiente di test, che non ha
+   questo comportamento. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{font-family:'Montserrat',sans-serif;color:#1b1b1b}
 
 /* Base di OGNI slide (schermo intero, centrata): le classi specifiche (.hero, .scena-domanda, ecc.)
@@ -2230,6 +2236,15 @@ requestAnimationFrame(riposiziona);
      non tocca affatto la posizione (si limita a segnalare che e' in sospeso, vedi anche il
      commento sul debounce piu' sotto per come si autocorregge da sola a zoom concluso). */
   let reflowInSospesoPerZoom=false;
+  /* true dal momento in cui onOrientationChange() nasconde lo stage fino a quando un reflow()
+     REALMENTE APPLICATO (non saltato) lo rivela di nuovo - vedi piu' sotto per il caso che questo
+     risolve: se lo zoom/instabilita' e' ancora attivo ai 150ms fissi di onOrientationChange(),
+     reflow() salta (giustamente) ma lo stage veniva comunque rivelato subito dopo allo scadere di
+     quel timer fisso, mostrando per tutta la durata residua del gesto la vecchia posizione (da
+     PRIMA della rotazione) mentre il viewport reale e' gia' nella nuova orientazione - esattamente
+     il layout "rotto/disallineato" segnalato, che si "sistemava" solo quando il gesto finiva e un
+     reflow() successivo (da resize/vv-debounced) applicava finalmente la correzione. */
+  let stageNascostaPerRotazione=false;
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
@@ -2248,6 +2263,10 @@ requestAnimationFrame(riposiziona);
     const s=sceneDi(correntePanel);
     if(s[correnteScena[correntePanel]]) panels[correntePanel].scrollTop=s[correnteScena[correntePanel]].offsetTop;
     requestAnimationFrame(()=>{ stage.style.transition = t; requestAnimationFrame(aggiornaColoreHeader); });
+    if(stageNascostaPerRotazione){
+      stageNascostaPerRotazione=false;
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
+    }
   }
   /* stesso motivo del debounce su riposiziona() (vedi sopra): senza, una raffica di resize/
      visualViewport durante l'animazione della barra indirizzi iOS forza ripetutamente scrollTop
@@ -2283,15 +2302,19 @@ requestAnimationFrame(riposiziona);
        farlo anche qui rischierebbe di far leggere a reflow() 'none' come valore "originale" da
        ripristinare, lasciando la transizione disattivata per sempre dopo la rotazione. */
     stage.style.opacity = '0';
+    stageNascostaPerRotazione=true;
     setTimeout(()=>{
       /* NIENTE forza=true qui: durante un pinch-zoom ancora attivo window.innerWidth/vvWidth
          sono distorti dallo zoom (es. 195px invece della vera larghezza schermo) esattamente come
          nel caso resize/vv-debounced gia' corretto - reflow() deve saltare qui allo stesso modo e
          farsi richiamare piu' tardi dal debounce quando lo zoom finisce, invece di calcolare subito
          un basePos() sbagliato con la larghezza ancora instabile (causa del layout disallineato
-         dopo rotazione durante uno zoom, corretto solo pizzicando lo schermo avanti e indietro). */
+         dopo rotazione durante uno zoom, corretto solo pizzicando lo schermo avanti e indietro).
+         Se reflow() salta qui (zoom/instabilita' ancora attivi ai 150ms fissi), stageNascostaPerRotazione
+         resta true e lo stage NON viene rivelato: ci pensa reflow() stesso, quando un suo prossimo
+         tentativo (via resize/vv-debounced, alla fine del gesto in corso) riesce davvero ad
+         applicarsi - cosi' non si vede mai la vecchia posizione pre-rotazione nel frattempo. */
       reflow('orientationchange');
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
     }, 150);
   }
   addEventListener('orientationchange', onOrientationChange);
