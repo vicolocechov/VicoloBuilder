@@ -1592,7 +1592,20 @@
     '.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.mhead button{border:none;background:transparent;font-size:16px;cursor:pointer}'+
     '.hint{font-size:12px;color:#666;margin:0 0 8px}.hint code{background:#f2f0e8;padding:1px 4px;border-radius:4px}'+
     '#csv{flex:1;min-height:200px;width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid #d5d3c9;border-radius:8px;padding:10px;resize:vertical}'+
-    '.mfoot{display:flex;align-items:center;gap:12px;margin-top:10px}.mfoot button{padding:9px 16px;border-radius:8px;border:none;background:#1b1b1b;color:#fcc454;font-weight:600;cursor:pointer}#copied{color:#2e7d32;font-size:12px}'
+    '.mfoot{display:flex;align-items:center;gap:12px;margin-top:10px}.mfoot button{padding:9px 16px;border-radius:8px;border:none;background:#1b1b1b;color:#fcc454;font-weight:600;cursor:pointer}#copied{color:#2e7d32;font-size:12px}'+
+    /* Solo su mobile reale (larghezza stretta O puntatore "grossolano" = touch): Safari iOS apre
+       automaticamente lo zoom quando il focus va su un campo con font-size<16px, e lo zoom resta
+       attivo (zoomato()===true nel motore del sito) finche' l'utente non lo annulla manualmente -
+       aggravando bug come quello del file-picker "morto" (vedi commit precedente). Il selettore
+       e' con #drawer (id, specificita' massima nel pannello) apposta per vincere senza bisogno di
+       !important su TUTTI i campi focusabili esistenti (.postertool-row, #search input, .num,
+       .hex, .tbox, .fraginput, #csv, #cat/#model), incluso qualunque campo futuro - escludendo
+       solo i tipi che non aprono mai la tastiera/lo zoom (checkbox, range, color, file). Su
+       desktop e nel simulatore del pannello stesso (puntatore fine, larghezza piena) resta
+       tutto com'e' oggi: nessuna riga esistente qui sopra viene toccata. */
+    '@media (max-width:767px),(pointer:coarse){'+
+      '#drawer input:not([type=checkbox]):not([type=range]):not([type=color]):not([type=file]),#drawer textarea,#drawer select{font-size:16px}'+
+    '}'
   ); }
 
   function applyTextLive(){
