@@ -1997,7 +1997,23 @@ requestAnimationFrame(riposiziona);
     panel.style.scrollBehavior='auto'; panel.scrollTop=top;
     requestAnimationFrame(()=>{ panel.style.scrollBehavior=''; });
   }
-  function basePos(){ return -correntePanel * window.innerWidth; }
+  /* Legge la geometria REALE renderizzata (getBoundingClientRect) invece di ricalcolare da
+     window.innerWidth*correntePanel - stessa filosofia gia' usata per le scene (scrollTop da
+     offsetTop reale, non da innerHeight*indice). La differenza tra il rect del pannello e quello
+     dello stage e' invariante rispetto al transform ATTUALMENTE applicato allo stage (il
+     transform sposta stage e figli insieme, quindi la differenza resta quella del layout flex
+     "naturale") - nessun bisogno di annullare/parsare il transform corrente. Nel caso stabile
+     (nessun bug in corso) il risultato coincide esattamente con la vecchia formula, perche'
+     window.innerWidth e la larghezza renderizzata del pannello (100vw) sono la stessa cosa;
+     la differenza emerge solo nei casi limite in cui le API di viewport sono transitoriamente
+     disallineate dal rendering reale di Safari (es. subito dopo un pinch spinto all'estremo
+     durante una rotazione) - casi che nessun trucco lato JS sullo zoom nativo puo' eliminare
+     del tutto, quindi la posizione va ancorata a quello che il browser ha DAVVERO disegnato. */
+  function basePos(){
+    const panel = panels[correntePanel];
+    if(!panel) return -correntePanel * window.innerWidth;   // fallback di sicurezza, non dovrebbe mai servire
+    return -(panel.getBoundingClientRect().left - stage.getBoundingClientRect().left);
+  }
   function posiziona(px){ stage.style.transform='translateX('+px+'px)'; }
 
   let bloccoPannello=false;
@@ -2249,6 +2265,38 @@ requestAnimationFrame(riposiziona);
      il layout "rotto/disallineato" segnalato, che si "sistemava" solo quando il gesto finiva e un
      reflow() successivo (da resize/vv-debounced) applicava finalmente la correzione. */
   let stageNascostaPerRotazione=false;
+  /* Rete di sicurezza MINIMA (un solo colpo, non un polling continuo): Safari puo' restare con un
+     residuo di zoom nativo "sporco" per un po' anche dopo forzaResetZoomNativo() - non e' qualcosa
+     che un trucco lato JS possa eliminare al 100%, e inseguirlo non e' piu' l'obiettivo. Quello che
+     invece dipende da noi e' che il sistema di pannelli resti allineato alla geometria REALE anche
+     se Safari e' ancora "sporco": un singolo ricontrollo qualche centinaio di ms dopo il reveal,
+     che si limita a verificare se la posizione attuale coincide con basePos() (ora calcolato da
+     geometria reale, vedi sopra) e la corregge silenziosamente se non coincide. Rispetta lo stesso
+     guard zoomato()||viewportInstabile() usato ovunque: se nel frattempo e' partito un nuovo gesto
+     vero, non tocca nulla (i meccanismi esistenti - reflowDeb - gestiranno la correzione quando il
+     gesto finisce), evitando di sovrascrivere un reflow legittimo in corso. */
+  let timerRicontrolloAllineamento=null;
+  function pianificaRicontrolloAllineamento(){
+    clearTimeout(timerRicontrolloAllineamento);
+    timerRicontrolloAllineamento=setTimeout(()=>{
+      if(zoomato() || viewportInstabile()){
+        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'RICONTROLLO-ALLINEAMENTO-SALTATO', motivo:`nuovo-gesto-in-corso zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
+        return;
+      }
+      const atteso=basePos();
+      const m=/translateX\((-?[\d.]+)px\)/.exec(stage.style.transform);
+      const attuale=m?parseFloat(m[1]):NaN;
+      if(Math.abs(atteso-attuale)>0.5){
+        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'RICONTROLLO-ALLINEAMENTO-CORRETTO', motivo:`atteso=${atteso} attuale=${attuale}`, durataMs:0 });
+        const t=stage.style.transition;
+        stage.style.transition='none';
+        posiziona(atteso);
+        requestAnimationFrame(()=>{ stage.style.transition=t; });
+      } else {
+        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'RICONTROLLO-ALLINEAMENTO-OK', motivo:`atteso=${atteso} attuale=${attuale}`, durataMs:0 });
+      }
+    }, 350);
+  }
   /* Durante l'animazione di rotazione, iOS genera touch-event fantasma (2 dita, nessun dito vero
      sullo schermo) che il motore di pinch-zoom NATIVO di Safari interpreta come un pinch reale -
      confermato da log+video reali: lo zoom nativo arriva a valori estremi in entrambe le direzioni
@@ -2331,6 +2379,7 @@ requestAnimationFrame(riposiziona);
           const vv3 = window.visualViewport;
           vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} basePosOra=${basePos()} basePosAlloSchedule=${basePosAlloSchedule} transformAttuale=${stage.style.transform} transition=${stage.style.transition} innerWidth=${window.innerWidth} vvScale=${vv3?vv3.scale.toFixed(3):'?'} vvOffsetLeft=${vv3?Math.round(vv3.offsetLeft):'?'} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
           stage.style.opacity = '';
+          pianificaRicontrolloAllineamento();
         });
       }); });
     }
