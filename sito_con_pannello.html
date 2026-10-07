@@ -2260,12 +2260,17 @@ requestAnimationFrame(riposiziona);
      scatti (incerto/rischioso): lo correggiamo a cose fatte con lo stesso trucco che un pinch
      manuale dell'utente produce come effetto collaterale - forzare per un istante
      maximum-scale=1.0 sul meta viewport, che azzera qualunque zoom nativo residuo. */
-  function forzaResetZoomNativo(){
+  function forzaResetZoomNativo(onCompletato){
     /* Solo maximum-scale limiterebbe lo zoom nativo dall'alto, ma non correggerebbe l'estremo
        "indietro" visto nel video (vvScale<1, pagina rimpicciolita a card fluttuante): serve
        vincolare lo zoom nativo a 1.0 anche dal basso con minimum-scale, cosi' il browser e'
-       forzato a riportare la scala a 1.0 in entrambe le direzioni, non solo verso il basso. */
-    const vpMeta=document.querySelector('meta[name="viewport"]'); if(!vpMeta) return;
+       forzato a riportare la scala a 1.0 in entrambe le direzioni, non solo verso il basso.
+       onCompletato: chiamato SOLO dopo che il meta-viewport e' stato ripristinato al valore
+       originale (2 rAF dopo) - confermato da log reale che senza aspettare questo, il reveal
+       dello stage (STAGE-REVEAL) partiva nello stesso tick sincrono di questa funzione, cioe'
+       MENTRE il meta-viewport aveva ancora min/max-scale=1.0 applicato: la pagina diventava
+       visibile prima che Safari avesse finito di riassestare lo zoom nativo. */
+    const vpMeta=document.querySelector('meta[name="viewport"]'); if(!vpMeta){ if(onCompletato) onCompletato(); return; }
     const originale=vpMeta.getAttribute('content');
     const vv0=window.visualViewport;
     vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ZOOM-NATIVO-RESET-PRIMA', motivo:`metaOriginale=${originale} vvScale=${vv0?vv0.scale.toFixed(3):'?'}`, durataMs:0 });
@@ -2278,6 +2283,7 @@ requestAnimationFrame(riposiziona);
       requestAnimationFrame(()=>{
         const vv2=window.visualViewport;
         vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ZOOM-NATIVO-RESET-DOPO', motivo:`metaRipristinato=${vpMeta.getAttribute('content')} vvScale=${vv2?vv2.scale.toFixed(3):'?'}`, durataMs:0 });
+        if(onCompletato) onCompletato();
       });
     });
   }
@@ -2316,9 +2322,16 @@ requestAnimationFrame(riposiziona);
           return;
         }
         stageNascostaPerRotazione=false;
-        forzaResetZoomNativo();
-        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} basePosOra=${basePos()} basePosAlloSchedule=${basePosAlloSchedule} transformAttuale=${stage.style.transform} transition=${stage.style.transition} innerWidth=${window.innerWidth} vvScale=${vv2?vv2.scale.toFixed(3):'?'} vvOffsetLeft=${vv2?Math.round(vv2.offsetLeft):'?'} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
-        stage.style.opacity = '';
+        /* il reveal (STAGE-REVEAL + opacity) parte SOLO dentro onCompletato, cioe' dopo che
+           forzaResetZoomNativo() ha finito anche il suo ripristino del meta-viewport (2 rAF
+           interni) - prima il reveal partiva nello stesso tick sincrono di questa chiamata,
+           cioe' MENTRE il meta-viewport aveva ancora min/max-scale=1.0 applicato (confermato
+           da log reale: STAGE-REVEAL arrivava prima di ZOOM-NATIVO-RESET-DURANTE/DOPO). */
+        forzaResetZoomNativo(()=>{
+          const vv3 = window.visualViewport;
+          vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} basePosOra=${basePos()} basePosAlloSchedule=${basePosAlloSchedule} transformAttuale=${stage.style.transform} transition=${stage.style.transition} innerWidth=${window.innerWidth} vvScale=${vv3?vv3.scale.toFixed(3):'?'} vvOffsetLeft=${vv3?Math.round(vv3.offsetLeft):'?'} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
+          stage.style.opacity = '';
+        });
       }); });
     }
   }
