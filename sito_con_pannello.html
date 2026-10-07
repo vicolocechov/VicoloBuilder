@@ -2289,12 +2289,23 @@ requestAnimationFrame(riposiziona);
     if(s[correnteScena[correntePanel]]) panels[correntePanel].scrollTop=s[correnteScena[correntePanel]].offsetTop;
     requestAnimationFrame(()=>{ stage.style.transition = t; requestAnimationFrame(aggiornaColoreHeader); });
     if(stageNascostaPerRotazione){
-      stageNascostaPerRotazione=false;
-      forzaResetZoomNativo();
       const panelIdAlReveal = panelIds[correntePanel] || '?';
       const basePosAlloSchedule = basePos();
       requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
         const vv2 = window.visualViewport;
+        /* ricontrolla QUI, al momento vero del reveal (2 rAF dopo la programmazione) - non basta
+           che la pagina fosse stabile quando reflow() e' partito: nella finestra di questi 2
+           fotogrammi puo' essersi infilato un nuovo pinch vero (confermato da log reale: reveal
+           scattato con zoomato=true, vvScale=3, basePos ormai diverso da quello calcolato alla
+           programmazione) - in quel caso non rivelare ancora e NON consumare il flag: un prossimo
+           reflow() riuscito (richiamato naturalmente da resize/vv-debounced quando il nuovo gesto
+           finisce) ritrovera' stageNascostaPerRotazione ancora true e riprovera' da capo. */
+        if(zoomato() || viewportInstabile()){
+          vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL-POSTICIPATO', motivo:`nuovo-gesto-durante-i-2-rAF correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} vvScale=${vv2?vv2.scale.toFixed(3):'?'} vvOffsetLeft=${vv2?Math.round(vv2.offsetLeft):'?'}`, durataMs:0 });
+          return;
+        }
+        stageNascostaPerRotazione=false;
+        forzaResetZoomNativo();
         vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} basePosOra=${basePos()} basePosAlloSchedule=${basePosAlloSchedule} transformAttuale=${stage.style.transform} transition=${stage.style.transition} innerWidth=${window.innerWidth} vvScale=${vv2?vv2.scale.toFixed(3):'?'} vvOffsetLeft=${vv2?Math.round(vv2.offsetLeft):'?'} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
         stage.style.opacity = '';
       }); });
