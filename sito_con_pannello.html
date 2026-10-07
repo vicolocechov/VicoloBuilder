@@ -2267,8 +2267,19 @@ requestAnimationFrame(riposiziona);
        forzato a riportare la scala a 1.0 in entrambe le direzioni, non solo verso il basso. */
     const vpMeta=document.querySelector('meta[name="viewport"]'); if(!vpMeta) return;
     const originale=vpMeta.getAttribute('content');
+    const vv0=window.visualViewport;
+    vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ZOOM-NATIVO-RESET-PRIMA', motivo:`metaOriginale=${originale} vvScale=${vv0?vv0.scale.toFixed(3):'?'}`, durataMs:0 });
     vpMeta.setAttribute('content', originale+', minimum-scale=1.0, maximum-scale=1.0');
-    requestAnimationFrame(()=>{ vpMeta.setAttribute('content', originale); });
+    const metaTemporaneo=vpMeta.getAttribute('content');
+    requestAnimationFrame(()=>{
+      const vv1=window.visualViewport;
+      vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ZOOM-NATIVO-RESET-DURANTE', motivo:`metaTemporaneo=${metaTemporaneo} vvScale=${vv1?vv1.scale.toFixed(3):'?'}`, durataMs:0 });
+      vpMeta.setAttribute('content', originale);
+      requestAnimationFrame(()=>{
+        const vv2=window.visualViewport;
+        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ZOOM-NATIVO-RESET-DOPO', motivo:`metaRipristinato=${vpMeta.getAttribute('content')} vvScale=${vv2?vv2.scale.toFixed(3):'?'}`, durataMs:0 });
+      });
+    });
   }
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
