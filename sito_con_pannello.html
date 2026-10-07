@@ -2287,7 +2287,13 @@ requestAnimationFrame(riposiziona);
     if(stageNascostaPerRotazione){
       stageNascostaPerRotazione=false;
       forzaResetZoomNativo();
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
+      const panelIdAlReveal = panelIds[correntePanel] || '?';
+      const basePosAlloSchedule = basePos();
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+        const vv2 = window.visualViewport;
+        vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'STAGE-REVEAL', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) panelAlloSchedule=${panelIdAlReveal} basePosOra=${basePos()} basePosAlloSchedule=${basePosAlloSchedule} transformAttuale=${stage.style.transform} transition=${stage.style.transition} innerWidth=${window.innerWidth} vvScale=${vv2?vv2.scale.toFixed(3):'?'} vvOffsetLeft=${vv2?Math.round(vv2.offsetLeft):'?'} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()}`, durataMs:0 });
+        stage.style.opacity = '';
+      }); });
     }
   }
   /* stesso motivo del debounce su riposiziona() (vedi sopra): senza, una raffica di resize/
