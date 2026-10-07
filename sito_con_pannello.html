@@ -2038,6 +2038,13 @@ requestAnimationFrame(riposiziona);
 
   /* ---- click su qualunque link #ancora: naviga al pannello giusto, ed eventualmente alla slide giusta dentro ---- */
   document.addEventListener('click', e=>{
+    /* Mai intercettare click dentro il pannello admin (shadow DOM #vc-admin-host): altrimenti un
+       click li' dentro - es. su un input[type=file] "Scegli file" - puo' essere annullato da
+       preventDefault() qui sotto solo perche' pinchAttivoORecente e' vero (es. per l'autozoom di
+       iOS su un campo con font-size<16px), bloccando il file-picker nativo senza nessun errore
+       visibile: il bottone sembra "morto". Nessun altro codice di questo motore deve essere
+       toccato per risolverlo - basta non intercettare qui i click che non lo riguardano. */
+    if(fuoriDalMotore(e.target)) return;
     if(pinchAttivoORecente){
       if(window.__vcTouchLog){ const t=e.target.closest('a,button'); window.__vcTouchLog.push({ t:Date.now(), panel:'-', esito:'CLICK-SOPPRESSO', motivo:`bersaglio=${t?(t.tagName+(t.getAttribute('href')?'['+t.getAttribute('href')+']':'')):'?'}`, durataMs:0 }); if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush(); }
       e.preventDefault(); e.stopPropagation(); return;
