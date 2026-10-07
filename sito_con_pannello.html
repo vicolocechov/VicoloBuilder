@@ -1939,9 +1939,10 @@ requestAnimationFrame(riposiziona);
      reali non mostra mai la chiamata corrispondente). Soppresso qui: qualunque click che arrivi
      durante o poco dopo un gesto con 2+ dita/zoom attivo viene ignorato - un tap reale a un dito
      non puo' mai coincidere con quella finestra. */
-  let pinchAttivoORecente=false, pinchClearId=null;
+  let pinchAttivoORecente=false, pinchClearId=null, ultimoPinchT=0;
   function segnalaPinch(){
     pinchAttivoORecente=true;
+    ultimoPinchT=performance.now();
     clearTimeout(pinchClearId);
     pinchClearId=setTimeout(()=>{ pinchAttivoORecente=false; }, 700);
   }
@@ -2129,6 +2130,9 @@ requestAnimationFrame(riposiziona);
        blocca anche l'avvio di un nuovo gesto a un dito: un tocco pulito e intenzionale dell'utente
        non capita mai a ridosso di un pinch appena concluso. */
     uno=(e.touches.length===1 && !zoomato() && !pinchAttivoORecente);
+    if(e.touches.length===1){
+      vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:(stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)')), esito:'TOUCHSTART-1DITO', motivo:`uno=${uno} zoomato=${zoomato()} pinchAttivoORecente=${pinchAttivoORecente} msDaUltimoPinch=${ultimoPinchT?Math.round(performance.now()-ultimoPinchT):'mai'}`, durataMs:0 });
+    }
     if(uno){
       tx0=e.touches[0].clientX; ty0=e.touches[0].clientY; tmoved=false; bailReason='';
       origineGesto = (stage.contains(e.target)?'stage':(header.contains(e.target)?'header':'document(altro)'));
