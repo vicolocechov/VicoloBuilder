@@ -2273,11 +2273,11 @@ requestAnimationFrame(riposiziona);
     if(!forza && (zoomato() || viewportInstabile())){
       reflowInSospesoPerZoom=true;
       const motivoSalto=zoomato()?'zoom-attivo':'viewport-instabile';
-      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:`REFLOW-SALTATO(${motivoSalto})`, motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'}`, durataMs:0 });
+      vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:`REFLOW-SALTATO(${motivoSalto})`, motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
       return;
     }
     reflowInSospesoPerZoom=false;
-    vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima}`, durataMs:0 });
+    vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
     const t = stage.style.transition;
     stage.style.transition = 'none';
     posiziona(basePos());
@@ -2325,6 +2325,7 @@ requestAnimationFrame(riposiziona);
        ripristinare, lasciando la transizione disattivata per sempre dopo la rotazione. */
     stage.style.opacity = '0';
     stageNascostaPerRotazione=true;
+    vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ORIENTATIONCHANGE-EVENTO', motivo:`innerWidth=${window.innerWidth} innerHeight=${window.innerHeight} stage-nascosta-impostata=true`, durataMs:0 });
     setTimeout(()=>{
       /* NIENTE forza=true qui: durante un pinch-zoom ancora attivo window.innerWidth/vvWidth
          sono distorti dallo zoom (es. 195px invece della vera larghezza schermo) esattamente come
