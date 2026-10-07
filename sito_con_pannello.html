@@ -2245,6 +2245,27 @@ requestAnimationFrame(riposiziona);
      il layout "rotto/disallineato" segnalato, che si "sistemava" solo quando il gesto finiva e un
      reflow() successivo (da resize/vv-debounced) applicava finalmente la correzione. */
   let stageNascostaPerRotazione=false;
+  /* Durante l'animazione di rotazione, iOS genera touch-event fantasma (2 dita, nessun dito vero
+     sullo schermo) che il motore di pinch-zoom NATIVO di Safari interpreta come un pinch reale -
+     confermato da log+video reali: lo zoom nativo arriva a valori estremi in entrambe le direzioni
+     (pagina enormemente ingrandita, o rimpicciolita a "card" fluttuante). Il nostro calcolo
+     (basePos/transform) e' gia' corretto a quel punto (il guard zoomato()/viewportInstabile() lo
+     garantisce, vedi sopra) - il problema e' SOLO lo zoom nativo del browser, che resta "sporco"
+     anche quando i nostri valori sono gia' tornati stabili. Siccome le dita fantasma non generano
+     un touchstart pulito intercettabile in anticipo, non proviamo a IMPEDIRE che lo zoom nativo
+     scatti (incerto/rischioso): lo correggiamo a cose fatte con lo stesso trucco che un pinch
+     manuale dell'utente produce come effetto collaterale - forzare per un istante
+     maximum-scale=1.0 sul meta viewport, che azzera qualunque zoom nativo residuo. */
+  function forzaResetZoomNativo(){
+    /* Solo maximum-scale limiterebbe lo zoom nativo dall'alto, ma non correggerebbe l'estremo
+       "indietro" visto nel video (vvScale<1, pagina rimpicciolita a card fluttuante): serve
+       vincolare lo zoom nativo a 1.0 anche dal basso con minimum-scale, cosi' il browser e'
+       forzato a riportare la scala a 1.0 in entrambe le direzioni, non solo verso il basso. */
+    const vpMeta=document.querySelector('meta[name="viewport"]'); if(!vpMeta) return;
+    const originale=vpMeta.getAttribute('content');
+    vpMeta.setAttribute('content', originale+', minimum-scale=1.0, maximum-scale=1.0');
+    requestAnimationFrame(()=>{ vpMeta.setAttribute('content', originale); });
+  }
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
@@ -2265,6 +2286,7 @@ requestAnimationFrame(riposiziona);
     requestAnimationFrame(()=>{ stage.style.transition = t; requestAnimationFrame(aggiornaColoreHeader); });
     if(stageNascostaPerRotazione){
       stageNascostaPerRotazione=false;
+      forzaResetZoomNativo();
       requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ stage.style.opacity = ''; }); });
     }
   }
