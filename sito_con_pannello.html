@@ -2104,12 +2104,45 @@ requestAnimationFrame(riposiziona);
      Registra ogni gesto in window.__vcTouchLog (ring buffer), letto dal pannellino "🐞" in fondo
      alla pagina. Solo osservazione: non chiama mai preventDefault/stopPropagation, non altera in
      alcun modo la logica di swipe sopra - va rimosso una volta chiuso il bug. */
+  /* Persistenza in sessionStorage: Safari puo' ricaricare la pagina per pressione di memoria
+     (osservato con la libreria foto nel file-picker nativo, pagina pesante con molte immagini) -
+     senza persistenza il log in-memory sparirebbe con il reload, lasciando un buco esattamente
+     nel momento che serve di piu' capire. sessionStorage sopravvive al reload della stessa
+     scheda (non alla sua chiusura): al prossimo avvio il log precedente si ricongiunge con quello
+     nuovo invece di perdersi. */
+  const VC_LOG_STORAGE_KEY='vc-debug-log-v1', VC_LOG_MAX=200;
+  (function(){
+    try{
+      const raw=sessionStorage.getItem(VC_LOG_STORAGE_KEY);
+      if(raw){ const prev=JSON.parse(raw); if(Array.isArray(prev)) window.__vcTouchLog=prev; }
+    }catch(e){}
+  })();
   window.__vcTouchLog = window.__vcTouchLog || [];
+  /* La scrittura su sessionStorage e' raggruppata (al massimo una ogni 500ms), MAI sincrona
+     dentro vcLog() stesso: durante un pinch/rotazione le righe RAW-touchmove/EVENTO-GREZZO
+     arrivano a centinaia al secondo, e un JSON.stringify+setItem di ~200 voci a ogni singola
+     riga potrebbe interferire col motore touch proprio nel momento piu' delicato (lo stesso
+     che questo log serve a diagnosticare). Scrittura immediata solo su pagehide/visibilitychange
+     (hidden), i momenti in cui un reload e' imminente e non possiamo aspettare il timer. */
+  let vcLogSaveTimer=null;
+  function vcLogSalvaOra(){
+    try{ sessionStorage.setItem(VC_LOG_STORAGE_KEY, JSON.stringify(window.__vcTouchLog)); }catch(e){}
+  }
+  function vcLogSchedulaSalvataggio(){
+    if(vcLogSaveTimer) return; // gia' programmato: il prossimo giro scrive comunque lo stato piu' recente
+    vcLogSaveTimer=setTimeout(()=>{ vcLogSaveTimer=null; vcLogSalvaOra(); }, 500);
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') vcLogSalvaOra(); });
+  window.addEventListener('pagehide', vcLogSalvaOra);
   function vcLog(o){
     const log = window.__vcTouchLog;
-    log.push(o); if(log.length>120) log.shift();
+    log.push(o); if(log.length>VC_LOG_MAX) log.shift();
+    vcLogSchedulaSalvataggio();
     if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush(o);
   }
+  /* esposto cosi' vc-admin-panel.js (stessa pagina, script separato) puo' loggare nello stesso
+     ring buffer/visualizzatore senza duplicare qui la logica di cap+persistenza. */
+  window.__vcLog = vcLog;
   function taOf(el){ try{ return getComputedStyle(el).touchAction; }catch(e){ return '?'; } }
 
   /* Ascolto su document, non solo su stage+header: il fix dell'header (v. commit precedente) ha
@@ -2525,7 +2558,7 @@ requestAnimationFrame(riposiziona);
     try{ document.execCommand('copy'); done(); }catch(e){}
     document.body.removeChild(ta);
   }
-  clearBtn.addEventListener('click', ()=>{ window.__vcTouchLog=[]; render(); });
+  clearBtn.addEventListener('click', ()=>{ window.__vcTouchLog=[]; try{ sessionStorage.removeItem(VC_LOG_STORAGE_KEY); }catch(e){} render(); });
 })();
 
 /* ===== CORSI · Bivio (#s3-slide1): accordion mobile verticale — tap sulla testa apre/chiude
@@ -2589,7 +2622,7 @@ requestAnimationFrame(riposiziona);
     b.className='s4-slide2-poster s4-slide2-poster'+id; b.type='button'; b.dataset.show=id;
     const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=d.cover||(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
     b.appendChild(im);
-    b.onclick=()=>{ lastOpener=b; openShow(id); };
+    b.onclick=()=>{ lastOpener=b; openShow(id, 'clickLocandina'); };
     slot.appendChild(b);
     return slot;
   }
@@ -2630,7 +2663,7 @@ requestAnimationFrame(riposiziona);
     [...nav.children].forEach((d,k)=>d.classList.toggle('is-active', k===gi));
   }
 
-  function openShow(id){
+  function openShow(id, motivo){
     const d=data[id]; if(!d) return;
     openId=id;
     track.innerHTML=''; nav.innerHTML='';
@@ -2655,9 +2688,9 @@ requestAnimationFrame(riposiziona);
        quindi finche' la scheda e' aperta l'header non deve intercettare i click
        (altrimenti su schermi piu' bassi copre la X e "non si clicca") */
     document.body.classList.add('s4-poster-modal-open');
-    notifyPosterOpenChanged();
+    notifyPosterOpenChanged(motivo||'openShow(ignoto)');
   }
-  function closeShow(){
+  function closeShow(motivo){
     /* sposta il focus FUORI dalla scheda prima di nasconderla con aria-hidden,
        altrimenti il browser blocca aria-hidden su un elemento con un discendente
        che ha ancora il focus (es. il bottone di chiusura appena cliccato) */
@@ -2668,14 +2701,15 @@ requestAnimationFrame(riposiziona);
     overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
     document.body.classList.remove('s4-poster-modal-open');
     openId=null;
-    notifyPosterOpenChanged();
+    notifyPosterOpenChanged(motivo||'closeShow(ignoto)');
   }
 
   /* avvisa il pannello (che sia nella stessa pagina, in "Modifica diretta", o nel
      frame padre se questa pagina gira dentro l'iframe di anteprima dispositivo)
      che si e' aperta/chiusa una scheda spettacolo, cosi' puo' mostrare/nascondere
      subito il tool "Modifica locandina" per quella scheda. */
-  function notifyPosterOpenChanged(){
+  function notifyPosterOpenChanged(motivo){
+    try{ if(window.__vcLog) window.__vcLog({ t:Date.now(), panel:'sito', origine:'scheda-spettacolo', esito:'NOTIFY-POSTER-OPEN-CHANGED', motivo:'openId='+openId+' causa='+(motivo||'ignota'), durataMs:0 }); }catch(eLog){}
     try{ window.__vcAdminPosterOpenChanged && window.__vcAdminPosterOpenChanged(openId); }catch(e){}
     try{ if(window!==window.top) window.parent.postMessage({__vc:'posteropen', id:openId}, '*'); }catch(e){}
   }
@@ -2743,7 +2777,7 @@ requestAnimationFrame(riposiziona);
       activeMonth=m; activePage=pages(m).length-1;
     }
     render(activeMonth);
-    if(openId===id) openShow(id);
+    if(openId===id) openShow(id, 'updatePoster(riapre-stessa-scheda-dopo-modifica)');
     if(!opts.silent){
       const entry=savedRef[id];
       if(entry) Object.assign(entry, info||{}, {month:m});
@@ -2761,7 +2795,7 @@ requestAnimationFrame(riposiziona);
     byMonth[d.month]=(byMonth[d.month]||[]).filter(x=>x!==id);
     delete data[id];
     removePosterCss(Number(id));
-    if(openId===id) closeShow();
+    if(openId===id) closeShow('deletePoster');
     activePage=0;
     render(activeMonth);
     if(!opts.silent){
@@ -2782,9 +2816,9 @@ requestAnimationFrame(riposiziona);
     activePage=0;
     render(activeMonth);
   });
-  closeBtn.onclick=closeShow;
-  overlay.onclick=e=>{ if(e.target===overlay) closeShow(); };
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.classList.contains('open')) closeShow(); });
+  closeBtn.onclick=()=>closeShow('clickBottoneChiudi');
+  overlay.onclick=e=>{ if(e.target===overlay) closeShow('clickSfondoOverlay'); };
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.classList.contains('open')) closeShow('tastoEscape'); });
   document.getElementById('s4Slide2GalleryPrev').onclick=()=>setG(gi-1);
   document.getElementById('s4Slide2GalleryNext').onclick=()=>setG(gi+1);
 
