@@ -1285,7 +1285,15 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-page-dots{display:flex;justify-content:center;gap:7px;margin:8px 0 0}
 .s4-slide2-page-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent;padding:0;cursor:pointer}
 .s4-slide2-page-dot.is-active{background:#fff}
-.s4-slide2-overlay{position:absolute;inset:0;background:#1b1b1b;display:grid;place-items:center;padding:clamp(24px,5vw,70px);opacity:0;visibility:hidden;pointer-events:none;z-index:1002}
+/* position:fixed (non piu' absolute): spostato su <body> via JS SOLO mentre aperto (vedi
+   overlayVaiSuBody()/overlayTornaAlPosto() accanto alla dichiarazione di overlay, richiamate da
+   openShow()/closeShow()) proprio perche' deve ancorarsi al viewport reale, non al box di
+   #vcStage (che ha un transform e diventerebbe altrimenti il contenitore anche per un fixed
+   lasciato al suo interno - verificato: resterebbe spostato della stessa traslazione orizzontale
+   del pannello corrente). Il padding aggiunge le safe-area (stesso schema --vc-safe-* usato nel
+   resto del sito) sopra al respiro visivo gia' presente (clamp), per non finire sotto notch/
+   home-indicator ora che l'overlay copre davvero tutto lo schermo. */
+.s4-slide2-overlay{position:fixed;inset:0;background:#1b1b1b;display:grid;place-items:center;padding:clamp(24px,5vw,70px);padding-top:calc(clamp(24px,5vw,70px) + var(--vc-safe-top));padding-bottom:calc(clamp(24px,5vw,70px) + var(--vc-safe-bottom));padding-left:calc(clamp(24px,5vw,70px) + var(--vc-safe-left));padding-right:calc(clamp(24px,5vw,70px) + var(--vc-safe-right));opacity:0;visibility:hidden;pointer-events:none;z-index:1002}
 .s4-slide2-overlay.open{opacity:1;visibility:visible;pointer-events:auto}
 /* justify-content:flex-start (non center): con "center" su un contenitore flex che scrolla,
    quando il contenuto supera max-height il browser lo taglia simmetricamente sopra E sotto
@@ -1332,7 +1340,7 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:1px solid rgba(255,255,255,.28);background:rgba(27,27,27,.82);color:#fff;border-radius:50%;font-size:26px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s}
 .s4-slide2-close:hover{background:var(--sede);color:#1b1b1b;transform:scale(1.06)}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
-@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:8px 11px;font-size:11px}.s4-slide2-detail-btn{padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
+@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:8px 11px;font-size:11px}.s4-slide2-detail-btn{padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
 /* Mobile ORIZZONTALE (telefono ruotato: pochissima altezza disponibile) - qui la priorita' e'
    che TUTTO resti visibile/proporzionato senza sforare, non ingrandire come in verticale */
 @media (orientation:landscape) and (max-height:550px){#s4-slide2{padding-top:calc(var(--header-h,48px) + 4px);padding-bottom:6px}.s4-slide2-eyebrow{margin-bottom:1px}.s4-slide2-titolo{font-size:calc(clamp(18px,3.6vw,24px) * var(--s4-slide2-titolo-scale,1));margin-top:1px}
@@ -1355,7 +1363,7 @@ html.sede-monte #s3-slide1{display:none}
    e' piu' alta di un solo schermo - frequente in orizzontale - centrare la scheda rispetto a
    TUTTA la sezione la spinge fuori dalla porzione di schermo davvero visibile. Allineandola
    in cima resta quasi sempre dentro lo schermo attuale. */
-.s4-slide2-overlay{padding:8px;padding-top:48px;align-items:flex-start}.s4-slide2-detail{max-height:calc(100svh - 60px);gap:10px;padding:2px}.s4-slide2-detail-row{gap:14px}.s4-slide2-detail-gallery{flex:0 0 34%}.s4-slide2-detail-gallery img{max-height:40vh}.s4-slide2-detail-titolo{font-size:calc(clamp(22px,5vw,34px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}.s4-slide2-detail-info{gap:6px;margin:10px 0 12px}.s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}.s4-slide2-detail-btn{padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin-top:0}.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
+.s4-slide2-overlay{padding:8px;padding-top:calc(48px + var(--vc-safe-top));padding-bottom:calc(8px + var(--vc-safe-bottom));padding-left:calc(8px + var(--vc-safe-left));padding-right:calc(8px + var(--vc-safe-right));align-items:flex-start}.s4-slide2-detail{max-height:calc(100svh - 60px);gap:10px;padding:2px}.s4-slide2-detail-row{gap:14px}.s4-slide2-detail-gallery{flex:0 0 34%}.s4-slide2-detail-gallery img{max-height:40vh}.s4-slide2-detail-titolo{font-size:calc(clamp(22px,5vw,34px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}.s4-slide2-detail-info{gap:6px;margin:10px 0 12px}.s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}.s4-slide2-detail-btn{padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin-top:0}.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
@@ -2069,7 +2077,13 @@ requestAnimationFrame(riposiziona);
   });
 
   /* ---- tastiera: sinistra/destra = sezione, su/giù = slide dentro la sezione ---- */
+  /* schedaAperta(): con la scheda-spettacolo aperta (ora fuori da #vcStage, vedi "document.body.
+     appendChild(overlay)" piu' sotto) tastiera e rotella non devono muovere la sezione sotto -
+     il touch lo evita gia' da tempo (onTouchStart/onTouchMove controllano schedaAperta()), questi
+     due mancavano: prima di questo fix frecce/PageUp-Down/rotella del mouse facevano scorrere il
+     pannello sotto mentre la scheda restava visibile sopra, invisibile a chi usa solo il dito. */
   addEventListener('keydown', e=>{
+    if(schedaAperta()) return;
     if(e.key==='ArrowRight'){ e.preventDefault(); stepPannello(1); }
     if(e.key==='ArrowLeft'){ e.preventDefault(); stepPannello(-1); }
     if(e.key==='ArrowDown'||e.key==='PageDown'){ e.preventDefault(); stepScena(1); }
@@ -2077,7 +2091,7 @@ requestAnimationFrame(riposiziona);
   });
 
   /* ---- rotellina: verticale = slide dentro la sezione ---- */
-  addEventListener('wheel', e=>{ e.preventDefault(); if(Math.abs(e.deltaY)<6) return; stepScena(e.deltaY>0?1:-1); }, {passive:false});
+  addEventListener('wheel', e=>{ if(schedaAperta()) return; e.preventDefault(); if(Math.abs(e.deltaY)<6) return; stepScena(e.deltaY>0?1:-1); }, {passive:false});
 
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
   let tx0=0,ty0=0,tmoved=false,uno=false,tStart0=0,scrollTopStart=0,bailReason='';
@@ -2606,6 +2620,20 @@ requestAnimationFrame(riposiziona);
   const tabs=[...document.querySelectorAll('.s4-slide2-month')], panels=[...document.querySelectorAll('.s4-slide2-month-panel')];
   if(!tabs.length) return;
   const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
+  /* Sposta l'overlay fuori da #vcStage, direttamente figlio di <body>, SOLO mentre e' aperto:
+     e' l'unico modo perche' position:fixed (vedi CSS) si ancori davvero al viewport, dato che
+     lo stage ha un transform - spostare il nodo gia' vivo (appendChild/insertBefore) non perde
+     listener/riferimenti, cambia solo dove si trova nel DOM. Memorizzati qui genitore e fratello
+     successivo originali (la posizione esatta nel markup, non solo "da qualche parte dentro la
+     scena") per poterlo rimettere al suo posto preciso alla chiusura - vedi overlayVaiSuBody()/
+     overlayTornaAlPosto() richiamate da openShow()/closeShow(). */
+  const overlayGenitoreOriginale=overlay.parentNode, overlayFratelloSuccessivoOriginale=overlay.nextSibling;
+  function overlayVaiSuBody(){ if(overlay.parentNode!==document.body) document.body.appendChild(overlay); }
+  function overlayTornaAlPosto(){
+    if(overlay.parentNode===overlayGenitoreOriginale) return;
+    if(overlayFratelloSuccessivoOriginale) overlayGenitoreOriginale.insertBefore(overlay, overlayFratelloSuccessivoOriginale);
+    else overlayGenitoreOriginale.appendChild(overlay);
+  }
   const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
   let lastOpener=null;
 
@@ -2665,6 +2693,7 @@ requestAnimationFrame(riposiziona);
 
   function openShow(id, motivo){
     const d=data[id]; if(!d) return;
+    overlayVaiSuBody();
     openId=id;
     track.innerHTML=''; nav.innerHTML='';
     const galleryImgs=d.cover?[d.cover, ...(d.gallery||[])]:(d.gallery||[]);
@@ -2700,6 +2729,7 @@ requestAnimationFrame(riposiziona);
     }
     overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true');
     document.body.classList.remove('s4-poster-modal-open');
+    overlayTornaAlPosto();
     openId=null;
     notifyPosterOpenChanged(motivo||'closeShow(ignoto)');
   }
