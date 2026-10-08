@@ -484,6 +484,7 @@
 
   var activeGroupKey = null;   // solo la slide corrente
   var follow = true;           // segui lo scroll
+  var ultimoActiveGroupKeyRenderizzato = null; // diagnostica temporanea: per sapere se renderBody() ha ricostruito a parita' di gruppo
 
   function loadOverrides(){ try{ var raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); }catch(e){} var o={}; ZONES.forEach(function(z){o[z.id]={};}); return o; }
   function saveOverrides(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }catch(e){} }
@@ -652,11 +653,11 @@
   function selectDevice(id){
     var d=findDevice(id); if(!d){ return; }
     currentDevice=id;
-    if(id==='live'){ currentZone='base'; closeStage(); renderNav(); renderBody(); applyLive(); return; }
+    if(id==='live'){ currentZone='base'; closeStage(); renderNav('selectDevice(live)'); renderBody('selectDevice(live)'); applyLive(); return; }
     var w=d.w, h=d.h; if(orientation==='landscape'){ var t=w; w=h; h=t; }
     currentZone=zoneForViewport(w,h);
     openStage(d,w,h);
-    renderNav(); renderBody(); applyLive();
+    renderNav('selectDevice('+id+')'); renderBody('selectDevice('+id+')'); applyLive();
   }
 
   function openStage(d,w,h){
@@ -690,6 +691,25 @@
   window.addEventListener('pageshow', function(e){ vcAdminLog('PAGESHOW', 'persisted='+e.persisted+' visibilityState='+document.visibilityState); });
   document.addEventListener('visibilitychange', function(){ vcAdminLog('VISIBILITYCHANGE', 'visibilityState='+document.visibilityState); });
   window.addEventListener('resize', function(){ var vv=window.visualViewport; vcAdminLog('RESIZE', 'innerWidth='+window.innerWidth+' innerHeight='+window.innerHeight+' vvHeight='+(vv?Math.round(vv.height):'?')); });
+  /* Marcatore di sessione per distinguere "renderBody() ha svuotato il campo" da "la pagina si
+     e' ricaricata mentre il picker era aperto": impostato al CLICK sull'input (non al change,
+     che non arriva mai se l'utente annulla il picker - per questo c'e' anche lo scadenza di
+     sicurezza a 60s, cosi' un picker annullato non lascia il marcatore per sempre), rimosso al
+     change o alla scadenza. sessionStorage sopravvive a un reload della STESSA scheda ma non
+     alla chiusura della scheda - se lo troviamo gia' presente all'avvio, la pagina e' stata
+     ricaricata (o il processo di Safari riavviato) mentre un picker era ancora aperto/pendente. */
+  var VC_ADMIN_PICKER_KEY='vc-admin-picker-open';
+  (function(){
+    try{
+      var pendente=sessionStorage.getItem(VC_ADMIN_PICKER_KEY);
+      if(pendente){ vcAdminLog('RELOAD-DURANTE-PICKER', 'marcatorePendenteAllAvvio='+pendente); sessionStorage.removeItem(VC_ADMIN_PICKER_KEY); }
+    }catch(e){}
+  })();
+  function marcaPickerAperto(etichetta){
+    try{ sessionStorage.setItem(VC_ADMIN_PICKER_KEY, etichetta+'|'+Date.now()); }catch(e){}
+    setTimeout(function(){ try{ sessionStorage.removeItem(VC_ADMIN_PICKER_KEY); }catch(e){} }, 60000);
+  }
+  function marcaPickerChiuso(){ try{ sessionStorage.removeItem(VC_ADMIN_PICKER_KEY); }catch(e){} }
   /* --vc-safe-* (vedi :root nel sito) e' l'unico modo per far vedere nell'iframe di anteprima
      l'area sicura REALE attorno al notch: env(safe-area-inset-*) non e' sovrascrivibile da CSS e
      in un iframe di un browser normale (nessun device reale sotto) vale comunque 0, quindi senza
@@ -761,7 +781,7 @@
     if(id===openPosterId) return;
     openPosterId=id;
     if(id){ activeGroupKey=groupKey(4,2); follow=false; try{ $('#followBtn').classList.remove('on'); }catch(e){} }
-    renderNav(); renderBody();
+    renderNav('onPosterOpenChanged('+id+')'); renderBody('onPosterOpenChanged('+id+')');
   }
   window.addEventListener('message', function(e){ var m=e.data; if(!m||!m.__vc) return;
     if(m.__vc==='inview') setActiveFromScroll(m.sec, m.slide);
@@ -772,9 +792,9 @@
   window.__vcAdminPosterOpenChanged=onPosterOpenChanged;
 
   $('#prev').addEventListener('change', function(e){ previewOn=e.target.checked; applyLocalPreview(); });
-  $('#q').addEventListener('input', function(){ renderBody(); });
-  $('#rescan').addEventListener('click', function(){ refreshVars(); renderNav(); renderBody(); syncFrame(); flash($('#rescan')); });
-  $('#resetzone').addEventListener('click', function(){ if(!confirm('Azzerare le modifiche della zona "'+zoneLabel(currentZone)+'"?')) return; overrides[currentZone]={}; saveOverrides(); applyLive(); renderBody(); });
+  $('#q').addEventListener('input', function(){ renderBody('ricercaInput(#q)'); });
+  $('#rescan').addEventListener('click', function(){ refreshVars(); renderNav('rescanClick'); renderBody('rescanClick'); syncFrame(); flash($('#rescan')); });
+  $('#resetzone').addEventListener('click', function(){ if(!confirm('Azzerare le modifiche della zona "'+zoneLabel(currentZone)+'"?')) return; overrides[currentZone]={}; saveOverrides(); applyLive(); renderBody('resetzoneClick'); });
   $('#pick').addEventListener('click', startPick);
   $('#exportCss').addEventListener('click', function(){ openExport(); });
   $('#exportFull').addEventListener('click', downloadFullSite);
@@ -812,10 +832,10 @@
   function buildTree(){ var tree={}; Object.keys(VARS).forEach(function(name){ var v=VARS[name], k=groupKey(v.sec,v.slide); (tree[k]=tree[k]||{sec:v.sec,slide:v.slide,fams:{}}); (tree[k].fams[v.family]=tree[k].fams[v.family]||[]).push({name:name,prop:v.prop}); }); return tree; }
   function sortedGroupKeys(tree){ function ord(s){ return s===0?999:s; } return Object.keys(tree).sort(function(a,b){ return (ord(tree[a].sec)-ord(tree[b].sec))||(tree[a].slide-tree[b].slide); }); }
 
-  function setActiveFromScroll(sec,slide){ var gk=groupKey(sec,slide); if(!follow) return; if(gk===activeGroupKey) return; vcAdminLog('SETACTIVEFROMSCROLL-CAMBIO-GRUPPO', 'da='+activeGroupKey+' a='+gk+' (renderBody() in arrivo, qualunque input[type=file] aperto verra\' ricreato vuoto)'); activeGroupKey=gk; renderNav(); renderBody(); }
-  function stepSlide(dir){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length) return; var i=keys.indexOf(activeGroupKey); if(i<0) i=0; i=Math.max(0,Math.min(keys.length-1,i+dir)); activeGroupKey=keys[i]; follow=false; $('#followBtn').classList.remove('on'); renderNav(); renderBody(); }
+  function setActiveFromScroll(sec,slide){ var gk=groupKey(sec,slide); if(!follow) return; if(gk===activeGroupKey) return; vcAdminLog('SETACTIVEFROMSCROLL-CAMBIO-GRUPPO', 'da='+activeGroupKey+' a='+gk+' (renderBody() in arrivo, qualunque input[type=file] aperto verra\' ricreato vuoto)'); activeGroupKey=gk; renderNav('setActiveFromScroll'); renderBody('setActiveFromScroll'); }
+  function stepSlide(dir){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length) return; var i=keys.indexOf(activeGroupKey); if(i<0) i=0; i=Math.max(0,Math.min(keys.length-1,i+dir)); activeGroupKey=keys[i]; follow=false; $('#followBtn').classList.remove('on'); renderNav('stepSlide('+dir+')'); renderBody('stepSlide('+dir+')'); }
 
-  function renderNav(){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length){ $('#curSlide').textContent='-'; return; } if(!activeGroupKey || keys.indexOf(activeGroupKey)<0) activeGroupKey=keys[0]; var g=tree[activeGroupKey]; $('#curSlide').textContent=groupLabel(g.sec,g.slide); }
+  function renderNav(chiamante){ vcAdminLog('RENDERNAV-CHIAMATO', 'chiamante='+(chiamante||'ignoto')); var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length){ $('#curSlide').textContent='-'; return; } if(!activeGroupKey || keys.indexOf(activeGroupKey)<0) activeGroupKey=keys[0]; var g=tree[activeGroupKey]; $('#curSlide').textContent=groupLabel(g.sec,g.slide); }
 
   /* ===================== TOOL "AGGIUNGI LOCANDINA" / "MODIFICA LOCANDINA" (Vicolo Off · Muro spettacoli) =====================
      Nessun dato/immagine inventato: tutto arriva da quello che l'admin scrive/carica qui.
@@ -923,6 +943,7 @@
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
     coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid);
+    coverInp.addEventListener('click', function(){ marcaPickerAperto('Copertina(Aggiungi):'+coverInp.dataset.vcid); });
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
@@ -931,6 +952,7 @@
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
     galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid);
+    galleryInp.addEventListener('click', function(){ marcaPickerAperto('Galleria(Aggiungi):'+galleryInp.dataset.vcid); });
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -972,6 +994,7 @@
     }
     coverInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(coverInp.files||[]);
+      marcaPickerChiuso();
       vcAdminLog('CHANGE-RICEVUTO', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
@@ -1003,6 +1026,7 @@
     }
     galleryInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(galleryInp.files||[]);
+      marcaPickerChiuso();
       vcAdminLog('CHANGE-RICEVUTO', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
@@ -1049,7 +1073,7 @@
         alert('Attenzione: la locandina e\' stata aggiunta ma NON e\' stato possibile salvarla (spazio di archiviazione del browser esaurito). Restera\' visibile solo in questa sessione: se ricarichi la pagina o riapri il sito da un altro dispositivo sparira\'. Elimina qualche locandina piu\' vecchia per liberare spazio, poi riprova.');
       }
       // la nuova locandina espone le proprie variabili di scala/posizione: le rileva subito
-      refreshVars(); renderNav(); renderBody(); syncFrame();
+      refreshVars(); renderNav('addPosterClick'); renderBody('addPosterClick'); syncFrame();
     });
     box.appendChild(btn);
 
@@ -1128,12 +1152,14 @@
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
     coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid);
+    coverInp.addEventListener('click', function(){ marcaPickerAperto('Copertina(Modifica):'+coverInp.dataset.vcid); });
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
     galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid);
+    galleryInp.addEventListener('click', function(){ marcaPickerAperto('Galleria(Modifica):'+galleryInp.dataset.vcid); });
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -1210,6 +1236,7 @@
     }
     coverInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(coverInp.files||[]);
+      marcaPickerChiuso();
       vcAdminLog('CHANGE-RICEVUTO', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
@@ -1241,6 +1268,7 @@
     }
     galleryInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(galleryInp.files||[]);
+      marcaPickerChiuso();
       vcAdminLog('CHANGE-RICEVUTO', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
@@ -1270,19 +1298,20 @@
       // stesso motivo delle altre azioni sulle locandine: in anteprima dispositivo il sito vero
       // e proprio vive in un iframe separato, va eliminata anche li'.
       try{ frame.contentWindow.postMessage({__vc:'deleteposter', id:id}, '*'); }catch(eDel2){}
-      refreshVars(); renderNav(); renderBody(); syncFrame();
+      refreshVars(); renderNav('deletePosterClick'); renderBody('deletePosterClick'); syncFrame();
     });
     box.appendChild(delBtn);
 
     return box;
   }
 
-  function renderBody(){
+  function renderBody(chiamante){
     var body=$('#body');
     try{
       var exInp=root.querySelector('.postertool-row input[type=file]');
-      vcAdminLog('RENDERBODY-CHIAMATO', 'inputFileEsistentePrimaDelWipe='+(exInp?exInp.dataset.vcid:'nessuno')+' activeGroupKey='+activeGroupKey+' openPosterId='+openPosterId);
+      vcAdminLog('RENDERBODY-CHIAMATO', 'chiamante='+(chiamante||'ignoto')+' inputFileEsistentePrimaDelWipe='+(exInp?exInp.dataset.vcid:'nessuno')+' activeGroupKeyInvariatoRispettoAllUltimoRender='+(activeGroupKey===ultimoActiveGroupKeyRenderizzato)+' activeGroupKey='+activeGroupKey+' openPosterId='+openPosterId);
     }catch(eLog){}
+    ultimoActiveGroupKeyRenderizzato=activeGroupKey;
     // memorizza quali elementi sono aperti e la posizione di scroll, per non richiudere/saltare
     var openSet={}; var prevScroll=0;
     try{ prevScroll=body.scrollTop; Array.prototype.forEach.call(root.querySelectorAll('.elem.open'), function(el){ var grp=el.closest('.grp'); var gk=grp?grp.dataset.gk:''; openSet[gk+'|'+el.dataset.fam]=1; }); }catch(e){}
@@ -1361,14 +1390,14 @@
           var hrow=document.createElement('div'); hrow.className='ctrl';
           var hlab=document.createElement('div'); hlab.className='clab'; hlab.innerHTML='<span>Visibilita\'</span>';
           var hreset=document.createElement('button'); hreset.className='x'; hreset.textContent='↺'; hreset.title='Ripristina in questa zona';
-          hreset.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,'visible'); renderBody(); }); hlab.appendChild(hreset);
+          hreset.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,'visible'); renderBody('hideModeResetClick'); }); hlab.appendChild(hreset);
           hrow.appendChild(hlab);
           var hseg=document.createElement('div'); hseg.className='seg';
           var hmodes=[['visible','Visibile','Nessuna modifica'],['none','No spazio','display:none - l\'elemento sparisce e il layout si ricompatta'],['hidden','Con spazio','visibility:hidden - invisibile ma lo spazio resta occupato']];
           var hcur=currentHideMode(g.sec,g.slide,family);
           hmodes.forEach(function(hm){
             var hb=document.createElement('button'); hb.textContent=hm[1]; hb.title=hm[2]; if(hm[0]===hcur) hb.classList.add('on');
-            hb.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,hm[0]); renderBody(); });
+            hb.addEventListener('click', function(){ setHideMode(g.sec,g.slide,family,hm[0]); renderBody('hideModeToggleClick'); });
             hseg.appendChild(hb);
           });
           hrow.appendChild(hseg); el.appendChild(hrow);
@@ -1385,16 +1414,16 @@
 
   var pendingFocus=null;
   function focusFamily(fam){ var el=root.querySelector('.grp[data-gk="'+fam.gk+'"] .elem[data-fam="'+fam.family+'"]'); if(!el){ // magari non e la slide attiva: passa a quella slide
-      activeGroupKey=fam.gk; renderNav(); renderBody(); el=root.querySelector('.grp[data-gk="'+fam.gk+'"] .elem[data-fam="'+fam.family+'"]'); if(!el) return; }
+      activeGroupKey=fam.gk; renderNav('focusFamily'); renderBody('focusFamily'); el=root.querySelector('.grp[data-gk="'+fam.gk+'"] .elem[data-fam="'+fam.family+'"]'); if(!el) return; }
     el.classList.add('open'); el.classList.add('justpicked'); setTimeout(function(){ el.classList.remove('justpicked'); },1400); el.scrollIntoView({block:'center',behavior:'smooth'}); }
-  function openElementCard(sec,slide,family){ openDrawer(); follow=false; $('#followBtn').classList.remove('on'); activeGroupKey=groupKey(sec,slide); pendingFocus={gk:groupKey(sec,slide),family:family}; renderNav(); renderBody(); }
+  function openElementCard(sec,slide,family){ openDrawer(); follow=false; $('#followBtn').classList.remove('on'); activeGroupKey=groupKey(sec,slide); pendingFocus={gk:groupKey(sec,slide),family:family}; renderNav('openElementCard'); renderBody('openElementCard'); }
 
   function makeControl(name,prop){
     var info=PROP_INFO[prop]||{kind:'num',label:prop,min:-500,max:500,step:1};
     var row=document.createElement('div'); row.className='ctrl';
     var lab=document.createElement('div'); lab.className='clab'; lab.innerHTML='<span>'+(info.label||prop)+'</span>';
     var reset=document.createElement('button'); reset.className='x'; reset.textContent='\u21ba'; reset.title='Ripristina in questa zona';
-    reset.addEventListener('click', function(){ clearOverride(name); renderBody(); }); lab.appendChild(reset); row.appendChild(lab);
+    reset.addEventListener('click', function(){ clearOverride(name); renderBody('propertyResetClick('+name+')'); }); lab.appendChild(reset); row.appendChild(lab);
     if(info.kind==='color'){
       var cur=currentValue(name)||defaultFor(name)||'#000000';
       var w=document.createElement('div'); w.className='colorwrap';
@@ -1506,14 +1535,14 @@
     var html=wordSpans(wordSplits[fk]);
     try{ if(el) el.innerHTML=html; }catch(e){}
     try{ frame.contentWindow.postMessage({__vc:'sethtml', sel:sel, html:html}, '*'); }catch(e){}
-    addSynthetic(); syncFrame(); renderBody();
+    addSynthetic(); syncFrame(); renderBody('splitWordsAuto');
   }
   function unsplitWords(fk){
     var w=wordSplits[fk]; if(!w) return; var text=w.words.map(function(x){ return (x&&x.text!=null)?x.text:x; }).join(' ');
     delete wordSplits[fk]; jsave(WORD_KEY, wordSplits);
     try{ var el=document.querySelector(w.sel); if(el) el.textContent=text; }catch(e){}
     try{ frame.contentWindow.postMessage({__vc:'settext', sel:w.sel, text:text}, '*'); }catch(e){}
-    refreshVars(); syncFrame(); renderBody();
+    refreshVars(); syncFrame(); renderBody('unsplitWords');
   }
 
   function clamp(v,a,b){ v=parseFloat(v); if(isNaN(v)) return a; return Math.min(b,Math.max(a,v)); }
@@ -1656,7 +1685,7 @@
   function applyBtnText(){ Object.keys(btnText).forEach(function(fk){ var o=btnText[fk]; try{ var el=document.querySelector(o.sel); if(el) vcMultilineWrite(el, o.text); }catch(e){} }); }
   function setBtnText(fk, sel, text){ btnText[fk]={sel:sel, text:text}; try{ localStorage.setItem(BTXT_KEY, JSON.stringify(btnText)); }catch(e){} try{ var el=document.querySelector(sel); if(el) vcMultilineWrite(el, text); }catch(e){} try{ frame.contentWindow.postMessage({__vc:'settext', sel:sel, text:text}, '*'); }catch(e){} }
   applyTextLive(); applyBtnText(); applyFragText();
-  applyLive(); renderNav(); renderBody(); setupTopObserver();
+  applyLive(); renderNav('avvioPannello'); renderBody('avvioPannello'); setupTopObserver();
   console.log('[VC Admin v3] pronto - '+Object.keys(VARS).length+' variabili, '+Object.keys(SELMAP).length+' mappe selettore');
 
   /* ---- osservatore pagina reale (device=live) ---- */
