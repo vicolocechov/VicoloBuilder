@@ -674,6 +674,22 @@
   function closeStage(){ stage.classList.add('hidden'); $('#zonechip').textContent=''; }
   function fitStage(w,h){ var availW=window.innerWidth-360-48, availH=window.innerHeight-80; var k=Math.min(1, availW/w, availH/h); scaler.style.transform='scale('+k+')'; scaler.style.width=w+'px'; scaler.style.height=h+'px'; }
   window.addEventListener('resize', function(){ if(currentDevice!=='live'){ drawChrome(); } });
+  /* ===== DIAGNOSTICA TEMPORANEA (bug "Scegli file" che torna a 'Nessun file selezionato' dopo
+     il picker su iPhone/Safari): riusa lo stesso ring buffer window.__vcTouchLog e lo stesso
+     visualizzatore 🐞 gia' presenti nel sito (stesso documento/pagina) - zero nuova UI, zero
+     modifiche al motore di swipe/segnalaPinch()/reflow() del sito, che restano del tutto
+     estranei a questo file. Solo osservazione: nessun preventDefault/stopPropagation, nessun
+     cambio di comportamento. Da rimuovere una volta chiuso il bug. */
+  function vcAdminLog(esito, motivo){
+    try{
+      window.__vcTouchLog = window.__vcTouchLog || [];
+      window.__vcTouchLog.push({ t:Date.now(), panel:'admin', origine:'pannello', esito:'ADMIN-'+esito, motivo:motivo||'', durataMs:0 });
+      if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush();
+    }catch(e){}
+  }
+  window.addEventListener('pageshow', function(e){ vcAdminLog('PAGESHOW', 'persisted='+e.persisted+' visibilityState='+document.visibilityState); });
+  document.addEventListener('visibilitychange', function(){ vcAdminLog('VISIBILITYCHANGE', 'visibilityState='+document.visibilityState); });
+  window.addEventListener('resize', function(){ var vv=window.visualViewport; vcAdminLog('RESIZE', 'innerWidth='+window.innerWidth+' innerHeight='+window.innerHeight+' vvHeight='+(vv?Math.round(vv.height):'?')); });
   /* --vc-safe-* (vedi :root nel sito) e' l'unico modo per far vedere nell'iframe di anteprima
      l'area sicura REALE attorno al notch: env(safe-area-inset-*) non e' sovrascrivibile da CSS e
      in un iframe di un browser normale (nessun device reale sotto) vale comunque 0, quindi senza
@@ -796,7 +812,7 @@
   function buildTree(){ var tree={}; Object.keys(VARS).forEach(function(name){ var v=VARS[name], k=groupKey(v.sec,v.slide); (tree[k]=tree[k]||{sec:v.sec,slide:v.slide,fams:{}}); (tree[k].fams[v.family]=tree[k].fams[v.family]||[]).push({name:name,prop:v.prop}); }); return tree; }
   function sortedGroupKeys(tree){ function ord(s){ return s===0?999:s; } return Object.keys(tree).sort(function(a,b){ return (ord(tree[a].sec)-ord(tree[b].sec))||(tree[a].slide-tree[b].slide); }); }
 
-  function setActiveFromScroll(sec,slide){ var gk=groupKey(sec,slide); if(!follow) return; if(gk===activeGroupKey) return; activeGroupKey=gk; renderNav(); renderBody(); }
+  function setActiveFromScroll(sec,slide){ var gk=groupKey(sec,slide); if(!follow) return; if(gk===activeGroupKey) return; vcAdminLog('SETACTIVEFROMSCROLL-CAMBIO-GRUPPO', 'da='+activeGroupKey+' a='+gk+' (renderBody() in arrivo, qualunque input[type=file] aperto verra\' ricreato vuoto)'); activeGroupKey=gk; renderNav(); renderBody(); }
   function stepSlide(dir){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length) return; var i=keys.indexOf(activeGroupKey); if(i<0) i=0; i=Math.max(0,Math.min(keys.length-1,i+dir)); activeGroupKey=keys[i]; follow=false; $('#followBtn').classList.remove('on'); renderNav(); renderBody(); }
 
   function renderNav(){ var tree=buildTree(); var keys=sortedGroupKeys(tree); if(!keys.length){ $('#curSlide').textContent='-'; return; } if(!activeGroupKey || keys.indexOf(activeGroupKey)<0) activeGroupKey=keys[0]; var g=tree[activeGroupKey]; $('#curSlide').textContent=groupLabel(g.sec,g.slide); }
@@ -905,12 +921,16 @@
 
     /* Copertina: una sola immagine, obbligatoria - e' quella che appare come locandina sul muro. */
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
+    coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+    vcAdminLog('INPUT-CREATO', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid);
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
     /* Galleria: piu' immagini, opzionali - sono quelle nel carosello dentro la scheda sinossi.
        Riordinabili (su/giu') ed eliminabili singolarmente prima di salvare. */
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
+    galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+    vcAdminLog('INPUT-CREATO', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid);
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -952,11 +972,14 @@
     }
     coverInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(coverInp.files||[]);
+      vcAdminLog('CHANGE-RICEVUTO', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
       readFiles(files.slice(0,1)).then(function(results){
         coverImage=results[0]; renderCoverPreview();
-      }).catch(function(){
+        vcAdminLog('LETTURA-OK', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid);
+      }).catch(function(err){
+        vcAdminLog('ERRORE-LETTURA', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid+' err='+(err&&err.message?err.message:err));
         errEl.textContent='Errore nel caricamento della copertina. Riprova.';
       }).then(function(){ setLoading(false); });
     });
@@ -980,13 +1003,16 @@
     }
     galleryInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(galleryInp.files||[]);
+      vcAdminLog('CHANGE-RICEVUTO', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
       readFiles(files).then(function(results){
         galleryImages=galleryImages.concat(results);
         renderGalleryPreview();
         galleryInp.value=''; // permette di aggiungere altre foto in un secondo momento senza dover riselezionare le stesse
-      }).catch(function(){
+        vcAdminLog('LETTURA-OK', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid+' nImmaginiTotali='+galleryImages.length);
+      }).catch(function(err){
+        vcAdminLog('ERRORE-LETTURA', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid+' err='+(err&&err.message?err.message:err));
         errEl.textContent='Errore nel caricamento di una o piu\' immagini della galleria. Riprova.';
       }).then(function(){ setLoading(false); });
     });
@@ -1100,10 +1126,14 @@
     row('Categoria').appendChild(tagSel);
 
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
+    coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+    vcAdminLog('INPUT-CREATO', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid);
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
+    galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+    vcAdminLog('INPUT-CREATO', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid);
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -1180,11 +1210,14 @@
     }
     coverInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(coverInp.files||[]);
+      vcAdminLog('CHANGE-RICEVUTO', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
       readFiles(files.slice(0,1)).then(function(results){
         coverImage=results[0]; renderCoverPreview(); commit();
-      }).catch(function(){
+        vcAdminLog('LETTURA-OK', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid);
+      }).catch(function(err){
+        vcAdminLog('ERRORE-LETTURA', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid+' err='+(err&&err.message?err.message:err));
         errEl.textContent='Errore nel caricamento della copertina. Riprova.';
       }).then(function(){ setLoading(false); });
     });
@@ -1208,6 +1241,7 @@
     }
     galleryInp.addEventListener('change', function(){
       var files=Array.prototype.slice.call(galleryInp.files||[]);
+      vcAdminLog('CHANGE-RICEVUTO', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid+' nFile='+files.length+' '+files.map(function(f){ return f.name+'('+f.size+'B,'+f.type+')'; }).join(';'));
       if(!files.length) return;
       errEl.textContent=''; setLoading(true);
       readFiles(files).then(function(results){
@@ -1215,7 +1249,9 @@
         renderGalleryPreview();
         galleryInp.value='';
         commit();
-      }).catch(function(){
+        vcAdminLog('LETTURA-OK', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid+' nImmaginiTotali='+galleryImages.length);
+      }).catch(function(err){
+        vcAdminLog('ERRORE-LETTURA', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid+' err='+(err&&err.message?err.message:err));
         errEl.textContent='Errore nel caricamento di una o piu\' immagini della galleria. Riprova.';
       }).then(function(){ setLoading(false); });
     });
@@ -1243,6 +1279,10 @@
 
   function renderBody(){
     var body=$('#body');
+    try{
+      var exInp=root.querySelector('.postertool-row input[type=file]');
+      vcAdminLog('RENDERBODY-CHIAMATO', 'inputFileEsistentePrimaDelWipe='+(exInp?exInp.dataset.vcid:'nessuno')+' activeGroupKey='+activeGroupKey+' openPosterId='+openPosterId);
+    }catch(eLog){}
     // memorizza quali elementi sono aperti e la posizione di scroll, per non richiudere/saltare
     var openSet={}; var prevScroll=0;
     try{ prevScroll=body.scrollTop; Array.prototype.forEach.call(root.querySelectorAll('.elem.open'), function(el){ var grp=el.closest('.grp'); var gk=grp?grp.dataset.gk:''; openSet[gk+'|'+el.dataset.fam]=1; }); }catch(e){}
