@@ -1363,7 +1363,41 @@ html.sede-monte #s3-slide1{display:none}
    e' piu' alta di un solo schermo - frequente in orizzontale - centrare la scheda rispetto a
    TUTTA la sezione la spinge fuori dalla porzione di schermo davvero visibile. Allineandola
    in cima resta quasi sempre dentro lo schermo attuale. */
-.s4-slide2-overlay{padding:8px;padding-top:calc(48px + var(--vc-safe-top));padding-bottom:calc(8px + var(--vc-safe-bottom));padding-left:calc(8px + var(--vc-safe-left));padding-right:calc(8px + var(--vc-safe-right));align-items:flex-start}.s4-slide2-detail{max-height:calc(100svh - 60px);gap:10px;padding:2px}.s4-slide2-detail-row{gap:14px}.s4-slide2-detail-gallery{flex:0 0 34%}.s4-slide2-detail-gallery img{max-height:40vh}.s4-slide2-detail-titolo{font-size:calc(clamp(22px,5vw,34px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}.s4-slide2-detail-info{gap:6px;margin:10px 0 12px}.s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}.s4-slide2-detail-btn{padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin-top:0}.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
+.s4-slide2-overlay{padding:8px;padding-top:calc(48px + var(--vc-safe-top));padding-bottom:calc(8px + var(--vc-safe-bottom));padding-left:calc(8px + var(--vc-safe-left));padding-right:calc(8px + var(--vc-safe-right));align-items:flex-start}
+/* Due colonne (locandina a sinistra, alta quanto la scheda; dettagli a destra) invece dello
+   stack verticale: display:grid su .s4-slide2-detail e display:contents su
+   .s4-slide2-detail-row "dissolvono" la riga cosi' i suoi due figli (galleria e copy) diventano
+   celle dirette della griglia, senza toccare l'HTML. Le grid-area fissano l'ordine nella
+   colonna destra (titolo, poi info, poi bottone, poi sinossi/cast) cosi' il contenuto essenziale
+   e' sempre il primo che si vede; solo .s4-slide2-detail-copy scorre se non entra, lasciando
+   la locandina ferma a sinistra. height (non solo max-height) e' necessaria perche' la riga
+   1fr della griglia abbia una misura reale da cui sottrarre, non solo un tetto. */
+.s4-slide2-detail{display:grid;grid-template-columns:minmax(120px,34%) 1fr;grid-template-rows:auto auto auto 1fr;grid-template-areas:"gallery head" "gallery info" "gallery btn" "gallery copy";column-gap:16px;row-gap:2px;height:calc(100svh - 60px);max-height:calc(100svh - 60px);padding:2px;overflow:hidden}
+.s4-slide2-detail-row{display:contents}
+/* Scheda senza copertina/galleria (galleryImgs.length===0): openShow() aggiunge questa classe
+   all'overlay (vedi JS) - niente colonna sinistra vuota, il testo prende tutta la larghezza. */
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:1fr;grid-template-areas:"head" "info" "btn" "copy"}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
+/* La galleria e' ora flex-column (invece che lasciare il track al 100% dell'altezza): se il
+   track occupasse tutta l'altezza della colonna, i puntini sotto (nav, nel normale flusso dopo
+   il track) finirebbero spinti fuori dal box e tagliati da overflow:hidden. Con track flex:1
+   (si riduce lui, non i puntini) e nav a altezza naturale, locandina e puntini restano sempre
+   entrambi dentro, anche quando la colonna e' bassa (844x300). */
+.s4-slide2-detail-gallery{grid-area:gallery;height:100%;max-height:none;flex:none;display:flex;flex-direction:column}
+.s4-slide2-gallery-track{flex:1;min-height:0}
+.s4-slide2-gallery-track img{height:100%;max-height:none;width:100%}
+.s4-slide2-gallery-nav{flex:none;margin-top:5px}
+.s4-slide2-detail-head{grid-area:head;max-width:none;margin:0;text-align:left}
+.s4-slide2-detail-titolo{font-size:calc(clamp(20px,4vw,30px) * var(--s4-slide2-detail-titolo-scale,1))}
+.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}
+.s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}
+.s4-slide2-detail-info{grid-area:info;justify-content:flex-start;gap:6px;margin:8px 0}
+.s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}
+.s4-slide2-detail-btn{grid-area:btn;align-self:start;justify-self:start;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin:0 0 6px}
+.s4-slide2-detail-copy{grid-area:copy;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-top:0}
+.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}
+.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}
+.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
@@ -2697,6 +2731,11 @@ requestAnimationFrame(riposiziona);
     openId=id;
     track.innerHTML=''; nav.innerHTML='';
     const galleryImgs=d.cover?[d.cover, ...(d.gallery||[])]:(d.gallery||[]);
+    /* in landscape (vedi CSS .s4-slide2-overlay.s4-slide2-senza-galleria) una scheda senza
+       copertina ne' galleria non deve lasciare una colonna sinistra vuota: il testo prende
+       tutta la larghezza. Nessun effetto su portrait, dove il layout resta a colonna singola
+       indipendentemente da questa classe. */
+    overlay.classList.toggle('s4-slide2-senza-galleria', galleryImgs.length===0);
     galleryImgs.forEach((u,k)=>{
       const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); track.appendChild(im);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
