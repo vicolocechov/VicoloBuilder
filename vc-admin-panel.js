@@ -484,7 +484,8 @@
 
   var activeGroupKey = null;   // solo la slide corrente
   var follow = true;           // segui lo scroll
-  var ultimoActiveGroupKeyRenderizzato = null; // diagnostica temporanea: per sapere se renderBody() ha ricostruito a parita' di gruppo
+  var ultimoActiveGroupKeyRenderizzato = null; // usato anche dal trasporto del poster tool in renderBody()
+  var ultimoOpenPosterIdRenderizzato = null;   // idem - deve combaciare anche il poster aperto, non solo il gruppo
 
   function loadOverrides(){ try{ var raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); }catch(e){} var o={}; ZONES.forEach(function(z){o[z.id]={};}); return o; }
   function saveOverrides(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides)); }catch(e){} }
@@ -683,12 +684,17 @@
      cambio di comportamento. Da rimuovere una volta chiuso il bug. */
   function vcAdminLog(esito, motivo){
     try{
-      window.__vcTouchLog = window.__vcTouchLog || [];
-      window.__vcTouchLog.push({ t:Date.now(), panel:'admin', origine:'pannello', esito:'ADMIN-'+esito, motivo:motivo||'', durataMs:0 });
-      if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush();
+      var entry={ t:Date.now(), panel:'admin', origine:'pannello', esito:'ADMIN-'+esito, motivo:motivo||'', durataMs:0 };
+      /* window.__vcLog (sito_con_pannello.html) fa anche cap a 200 voci + persistenza in
+         sessionStorage, cosi' un reload a meta' picker (libreria foto, pagina pesante) non
+         cancella quello che e' successo prima - fallback diretto se per qualche motivo non
+         fosse ancora disponibile (es. ordine di caricamento script). */
+      if(window.__vcLog){ window.__vcLog(entry); }
+      else{ window.__vcTouchLog=window.__vcTouchLog||[]; window.__vcTouchLog.push(entry); if(window.__vcTouchLogPanelPush) window.__vcTouchLogPanelPush(); }
     }catch(e){}
   }
   window.addEventListener('pageshow', function(e){ vcAdminLog('PAGESHOW', 'persisted='+e.persisted+' visibilityState='+document.visibilityState); });
+  window.addEventListener('pagehide', function(e){ vcAdminLog('PAGEHIDE', 'persisted='+e.persisted); });
   document.addEventListener('visibilitychange', function(){ vcAdminLog('VISIBILITYCHANGE', 'visibilityState='+document.visibilityState); });
   window.addEventListener('resize', function(){ var vv=window.visualViewport; vcAdminLog('RESIZE', 'innerWidth='+window.innerWidth+' innerHeight='+window.innerHeight+' vvHeight='+(vv?Math.round(vv.height):'?')); });
   /* Marcatore di sessione per distinguere "renderBody() ha svuotato il campo" da "la pagina si
@@ -710,6 +716,16 @@
     setTimeout(function(){ try{ sessionStorage.removeItem(VC_ADMIN_PICKER_KEY); }catch(e){} }, 60000);
   }
   function marcaPickerChiuso(){ try{ sessionStorage.removeItem(VC_ADMIN_PICKER_KEY); }catch(e){} }
+  /* Aggancia tutta la diagnostica di ciclo-vita del picker a un input[type=file]: click (apre il
+     picker nativo), cancel (l'utente lo chiude senza scegliere nulla - supportato da iOS 16.4+/
+     Safari recenti, innocuo se non supportato: semplicemente non scatta mai), focus/blur. Solo
+     osservazione, nessun preventDefault/stopPropagation, nessun cambio di comportamento. */
+  function agganciaDiagnosticaInput(inp, etichetta){
+    inp.addEventListener('click', function(){ marcaPickerAperto(etichetta+':'+inp.dataset.vcid); vcAdminLog('CLICK-INPUT', 'campo='+etichetta+' vcid='+inp.dataset.vcid); });
+    inp.addEventListener('cancel', function(){ marcaPickerChiuso(); vcAdminLog('CANCEL-PICKER', 'campo='+etichetta+' vcid='+inp.dataset.vcid); });
+    inp.addEventListener('focus', function(){ vcAdminLog('FOCUS-INPUT', 'campo='+etichetta+' vcid='+inp.dataset.vcid); });
+    inp.addEventListener('blur', function(){ vcAdminLog('BLUR-INPUT', 'campo='+etichetta+' vcid='+inp.dataset.vcid); });
+  }
   /* --vc-safe-* (vedi :root nel sito) e' l'unico modo per far vedere nell'iframe di anteprima
      l'area sicura REALE attorno al notch: env(safe-area-inset-*) non e' sovrascrivibile da CSS e
      in un iframe di un browser normale (nessun device reale sotto) vale comunque 0, quindi senza
@@ -943,7 +959,7 @@
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
     coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Copertina(Aggiungi) vcid='+coverInp.dataset.vcid);
-    coverInp.addEventListener('click', function(){ marcaPickerAperto('Copertina(Aggiungi):'+coverInp.dataset.vcid); });
+    agganciaDiagnosticaInput(coverInp, 'Copertina(Aggiungi)');
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
@@ -952,7 +968,7 @@
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
     galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Galleria(Aggiungi) vcid='+galleryInp.dataset.vcid);
-    galleryInp.addEventListener('click', function(){ marcaPickerAperto('Galleria(Aggiungi):'+galleryInp.dataset.vcid); });
+    agganciaDiagnosticaInput(galleryInp, 'Galleria(Aggiungi)');
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -1152,14 +1168,14 @@
     var coverInp=document.createElement('input'); coverInp.type='file'; coverInp.accept='image/*';
     coverInp.dataset.vcid='cover-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Copertina(Modifica) vcid='+coverInp.dataset.vcid);
-    coverInp.addEventListener('click', function(){ marcaPickerAperto('Copertina(Modifica):'+coverInp.dataset.vcid); });
+    agganciaDiagnosticaInput(coverInp, 'Copertina(Modifica)');
     row('Copertina').appendChild(coverInp);
     var coverPreview=document.createElement('div'); coverPreview.className='postertool-coverpreview'; box.appendChild(coverPreview);
 
     var galleryInp=document.createElement('input'); galleryInp.type='file'; galleryInp.accept='image/*'; galleryInp.multiple=true;
     galleryInp.dataset.vcid='gallery-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
     vcAdminLog('INPUT-CREATO', 'campo=Galleria(Modifica) vcid='+galleryInp.dataset.vcid);
-    galleryInp.addEventListener('click', function(){ marcaPickerAperto('Galleria(Modifica):'+galleryInp.dataset.vcid); });
+    agganciaDiagnosticaInput(galleryInp, 'Galleria(Modifica)');
     row('Galleria').appendChild(galleryInp);
     var galleryPreview=document.createElement('div'); galleryPreview.className='postertool-gallerypreview'; box.appendChild(galleryPreview);
 
@@ -1307,11 +1323,29 @@
 
   function renderBody(chiamante){
     var body=$('#body');
+    /* Trasporta il nodo VIVO del poster tool invece di ricrearlo, quando il gruppo e il poster
+       aperto sono gli stessi dell'ultimo render: body.innerHTML='' qui sotto distruggerebbe
+       anche l'input[type=file] con il file gia' scelto, il closure coverImage/galleryImages,
+       tutto - a prescindere da CHI ha chiamato renderBody() (confermato da log reale: capita
+       con onPosterOpenChanged, ma anche ricerca/rescan/resetzone/nav lo farebbero allo stesso
+       modo). La condizione e' indipendente dal chiamante: se gruppo+poster aperto non sono
+       CAMBIATI DAVVERO rispetto all'ultimo render, non c'e' nulla da ricostruire in quella
+       porzione - il resto di #body (famiglie/proprieta' sotto) si ricostruisce normalmente. */
+    var preservaPosterTool = !($('#q').value||'').trim() && activeGroupKey===groupKey(4,2) &&
+      activeGroupKey===ultimoActiveGroupKeyRenderizzato && openPosterId===ultimoOpenPosterIdRenderizzato;
+    var posterToolSalvato=null;
+    if(preservaPosterTool){
+      try{
+        posterToolSalvato=root.querySelector('.postertool');
+        if(posterToolSalvato && posterToolSalvato.parentNode) posterToolSalvato.parentNode.removeChild(posterToolSalvato);
+      }catch(eSalva){ posterToolSalvato=null; }
+    }
     try{
       var exInp=root.querySelector('.postertool-row input[type=file]');
-      vcAdminLog('RENDERBODY-CHIAMATO', 'chiamante='+(chiamante||'ignoto')+' inputFileEsistentePrimaDelWipe='+(exInp?exInp.dataset.vcid:'nessuno')+' activeGroupKeyInvariatoRispettoAllUltimoRender='+(activeGroupKey===ultimoActiveGroupKeyRenderizzato)+' activeGroupKey='+activeGroupKey+' openPosterId='+openPosterId);
+      vcAdminLog('RENDERBODY-CHIAMATO', 'chiamante='+(chiamante||'ignoto')+' inputFileEsistentePrimaDelWipe='+(exInp?exInp.dataset.vcid:'nessuno')+' activeGroupKeyInvariatoRispettoAllUltimoRender='+(activeGroupKey===ultimoActiveGroupKeyRenderizzato)+' posterToolPreservato='+(!!posterToolSalvato)+' activeGroupKey='+activeGroupKey+' openPosterId='+openPosterId);
     }catch(eLog){}
     ultimoActiveGroupKeyRenderizzato=activeGroupKey;
+    ultimoOpenPosterIdRenderizzato=openPosterId;
     // memorizza quali elementi sono aperti e la posizione di scroll, per non richiudere/saltare
     var openSet={}; var prevScroll=0;
     try{ prevScroll=body.scrollTop; Array.prototype.forEach.call(root.querySelectorAll('.elem.open'), function(el){ var grp=el.closest('.grp'); var gk=grp?grp.dataset.gk:''; openSet[gk+'|'+el.dataset.fam]=1; }); }catch(e){}
@@ -1339,7 +1373,8 @@
       if(q){ var h=document.createElement('div'); h.className='grphead'; h.innerHTML='<span>'+groupLabel(g.sec,g.slide)+'</span>'; sec.appendChild(h); }
       var wrap=document.createElement('div'); wrap.className='grpbody'; sec.appendChild(wrap);
       if(!q && gk===groupKey(4,2)){
-        if(openPosterId) wrap.appendChild(buildPosterEditTool(openPosterId));
+        if(posterToolSalvato) wrap.appendChild(posterToolSalvato);
+        else if(openPosterId) wrap.appendChild(buildPosterEditTool(openPosterId));
         else wrap.appendChild(buildPosterTool());
       }
       visible.forEach(function(family){
