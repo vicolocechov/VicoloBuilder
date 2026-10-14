@@ -2129,6 +2129,11 @@ requestAnimationFrame(riposiziona);
 
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
   let tx0=0,ty0=0,tmoved=false,uno=false,tStart0=0,scrollTopStart=0,bailReason='';
+  /* Solo bookkeeping (nessun effetto su swipe/pinch): quante dita sono APPOGGIATE ORA sullo
+     schermo, aggiornato dai 4 handler touch esistenti senza cambiarne la logica - serve al
+     ricontrollo differito di reflow() per sapere se puo' correggere lo scrollX residuo (sotto)
+     senza rischiare di interferire con un gesto ancora in corso. */
+  let ditaAttuali=0;
   function zoomato(){ return window.visualViewport && window.visualViewport.scale > 1.01; }   // pinch-zoom attivo?
   /* zoomato()===false (scale tornata ~1) NON basta a garantire che window.innerWidth sia gia'
      stabile: dati reali mostrano che subito dopo la fine di un pinch, per un paio di eventi,
@@ -2220,6 +2225,7 @@ requestAnimationFrame(riposiziona);
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'RAW-'+fase, motivo:`touches=${e.touches.length} zoom=${zoomato()?'SI('+window.visualViewport.scale.toFixed(2)+')':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
   }
   function onTouchStart(e){
+    ditaAttuali=e.touches.length;
     if(schedaAperta() || fuoriDalMotore(e.target)){ uno=false; return; }
     if(e.touches.length>1) { vcLogRaw('touchstart', e); segnalaPinch(); gestoMultiTouch=true; }
     /* !zoomato(): se la pagina e' ancora visivamente zoomata (l'utente non ha ancora rilasciato/
@@ -2258,6 +2264,7 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('touchstart', onTouchStart, {passive:true});
 
   function onTouchMove(e){
+    ditaAttuali=e.touches.length;
     if(e.touches.length>1 || zoomato()) { vcLogRaw('touchmove', e); segnalaPinch(); gestoMultiTouch=true; }
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
@@ -2275,6 +2282,7 @@ requestAnimationFrame(riposiziona);
      posizione ormai vecchia, superando quasi sempre la soglia e facendo scattare una navigazione
      indesiderata subito dopo l'inizio dello zoom. Trattalo esattamente come un gesto annullato. */
   function onTouchCancel(e){
+    ditaAttuali=e.touches.length;
     const panelId = panelIds[correntePanel] || '?';
     vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'TOUCHCANCEL', motivo:`touches-residue=${e.touches.length} zoom=${zoomato()?'SI':'no'} uno-prima=${uno?'SI':'no'} tmoved-prima=${tmoved?'SI':'no'}`, durataMs: Math.round(performance.now()-tStart0) });
     segnalaPinch(); gestoMultiTouch=true;   /* un cancel nativo e' quasi sempre legato a un gesto multi-touch/zoom */
@@ -2303,6 +2311,7 @@ requestAnimationFrame(riposiziona);
     setTimeout(()=>fotografaAllineamento('+2000ms'), 2000);
   }
   function onTouchEnd(e){
+    ditaAttuali=e.touches.length;
     const panelId = panelIds[correntePanel] || '?';
     /* cattura PRIMA del reset sotto: serve a sapere se questo touchend chiude un gesto
        multi-touch/pinch, indipendentemente dal fatto che azzeri gestoMultiTouch un attimo dopo. */
@@ -2504,6 +2513,19 @@ requestAnimationFrame(riposiziona);
       ricontrolloInstabileId=setTimeout(()=>{
         ricontrolloInstabileId=null;
         if(reflowInSospesoPerZoom) reflow('ricontrollo-post-instabile');
+        /* FIX (bug: dopo un pinch resta uno scarto orizzontale anche a translateX gia' corretto):
+           un residuo di scroll NATIVO del documento (window.scrollX) non e' qualcosa che reflow()
+           possa mai correggere - basePos()/translateX sono calcolati dalla posizione RELATIVA tra
+           pannello e stage (getBoundingClientRect), indifferenti a uno scroll orizzontale globale,
+           quindi anche un reflow() riuscito lo lascia intatto (confermato da log reale: translateX
+           corretto, scrollX=6 invariato). Corretto SOLO a gesto davvero concluso (non zoomato(),
+           non viewportInstabile(), nessun dito sullo schermo) per non interferire con un pinch/
+           pan ancora in corso; scrollY non toccato. */
+        if(!zoomato() && !viewportInstabile() && ditaAttuali===0 && Math.abs(window.scrollX)>0.5){
+          const scrollXPrima=window.scrollX;
+          window.scrollTo(0, window.scrollY);
+          vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'SCROLLX-CORRETTO', motivo:`scrollXPrima=${scrollXPrima} scrollXDopo=${window.scrollX} scrollY=${window.scrollY}`, durataMs:0 });
+        }
       }, 350);
       return;
     }
