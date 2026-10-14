@@ -2582,7 +2582,7 @@ requestAnimationFrame(riposiziona);
      Nessun meccanismo separato di "correzione immediata" serve: sarebbe complessità in piu' per
      un problema che il debounce gia' risolve da solo. */
   const reflowDeb = vcDebounce(()=>reflow('resize/vv-debounced'), 90);
-  addEventListener('resize', (e)=>{ vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`window.resize innerWidth=${window.innerWidth} innerHeight=${window.innerHeight}`, durataMs:0 }); reflowDeb(); });
+  addEventListener('resize', (e)=>{ vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`window.resize innerWidth=${window.innerWidth} innerHeight=${window.innerHeight}`, durataMs:0 }); if(stageNascostaPerRotazione && !primoResizeDopoRotazioneLoggato){ primoResizeDopoRotazioneLoggato=true; logGeometriaStage('primo-resize'); } reflowDeb(); });
   if (window.visualViewport){
     visualViewport.addEventListener('resize', ()=>{
       const vv=window.visualViewport;
@@ -2591,6 +2591,34 @@ requestAnimationFrame(riposiziona);
     });
     visualViewport.addEventListener('scroll', ()=>{ const vv=window.visualViewport; vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'EVENTO-GREZZO', motivo:`visualViewport.scroll vvWidth=${Math.round(vv.width)} vvScale=${vv.scale.toFixed(3)} vvOffsetLeft=${Math.round(vv.offsetLeft)} innerWidth=${window.innerWidth}`, durataMs:0 }); });
   }
+  /* DIAGNOSTICA (bug: rotazione O->V rotta solo da correntePanel>=2, iOS forza da solo uno zoom
+     indietro dopo la rotazione - vvScale=2.393 senza nessun dito sullo schermo). Ipotesi: iOS
+     legge lo stage ancora traslato (vecchio basePos, calcolato per l'altra orientazione) come
+     contenuto "sporgente" e ricalcola la scala per farcelo entrare. Solo osservazione: misura la
+     geometria esatta al momento della rotazione e al primo resize successivo, per confrontare
+     pannello 0 (mai rotto) con pannello 2 (rotto) sullo stesso dato reale invece di supporre. */
+  function logGeometriaStage(etichetta){
+    const contenitore=stage.parentElement;
+    const r=stage.getBoundingClientRect();
+    vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'GEOMETRIA-STAGE-'+etichetta, motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) transformAttuale=${stage.style.transform} innerWidth=${window.innerWidth} innerHeight=${window.innerHeight} docScrollWidth=${document.documentElement.scrollWidth} bodyScrollWidth=${document.body.scrollWidth} stageRect(left=${Math.round(r.left)},top=${Math.round(r.top)},width=${Math.round(r.width)},right=${Math.round(r.right)}) overflowXHtml=${getComputedStyle(document.documentElement).overflowX} overflowXBody=${getComputedStyle(document.body).overflowX} overflowXContenitore=${contenitore?getComputedStyle(contenitore).overflowX:'?'}`, durataMs:0 });
+  }
+  let primoResizeDopoRotazioneLoggato=false;
+  /* Interruttore sperimentale ?rotfix=1 (sessionStorage come ?noreset, ?rotfix=0 lo azzera):
+     SENZA il parametro rotfixAttivo() e' sempre false e onOrientationChange() si comporta
+     esattamente come prima. Serve a verificare l'ipotesi sopra: azzerare il translateX dello
+     stage APPENA la rotazione inizia (stage gia' nascosto, quindi invisibile all'utente), prima
+     che reflow() lo riporti al basePos corretto nel reveal normale 150ms dopo (gia' cosi' oggi,
+     nessun codice in piu' serve per quella parte). */
+  const VC_ROTFIX_KEY='vc-rotfix-v1';
+  (function(){
+    try{
+      const qp=new URLSearchParams(location.search).get('rotfix');
+      if(qp==='1') sessionStorage.setItem(VC_ROTFIX_KEY,'1');
+      else if(qp==='0') sessionStorage.removeItem(VC_ROTFIX_KEY);
+    }catch(e){}
+  })();
+  function rotfixAttivo(){ try{ return sessionStorage.getItem(VC_ROTFIX_KEY)==='1'; }catch(e){ return false; } }
+  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'ROTFIX-MODO', motivo:`ROTFIX-MODO=${rotfixAttivo()?'on':'off'}`, durataMs:0 });
   /* ROTAZIONE DEVICE (orientationchange): su iOS il primo scatto dell'evento puo' arrivare con
      window.innerWidth ancora transitorio (non ancora assestato sulla nuova orientazione) - un
      reflow() immediato rischia quindi di calcolare basePos() con una larghezza sbagliata, e anche
@@ -2605,7 +2633,21 @@ requestAnimationFrame(riposiziona);
        ripristinare, lasciando la transizione disattivata per sempre dopo la rotazione. */
     stage.style.opacity = '0';
     stageNascostaPerRotazione=true;
+    primoResizeDopoRotazioneLoggato=false;
+    logGeometriaStage('orientationchange');
     vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ORIENTATIONCHANGE-EVENTO', motivo:`innerWidth=${window.innerWidth} innerHeight=${window.innerHeight} stage-nascosta-impostata=true`, durataMs:0 });
+    if(rotfixAttivo()){
+      /* azzeramento ISTANTANEO (transizione disattivata e subito ripristinata, come fa reflow()
+         sotto): niente animazione da lasciare a meta', e la transizione restituita ORIGINALE a
+         reflow() 150ms dopo, non 'none' - evita la stessa trappola spiegata nel commento sopra. */
+      const transformPrimaDiRotfix=stage.style.transform;
+      const transizioneOriginale=stage.style.transition;
+      stage.style.transition='none';
+      stage.style.transform='translateX(0px)';
+      void stage.offsetHeight;
+      stage.style.transition=transizioneOriginale;
+      vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ROTFIX-TRANSLATEX-AZZERATO', motivo:`transformPrima=${transformPrimaDiRotfix} transformDopo=${stage.style.transform}`, durataMs:0 });
+    }
     setTimeout(()=>{
       /* NIENTE forza=true qui: durante un pinch-zoom ancora attivo window.innerWidth/vvWidth
          sono distorti dallo zoom (es. 195px invece della vera larghezza schermo) esattamente come
