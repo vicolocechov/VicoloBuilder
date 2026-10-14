@@ -2479,6 +2479,18 @@ requestAnimationFrame(riposiziona);
      fotografie di allineamento programmate da onTouchEnd (vedi sotto) possono dire se reflow()
      e' stato chiamato o saltato nella finestra appena trascorsa, senza doverlo indovinare. */
   let ultimoReflowEsito='mai', ultimoReflowT=0;
+  /* FIX (bug: dopo un pinch la pagina resta a volte leggermente spostata): reflowInSospesoPerZoom
+     veniva impostato a true qui sotto ma non era mai riletto da nessuna parte - il riallineamento
+     dipendeva SOLO da un futuro evento resize/visualViewport.resize/scroll che lo richiamasse (il
+     debounce esistente, invariato). Se quell'evento non arriva piu' (es. l'assestamento elastico
+     di iOS a fine pinch non ne genera uno nuovo), nulla ricontrollava mai piu'. Un solo ricontrollo
+     differito (non un polling continuo) per ogni skip: se nel frattempo arriva gia' un reflow()
+     davvero applicato il timer si azzera (sotto); se scade ancora con reflowInSospesoPerZoom=true
+     ritenta UNA volta - se il viewport e' nel frattempo tornato stabile da solo, reflow() lo
+     applica per davvero; se e' ancora instabile (es. un nuovo gesto in corso), reflow() si limita
+     a saltare di nuovo e riprogrammare un altro ricontrollo, senza mai accumularne piu' di uno
+     pendente alla volta. */
+  let ricontrolloInstabileId=null;
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
@@ -2488,8 +2500,14 @@ requestAnimationFrame(riposiziona);
       const motivoSalto=zoomato()?'zoom-attivo':'viewport-instabile';
       ultimoReflowEsito='saltato('+motivoSalto+')'; ultimoReflowT=performance.now();
       vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:`REFLOW-SALTATO(${motivoSalto})`, motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
+      if(ricontrolloInstabileId) clearTimeout(ricontrolloInstabileId);
+      ricontrolloInstabileId=setTimeout(()=>{
+        ricontrolloInstabileId=null;
+        if(reflowInSospesoPerZoom) reflow('ricontrollo-post-instabile');
+      }, 350);
       return;
     }
+    if(ricontrolloInstabileId){ clearTimeout(ricontrolloInstabileId); ricontrolloInstabileId=null; }
     reflowInSospesoPerZoom=false;
     ultimoReflowEsito='chiamato'; ultimoReflowT=performance.now();
     vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
