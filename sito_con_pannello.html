@@ -2396,22 +2396,23 @@ requestAnimationFrame(riposiziona);
      scatti (incerto/rischioso): lo correggiamo a cose fatte con lo stesso trucco che un pinch
      manuale dell'utente produce come effetto collaterale - forzare per un istante
      maximum-scale=1.0 sul meta viewport, che azzera qualunque zoom nativo residuo. */
-  /* Interruttore sperimentale, SOLO per confronto a parita' di codice (non e' il comportamento
-     di default): ?noreset=1 nell'URL salta forzaResetZoomNativo() quando il visualViewport e'
-     gia' neutro durante la rotazione, per capire se quel reset serva davvero o rischi di riaprire
-     il bug della rotazione semplice (ora corretto). Persistito in sessionStorage cosi' resta
-     attivo anche dopo un ricaricamento durante il confronto sul telefono vero; ?noreset=0 lo
-     azzera. SENZA il parametro noresetAttivo() e' sempre false e forzaResetZoomNativo() si
-     comporta esattamente come prima di questo interruttore. */
+  /* Confronto A/B sul telefono vero (risultato): la rotazione semplice si rompe CON il reset
+     zoom e non si rompe saltandolo quando il viewport e' gia' neutro - saltarlo e' quindi
+     diventato il comportamento di DEFAULT. Il reset resta attivo quando forzaResetZoomNativo()
+     e' raggiunta con zoomato()/viewportInstabile() ancora veri (la condizione sotto non si
+     verifica, percio' si procede con il reset pieno come prima). ?noreset=0 forza il vecchio
+     comportamento (reset sempre eseguito), persistito in sessionStorage cosi' resta valido
+     anche dopo un ricaricamento durante un confronto; ?noreset=1 e' equivalente al default
+     (esplicito, per chiarezza nei test) e azzera un eventuale ?noreset=0 precedente. */
   const VC_NORESET_KEY='vc-noreset-v1';
   (function(){
     try{
       const qp=new URLSearchParams(location.search).get('noreset');
       if(qp==='1') sessionStorage.setItem(VC_NORESET_KEY,'1');
-      else if(qp==='0') sessionStorage.removeItem(VC_NORESET_KEY);
+      else if(qp==='0') sessionStorage.setItem(VC_NORESET_KEY,'0');
     }catch(e){}
   })();
-  function noresetAttivo(){ try{ return sessionStorage.getItem(VC_NORESET_KEY)==='1'; }catch(e){ return false; } }
+  function noresetAttivo(){ try{ return sessionStorage.getItem(VC_NORESET_KEY)!=='0'; }catch(e){ return true; } }
   vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'NORESET-MODO', motivo:`NORESET-MODO=${noresetAttivo()?'on':'off'}`, durataMs:0 });
   function forzaResetZoomNativo(onCompletato){
     /* Solo maximum-scale limiterebbe lo zoom nativo dall'alto, ma non correggerebbe l'estremo
