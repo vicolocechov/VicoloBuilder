@@ -2282,13 +2282,37 @@ requestAnimationFrame(riposiziona);
   }
   document.addEventListener('touchcancel', onTouchCancel, {passive:true});
 
+  /* DIAGNOSTICA (bug: dopo un pinch la pagina resta leggermente spostata a destra/sinistra invece
+     di riagganciarsi esattamente). Solo osservazione, nessun effetto su swipe/reflow/pinch: una
+     fotografia dello stato di allineamento, scattata subito alla fine di ogni gesto multi-touch e
+     poi di nuovo a 300/1000/2000ms, per vedere SE e QUANDO la pagina torna esattamente al suo
+     posto (getBoundingClientRect().left del pannello corrente, atteso 0) e se in quella finestra
+     reflow() e' stato chiamato o saltato - verifica le 3 ipotesi (nessun ritentativo quando il
+     viewport torna stabile; soglie di zoomato()/viewportInstabile() troppo strette/larghe;
+     scrollX/pageLeft residuo) senza doverle dare per vere. */
+  function fotografaAllineamento(etichetta){
+    const vv=window.visualViewport;
+    const panel=panels[correntePanel];
+    const rectLeft=panel?panel.getBoundingClientRect().left:null;
+    vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'ALLINEAMENTO-'+etichetta, motivo:`vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'} vvPageLeft=${vv?Math.round(vv.pageLeft):'?'} vvPageTop=${vv?Math.round(vv.pageTop):'?'} scrollX=${Math.round(window.scrollX)} scrollY=${Math.round(window.scrollY)} innerWidth=${window.innerWidth} transformAttuale=${stage.style.transform} basePosAtteso=${basePos()} panelLeft=${rectLeft===null?'?':Math.round(rectLeft)} scarto=${rectLeft===null?'?':Math.round(rectLeft)} zoomato=${zoomato()} viewportInstabile=${viewportInstabile()} ultimoReflowEsito=${ultimoReflowEsito} msDaUltimoReflow=${ultimoReflowT?Math.round(performance.now()-ultimoReflowT):'mai'}`, durataMs:0 });
+  }
+  function fotografaAllineamentoProgrammato(){
+    fotografaAllineamento('+0ms');
+    setTimeout(()=>fotografaAllineamento('+300ms'), 300);
+    setTimeout(()=>fotografaAllineamento('+1000ms'), 1000);
+    setTimeout(()=>fotografaAllineamento('+2000ms'), 2000);
+  }
   function onTouchEnd(e){
     const panelId = panelIds[correntePanel] || '?';
+    /* cattura PRIMA del reset sotto: serve a sapere se questo touchend chiude un gesto
+       multi-touch/pinch, indipendentemente dal fatto che azzeri gestoMultiTouch un attimo dopo. */
+    const eraGestoMultiTouch = gestoMultiTouch || zoomato();
     /* rinfresca la finestra di soppressione anche qui (non solo sui touchmove intermedi): vedi
        il commento su gestoMultiTouch piu' sopra. Se questo era l'ultimo dito (touches.length===0),
        il gesto e' concluso e puo' ripartire pulito al prossimo touchstart. */
     if(gestoMultiTouch || zoomato()) segnalaPinch();
     if(e.touches.length===0) gestoMultiTouch=false;
+    if(e.touches.length===0 && eraGestoMultiTouch) fotografaAllineamentoProgrammato();
     if(!uno||!tmoved||zoomato()||e.touches.length>0){
       vcLog({ t:Date.now(), panel:panelId, origine:origineGesto, esito:'NESSUN-GESTO', motivo: `${!uno?(bailReason||'uno=false'):(!tmoved?'mai-mosso':(zoomato()?'zoom-attivo':'dita-residue'))} (touches-residue=${e.touches.length})`, durataMs: Math.round(performance.now()-tStart0) });
       uno=false;
@@ -2450,6 +2474,11 @@ requestAnimationFrame(riposiziona);
       });
     });
   }
+  /* DIAGNOSTICA (bug: pagina resta leggermente spostata dopo un pinch): solo bookkeeping, non
+     altera il comportamento di reflow() - memorizza il suo ultimo esito/istante cosi' le
+     fotografie di allineamento programmate da onTouchEnd (vedi sotto) possono dire se reflow()
+     e' stato chiamato o saltato nella finestra appena trascorsa, senza doverlo indovinare. */
+  let ultimoReflowEsito='mai', ultimoReflowT=0;
   function reflow(origineChiamata, forza){
     const vv = window.visualViewport;
     const panelIdPrima = panelIds[correntePanel] || '?';
@@ -2457,10 +2486,12 @@ requestAnimationFrame(riposiziona);
     if(!forza && (zoomato() || viewportInstabile())){
       reflowInSospesoPerZoom=true;
       const motivoSalto=zoomato()?'zoom-attivo':'viewport-instabile';
+      ultimoReflowEsito='saltato('+motivoSalto+')'; ultimoReflowT=performance.now();
       vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:`REFLOW-SALTATO(${motivoSalto})`, motivo:`da=${origineChiamata||'?'} innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} vvOffsetTop=${vv?Math.round(vv.offsetTop):'?'} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
       return;
     }
     reflowInSospesoPerZoom=false;
+    ultimoReflowEsito='chiamato'; ultimoReflowT=performance.now();
     vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
     const t = stage.style.transition;
     stage.style.transition = 'none';
