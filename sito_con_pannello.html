@@ -1337,10 +1337,73 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-gallery-nav{display:flex;justify-content:center;gap:7px;margin-top:7px}
 .s4-slide2-gallery-dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent;padding:0;cursor:pointer}
 .s4-slide2-gallery-dot.is-active{background:#fff}
+/* Contatore "1 / N" e suggerimento "Tocca per ingrandire": nuovi, usati solo nel rifacimento
+   mobile della scheda (vedi le due media query sotto) - su desktop (nessuna modifica li' dentro)
+   restano semplicemente nascosti, cosi' questa riga di base non cambia nulla del comportamento
+   gia' esistente. */
+.s4-slide2-gallery-counter,.s4-slide2-gallery-hint{display:none}
 .s4-slide2-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:1px solid rgba(255,255,255,.28);background:rgba(27,27,27,.82);color:#fff;border-radius:50%;font-size:26px;line-height:1;cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s}
 .s4-slide2-close:hover{background:var(--sede);color:#1b1b1b;transform:scale(1.06)}
+/* LIGHTBOX a tutto schermo (tocco su una foto della galleria, solo mobile - vedi JS): creata
+   fuori da #vcStage, sempre figlia diretta di <body> (nessun transplant come l'overlay, non
+   serve perche' e' gia' creata li' da zero via JS). z-index sopra l'overlay (1002) ma sotto il
+   pannello admin (2147483647) e il 🐞 (999999), come tutto il resto del sito. touch-action:none
+   su tutto: la gestione di pinch/pan/doppio-tocco e' interamente nostra (vedi JS), nessun gesto
+   nativo del browser deve intromettersi. */
+.s4-lightbox{position:fixed;inset:0;z-index:1200;background:rgba(10,10,10,.96);display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;touch-action:none;overflow:hidden}
+.s4-lightbox.open{opacity:1;visibility:visible;pointer-events:auto}
+.s4-lightbox-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.s4-lightbox-stage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:0 0;will-change:transform;touch-action:none;-webkit-user-drag:none;user-select:none}
+.s4-lightbox-close{position:absolute;top:calc(14px + var(--vc-safe-top));right:calc(14px + var(--vc-safe-right));width:52px;height:52px;border:1px solid rgba(255,255,255,.3);background:rgba(20,20,20,.75);color:#fff;border-radius:50%;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+.s4-lightbox-arrow{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border:0;border-radius:50%;background:rgba(20,20,20,.6);color:#fff;font-size:28px;cursor:pointer;z-index:2}
+.s4-lightbox-prev{left:calc(10px + var(--vc-safe-left))}
+.s4-lightbox-next{right:calc(10px + var(--vc-safe-right))}
+.s4-lightbox.s4-lightbox-foto-singola .s4-lightbox-arrow{display:none}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
-@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}.s4-slide2-detail{width:100%;max-height:94svh;gap:14px;padding:2px}.s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}.s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}.s4-slide2-detail-row{gap:12px}.s4-slide2-detail-gallery{flex:0 0 38%}.s4-slide2-gallery-track img{max-height:44vh}.s4-slide2-gallery-arrow{width:30px;height:30px;font-size:16px}.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}.s4-slide2-detail-info{gap:6px;margin:14px 0 16px}.s4-slide2-detail-info span{padding:8px 11px;font-size:11px}.s4-slide2-detail-btn{padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}.s4-slide2-close{top:6px;right:6px;width:36px;height:36px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
+@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
+   display:contents su .s4-slide2-detail-row (stesso trucco gia' usato in landscape, b6b1416)
+   portano galleria/info/head/copy/btn tutte a celle dirette della griglia, nell'ordine chiesto
+   (galleria, chip, titolo, sinossi+cast, bottone) - nessun elemento/id/classe esistente toccato,
+   solo l'ordine VISIVO cambia. Nessuna di queste regole tocca il desktop (fuori da questa media
+   query). */
+.s4-slide2-detail{display:grid;grid-template-columns:1fr;grid-template-areas:"gallery" "info" "head" "copy" "btn";row-gap:14px;width:100%;max-height:94svh;padding:2px;padding-bottom:calc(20px + var(--vc-safe-bottom));padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right))}
+.s4-slide2-detail-row{display:contents}
+/* altezza FISSA (non legata alla singola foto, vedi richiesta): niente "salto" di misura della
+   scheda passando da una foto verticale a una orizzontale nella stessa galleria. */
+.s4-slide2-detail-gallery{grid-area:gallery;height:48svh;position:relative;flex:none}
+/* scorrimento NATIVO con scroll-snap (non piu' il transform via JS, riservato al desktop dove
+   .s4-slide2-gallery-track resta overflow:visible/hidden come oggi - setG() nel JS sceglie il
+   meccanismo giusto leggendo overflow-x calcolato, invece di duplicare qui la logica). */
+.s4-slide2-gallery-track{display:flex;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;border-radius:12px}
+.s4-slide2-gallery-track::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-gallery-track img{flex:0 0 100%;width:100%;height:100%;max-height:none;object-fit:contain;scroll-snap-align:center;scroll-snap-stop:always;border-radius:12px}
+.s4-slide2-gallery-arrow{width:44px;height:44px;font-size:22px}
+.s4-slide2-gallery-nav{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin-top:0;background:rgba(0,0,0,.3);padding:5px 8px;border-radius:999px}
+/* contatore in basso A DESTRA e suggerimento in alto a sinistra (non in basso, dove si
+   sovrapporrebbe ai puntini) - vedi richiesta esplicita. */
+.s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font:600 11px/1 'Poppins',sans-serif;padding:5px 9px;border-radius:999px}
+.s4-slide2-gallery-hint{display:block;position:absolute;left:8px;top:8px;background:rgba(0,0,0,.55);color:#fff;font:500 10px/1 'Poppins',sans-serif;padding:5px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+/* con una sola foto: niente frecce/puntini/contatore (openShow() aggiunge questa classe, vedi JS) */
+.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
+/* Scheda senza copertina/galleria (galleryImgs.length===0): qui, a differenza del vecchio stack
+   verticale, .s4-slide2-detail-gallery ha ora un'altezza FISSA (48svh) riservata nella griglia -
+   senza questa regola resterebbe comunque un riquadro vuoto alto quasi meta' schermo. */
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-areas:"info" "head" "copy" "btn"}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
+.s4-slide2-detail-info{grid-area:info;gap:6px;margin:0}
+.s4-slide2-detail-info span{padding:8px 11px;font-size:11px}
+.s4-slide2-detail-head{grid-area:head;margin:0 auto;max-width:100%}
+.s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}
+.s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}
+/* riga vuota (sottotitolo/regia/cast non compilati) non deve lasciare spazio: openShow() non
+   crea gia' gli span di sottotitolo/regia se assenti (nessun cambiamento li'), ma .autore e
+   .cast restano comunque nel DOM come contenitori vuoti - :empty li collassa del tutto. */
+.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty{display:none}
+.s4-slide2-detail-copy{grid-area:copy;padding-top:0}
+.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}
+.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}
+.s4-slide2-detail-btn{grid-area:btn;justify-self:center;margin-top:4px;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
+.s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:44px;height:44px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
 /* Mobile ORIZZONTALE (telefono ruotato: pochissima altezza disponibile) - qui la priorita' e'
    che TUTTO resti visibile/proporzionato senza sforare, non ingrandire come in verticale */
 @media (orientation:landscape) and (max-height:550px){#s4-slide2{padding-top:calc(var(--header-h,48px) + 4px);padding-bottom:6px}.s4-slide2-eyebrow{margin-bottom:1px}.s4-slide2-titolo{font-size:calc(clamp(18px,3.6vw,24px) * var(--s4-slide2-titolo-scale,1));margin-top:1px}
@@ -1364,40 +1427,49 @@ html.sede-monte #s3-slide1{display:none}
    TUTTA la sezione la spinge fuori dalla porzione di schermo davvero visibile. Allineandola
    in cima resta quasi sempre dentro lo schermo attuale. */
 .s4-slide2-overlay{padding:8px;padding-top:calc(48px + var(--vc-safe-top));padding-bottom:calc(8px + var(--vc-safe-bottom));padding-left:calc(8px + var(--vc-safe-left));padding-right:calc(8px + var(--vc-safe-right));align-items:flex-start}
-/* Due colonne (locandina a sinistra, alta quanto la scheda; dettagli a destra) invece dello
-   stack verticale: display:grid su .s4-slide2-detail e display:contents su
-   .s4-slide2-detail-row "dissolvono" la riga cosi' i suoi due figli (galleria e copy) diventano
-   celle dirette della griglia, senza toccare l'HTML. Le grid-area fissano l'ordine nella
-   colonna destra (titolo, poi info, poi bottone, poi sinossi/cast) cosi' il contenuto essenziale
-   e' sempre il primo che si vede; solo .s4-slide2-detail-copy scorre se non entra, lasciando
-   la locandina ferma a sinistra. height (non solo max-height) e' necessaria perche' la riga
-   1fr della griglia abbia una misura reale da cui sottrarre, non solo un tetto. */
-.s4-slide2-detail{display:grid;grid-template-columns:minmax(120px,34%) 1fr;grid-template-rows:auto auto auto 1fr;grid-template-areas:"gallery head" "gallery info" "gallery btn" "gallery copy";column-gap:16px;row-gap:2px;height:calc(100svh - 60px);max-height:calc(100svh - 60px);padding:2px;overflow:hidden}
+/* Due colonne (locandina a sinistra, ferma; dettagli a destra) invece dello stack verticale:
+   display:grid su .s4-slide2-detail e display:contents su .s4-slide2-detail-row "dissolvono" la
+   riga cosi' i suoi due figli (galleria e copy) diventano celle dirette della griglia, senza
+   toccare l'HTML. .s4-slide2-detail e' ora anche il contenitore che scorre (overflow-y:auto):
+   la galleria resta ferma con position:sticky;top:0 (la sua altezza riempie gia' tutto lo
+   spazio verticale, quindi lo "sticky" non la fa mai muovere), e il bottone Prenota resta
+   SEMPRE visibile con position:sticky;bottom:0 - tutto il resto (titolo, chip, sinossi/cast)
+   scorre insieme come un solo blocco nella colonna destra. */
+.s4-slide2-detail{display:grid;grid-template-columns:47% 1fr;column-gap:16px;height:calc(100svh - 60px);max-height:calc(100svh - 60px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right));padding-bottom:calc(8px + var(--vc-safe-bottom))}
 .s4-slide2-detail-row{display:contents}
 /* Scheda senza copertina/galleria (galleryImgs.length===0): openShow() aggiunge questa classe
-   all'overlay (vedi JS) - niente colonna sinistra vuota, il testo prende tutta la larghezza. */
-.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:1fr;grid-template-areas:"head" "info" "btn" "copy"}
+   all'overlay (vedi JS) - niente colonna sinistra vuota, il testo prende tutta la larghezza.
+   grid-column:1 va ripetuto su head/info/copy/btn: senza, restando ancorati alla colonna 2 (che
+   con una sola colonna esplicita non esiste piu') la griglia ne crea una implicita strettissima
+   invece di usare tutto lo spazio disponibile. */
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:1fr}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
-/* La galleria e' ora flex-column (invece che lasciare il track al 100% dell'altezza): se il
-   track occupasse tutta l'altezza della colonna, i puntini sotto (nav, nel normale flusso dopo
-   il track) finirebbero spinti fuori dal box e tagliati da overflow:hidden. Con track flex:1
-   (si riduce lui, non i puntini) e nav a altezza naturale, locandina e puntini restano sempre
-   entrambi dentro, anche quando la colonna e' bassa (844x300). */
-.s4-slide2-detail-gallery{grid-area:gallery;height:100%;max-height:none;flex:none;display:flex;flex-direction:column}
-.s4-slide2-gallery-track{flex:1;min-height:0}
-.s4-slide2-gallery-track img{height:100%;max-height:none;width:100%}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-head,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-info,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-copy,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-btn{grid-column:1}
+.s4-slide2-detail-gallery{grid-column:1;grid-row:1/5;position:sticky;top:0;align-self:start;height:calc(100svh - 60px);max-height:none;flex:none;display:flex;flex-direction:column}
+/* scorrimento NATIVO con scroll-snap (vedi anche il verticale sopra): stesso meccanismo,
+   setG() nel JS sceglie da solo se usare lo scroll nativo o il vecchio transform (riservato
+   al desktop) leggendo l'overflow-x calcolato, invece di duplicare qui la logica. */
+.s4-slide2-gallery-track{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.s4-slide2-gallery-track::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-gallery-track img{flex:0 0 100%;height:100%;max-height:none;width:100%;object-fit:contain;scroll-snap-align:center;scroll-snap-stop:always}
 .s4-slide2-gallery-nav{flex:none;margin-top:5px}
-.s4-slide2-detail-head{grid-area:head;max-width:none;margin:0;text-align:left}
+.s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:36px;background:rgba(0,0,0,.55);color:#fff;font:600 10px/1 'Poppins',sans-serif;padding:4px 8px;border-radius:999px}
+/* "tocca per ingrandire" nascosto in landscape (schermo troppo basso per un'etichetta in piu') */
+.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
+.s4-slide2-detail-head{grid-column:2;grid-row:1;max-width:none;margin:0;text-align:left}
 .s4-slide2-detail-titolo{font-size:calc(clamp(20px,4vw,30px) * var(--s4-slide2-detail-titolo-scale,1))}
 .s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}
 .s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}
-.s4-slide2-detail-info{grid-area:info;justify-content:flex-start;gap:6px;margin:8px 0}
+.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty{display:none}
+.s4-slide2-detail-info{grid-column:2;grid-row:2;justify-content:flex-start;gap:6px;margin:8px 0}
 .s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}
-.s4-slide2-detail-btn{grid-area:btn;align-self:start;justify-self:start;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1));margin:0 0 6px}
-.s4-slide2-detail-copy{grid-area:copy;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-top:0}
+.s4-slide2-detail-copy{grid-column:2;grid-row:3;padding-top:0}
 .s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}
 .s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}
-.s4-slide2-close{top:6px;right:6px;width:32px;height:32px}}
+/* bottone CENTRATO e fisso in fondo alla colonna destra (sticky, non alla colonna sinistra): lo
+   sfondo pieno evita che il testo che scorre dietro si veda sotto il bottone quando e' "attaccato". */
+.s4-slide2-detail-btn{grid-column:2;grid-row:4;justify-self:center;align-self:end;position:sticky;bottom:0;margin-top:8px;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1))}
+.s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
 /* MASCHERINO — TOLFAMA · Slide 1 · Occhiello "Workshop & esperienze" -> --s5-slide1-eyebrow-{scale|x|y|lh|ls|color} */
@@ -1832,7 +1904,7 @@ html.sede-monte #s3-slide1{display:none}
       </div>
       <div class="s4-slide2-month-panels"><div class="s4-slide2-month-panel is-active" data-month-panel="novembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="dicembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="gennaio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="febbraio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="marzo"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="aprile"><div class="s4-slide2-pages"></div></div></div>
       </div>
-      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
+      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div><div class="s4-slide2-gallery-counter" id="s4Slide2GalleryCounter"></div><div class="s4-slide2-gallery-hint" id="s4Slide2GalleryHint">Tocca per ingrandire</div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
     </section>
   </section><!-- /vc-panel vicolo-off -->
 
@@ -1988,6 +2060,9 @@ requestAnimationFrame(riposiziona);
     clearTimeout(pinchClearId);
     pinchClearId=setTimeout(()=>{ pinchAttivoORecente=false; }, 700);
   }
+  /* esposta cosi' la lightbox della scheda-spettacolo (script separato) puo' richiamarla dopo
+     un proprio pinch, per la stessa soppressione di click-fantasma usata qui per il sito. */
+  window.__vcSegnalaPinch = segnalaPinch;
   /* true se la sequenza di tocco IN CORSO ha mai avuto 2+ dita (o zoom attivo) in un qualunque
      momento - a differenza di pinchAttivoORecente (che scade dopo 700ms dall'ultimo evento) questo
      resta vero per TUTTA la durata del gesto, cosi' da poter rinfrescare la finestra di
@@ -2209,11 +2284,12 @@ requestAnimationFrame(riposiziona);
      per costruzione la misura PIU' PICCOLA possibile) copre, lasciando una fascia scoperta che
      nessun elemento del DOM statico occupa. Ascoltare su document invece che sui singoli
      contenitori rende la copertura indipendente da QUALE elemento (o nessuno) si trovi sotto il
-     dito in quella fascia. Due soli casi da escludere esplicitamente, perche' non devono mai
-     essere trattati come inizio-swipe: il pannello admin (#vc-admin-host, shadow DOM) e questo
-     stesso overlay diagnostico (#vcDebugOverlayRoot). */
+     dito in quella fascia. Tre casi da escludere esplicitamente, perche' non devono mai essere
+     trattati come inizio-swipe: il pannello admin (#vc-admin-host, shadow DOM), questo stesso
+     overlay diagnostico (#vcDebugOverlayRoot), e la lightbox a tutto schermo della scheda
+     spettacolo (#s4Lightbox, script separato) che gestisce da sola pinch/pan/doppio-tocco. */
   function fuoriDalMotore(target){
-    return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot')));
+    return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')));
   }
   /* Traccia RAW (solo eventi multi-touch/zoom, per non intasare il log normale dello swipe a un
      dito): registra ogni touchstart/touchmove con 2+ dita o a zoom attivo, con lo stato uno/tmoved
@@ -2829,7 +2905,7 @@ requestAnimationFrame(riposiziona);
   const savedRef={};
   const tabs=[...document.querySelectorAll('.s4-slide2-month')], panels=[...document.querySelectorAll('.s4-slide2-month-panel')];
   if(!tabs.length) return;
-  const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav');
+  const overlay=document.getElementById('s4Slide2Overlay'), closeBtn=document.getElementById('s4Slide2Close'), track=document.getElementById('s4Slide2GalleryTrack'), nav=document.getElementById('s4Slide2GalleryNav'), galleryCounter=document.getElementById('s4Slide2GalleryCounter'), galleryPrevBtn=document.getElementById('s4Slide2GalleryPrev'), galleryNextBtn=document.getElementById('s4Slide2GalleryNext');
   /* Sposta l'overlay fuori da #vcStage, direttamente figlio di <body>, SOLO mentre e' aperto:
      e' l'unico modo perche' position:fixed (vedi CSS) si ancori davvero al viewport, dato che
      lo stage ha un transform - spostare il nodo gia' vivo (appendChild/insertBefore) non perde
@@ -2894,12 +2970,126 @@ requestAnimationFrame(riposiziona);
     });
   }
 
+  /* Due meccanismi di scorrimento della galleria sotto lo stesso setG(): il DESKTOP (nessuna
+     modifica li', fuori dalle due media query mobile) resta sul transform via JS di sempre
+     (.s4-slide2-gallery-track li' non ha mai overflow-x:auto). Sul MOBILE invece il track e'
+     davvero scorrevole con scroll-snap nativo (vedi CSS): leggere l'overflow-x CALCOLATO,
+     invece di indovinare la larghezza schermo o duplicare qui le media query, lascia alla CSS
+     l'unica fonte di verita' su quale dei due casi si applica in questo momento. */
+  function galleriaInScrollNativo(){ try{ return getComputedStyle(track).overflowX==='auto'; }catch(e){ return false; } }
+  function aggiornaGalleriaUI(){
+    const n=track.children.length;
+    [...nav.children].forEach((d,k)=>d.classList.toggle('is-active', k===gi));
+    if(galleryCounter) galleryCounter.textContent=n?((gi+1)+' / '+n):'';
+  }
   function setG(i){
     if(!track.children.length) return;
     gi=Math.max(0, Math.min(i, track.children.length-1));
-    track.style.transform='translateX(-'+(gi*100)+'%)';
-    [...nav.children].forEach((d,k)=>d.classList.toggle('is-active', k===gi));
+    if(galleriaInScrollNativo()){
+      const im=track.children[gi];
+      if(im) track.scrollTo({ left: im.offsetLeft, behavior:'smooth' });
+    } else {
+      track.style.transform='translateX(-'+(gi*100)+'%)';
+    }
+    aggiornaGalleriaUI();
   }
+  /* lo swipe col dito nativo (scroll-snap) non passa da setG(): un ascoltatore sullo scroll
+     stesso del track rilegge la posizione e riallinea gi/puntini/contatore di conseguenza -
+     un solo rAF alla volta (throttle), mai una chiamata per fotogramma di scroll. */
+  let galleryScrollRAF=null;
+  track.addEventListener('scroll', ()=>{
+    if(!galleriaInScrollNativo() || galleryScrollRAF) return;
+    galleryScrollRAF=requestAnimationFrame(()=>{
+      galleryScrollRAF=null;
+      const n=track.children.length; if(!n || !track.clientWidth) return;
+      const idx=Math.round(track.scrollLeft/track.clientWidth);
+      gi=Math.max(0, Math.min(idx, n-1));
+      aggiornaGalleriaUI();
+    });
+  }, { passive:true });
+
+  /* ===== LIGHTBOX a tutto schermo (tocco su una foto della galleria, solo mobile) =====
+     Creata una volta sola, sempre figlia diretta di <body> (mai dentro l'overlay/.vc-scena:
+     niente "trasloco" da fare come per l'overlay, e' gia' li' dalla creazione). Pinch fino a
+     ~4x, trascinamento quando ingrandita, doppio tocco per alternare 1x/2x. Esclusa dal motore
+     di swipe del sito con fuoriDalMotore() (esteso sotto per riconoscere #s4Lightbox) - inoltre
+     schedaAperta() e' gia' vero finche' la scheda-spettacolo resta aperta dietro, quindi il
+     motore di swipe non intercetta comunque nulla qui dentro. Un pinch nella lightbox richiama
+     anche segnalaPinch() del sito (via window.__vcSegnalaPinch, esposto sotto) cosi' un tap
+     "fantasma" generato da iOS subito dopo non colpisca per sbaglio qualcosa dietro una volta
+     chiusa la lightbox. */
+  let lightboxImgs=[], lightboxIdx=0;
+  const lightbox=document.createElement('div');
+  lightbox.className='s4-lightbox'; lightbox.id='s4Lightbox'; lightbox.setAttribute('aria-hidden','true');
+  lightbox.innerHTML='<button class="s4-lightbox-close" id="s4LightboxClose" type="button">×</button><div class="s4-lightbox-stage" id="s4LightboxStage"><img id="s4LightboxImg" alt="" draggable="false"></div><button class="s4-lightbox-arrow s4-lightbox-prev" id="s4LightboxPrev" type="button">‹</button><button class="s4-lightbox-arrow s4-lightbox-next" id="s4LightboxNext" type="button">›</button>';
+  document.body.appendChild(lightbox);
+  const lbStage=document.getElementById('s4LightboxStage'), lbImg=document.getElementById('s4LightboxImg'), lbClose=document.getElementById('s4LightboxClose'), lbPrev=document.getElementById('s4LightboxPrev'), lbNext=document.getElementById('s4LightboxNext');
+
+  let lbScale=1, lbX=0, lbY=0;
+  function lbApplica(){ lbImg.style.transform='translate('+lbX+'px,'+lbY+'px) scale('+lbScale+')'; }
+  function lbReset(){ lbScale=1; lbX=0; lbY=0; lbImg.style.transformOrigin='center center'; lbApplica(); }
+  function lbImpostaOrigine(clientX, clientY){
+    const rect=lbImg.getBoundingClientRect(); if(!rect.width || !rect.height) return;
+    lbImg.style.transformOrigin=((clientX-rect.left)/rect.width*100).toFixed(2)+'% '+((clientY-rect.top)/rect.height*100).toFixed(2)+'%';
+  }
+  function mostraLightboxImg(){ lbImg.src=lightboxImgs[lightboxIdx]||''; lbReset(); }
+  function apriLightbox(idx){
+    lightboxImgs=[...track.children].map(im=>im.src);
+    if(!lightboxImgs.length) return;
+    lightboxIdx=Math.max(0, Math.min(idx, lightboxImgs.length-1));
+    lightbox.classList.toggle('s4-lightbox-foto-singola', lightboxImgs.length===1);
+    mostraLightboxImg();
+    lightbox.classList.add('open'); lightbox.setAttribute('aria-hidden','false');
+  }
+  function chiudiLightbox(){
+    if(!lightbox.classList.contains('open')) return;
+    lightbox.classList.remove('open'); lightbox.setAttribute('aria-hidden','true');
+    lbImg.src='';
+  }
+  function lightboxVai(dir){ if(!lightboxImgs.length) return; lightboxIdx=(lightboxIdx+dir+lightboxImgs.length)%lightboxImgs.length; mostraLightboxImg(); }
+  lbClose.onclick=chiudiLightbox;
+  lbPrev.onclick=()=>lightboxVai(-1);
+  lbNext.onclick=()=>lightboxVai(1);
+  lightbox.addEventListener('click', e=>{ if(e.target===lightbox) chiudiLightbox(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && lightbox.classList.contains('open')) chiudiLightbox(); });
+
+  /* gesti: pinch a 2 dita (clamp 1x-4x), trascinamento di 1 dito quando ingrandita, doppio
+     tocco per alternare 1x/2x - tutto fatto a mano (touch-action:none in CSS), nessun gesto
+     nativo del browser deve intromettersi qui dentro. */
+  let lbPinchDist0=0, lbPinchScale0=1, lbPanAttivo=false, lbPanX0=0, lbPanY0=0, lbX0=0, lbY0=0, lbUltimoTapT=0;
+  function lbDist(t1,t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return Math.sqrt(dx*dx+dy*dy); }
+  lbStage.addEventListener('touchstart', e=>{
+    if(e.touches.length===2){
+      lbPinchDist0=lbDist(e.touches[0], e.touches[1]); lbPinchScale0=lbScale; lbPanAttivo=false;
+      lbImpostaOrigine((e.touches[0].clientX+e.touches[1].clientX)/2, (e.touches[0].clientY+e.touches[1].clientY)/2);
+    } else if(e.touches.length===1){
+      const ora=performance.now();
+      if(ora-lbUltimoTapT<300){
+        lbImpostaOrigine(e.touches[0].clientX, e.touches[0].clientY);
+        if(lbScale>1){ lbReset(); } else { lbScale=2; lbX=0; lbY=0; lbApplica(); }
+        lbUltimoTapT=0;
+      } else {
+        lbUltimoTapT=ora;
+        if(lbScale>1){ lbPanAttivo=true; lbPanX0=e.touches[0].clientX; lbPanY0=e.touches[0].clientY; lbX0=lbX; lbY0=lbY; }
+      }
+    }
+  }, { passive:true });
+  lbStage.addEventListener('touchmove', e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      if(lbPinchDist0>0){ lbScale=Math.max(1, Math.min(4, lbPinchScale0*(lbDist(e.touches[0],e.touches[1])/lbPinchDist0))); lbApplica(); }
+    } else if(e.touches.length===1 && lbPanAttivo){
+      e.preventDefault();
+      lbX=lbX0+(e.touches[0].clientX-lbPanX0); lbY=lbY0+(e.touches[0].clientY-lbPanY0); lbApplica();
+    }
+  }, { passive:false });
+  lbStage.addEventListener('touchend', e=>{
+    if(e.touches.length===0){
+      lbPanAttivo=false; lbPinchDist0=0;
+      if(lbScale<=1.02) lbReset();
+      try{ window.__vcSegnalaPinch && window.__vcSegnalaPinch(); }catch(err){}
+    }
+  }, { passive:true });
 
   function openShow(id, motivo){
     const d=data[id]; if(!d) return;
@@ -2912,10 +3102,16 @@ requestAnimationFrame(riposiziona);
        tutta la larghezza. Nessun effetto su portrait, dove il layout resta a colonna singola
        indipendentemente da questa classe. */
     overlay.classList.toggle('s4-slide2-senza-galleria', galleryImgs.length===0);
+    /* con una sola foto: niente frecce/puntini/contatore (il suggerimento "tocca per
+       ingrandire" resta, si puo' ingrandire anche l'unica foto presente). */
+    overlay.classList.toggle('s4-slide2-foto-singola', galleryImgs.length===1);
     galleryImgs.forEach((u,k)=>{
-      const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); track.appendChild(im);
+      const im=document.createElement('img'); im.src=u; im.alt=(d.title||'')+' immagine '+(k+1); im.loading='lazy';
+      im.onclick=()=>{ if(galleriaInScrollNativo()) apriLightbox(k); };
+      track.appendChild(im);
       const dot=document.createElement('button'); dot.type='button'; dot.className='s4-slide2-gallery-dot'+(k===0?' is-active':''); dot.onclick=()=>setG(k); nav.appendChild(dot);
     });
+    track.scrollLeft=0;
     setG(0);
     elTitle.textContent=d.title||'';
     /* sottotitolo e regia su due righe separate (non piu' unite con " · " sulla stessa riga) */
@@ -2932,9 +3128,11 @@ requestAnimationFrame(riposiziona);
        quindi finche' la scheda e' aperta l'header non deve intercettare i click
        (altrimenti su schermi piu' bassi copre la X e "non si clicca") */
     document.body.classList.add('s4-poster-modal-open');
+    chiudiLightbox();
     notifyPosterOpenChanged(motivo||'openShow(ignoto)');
   }
   function closeShow(motivo){
+    chiudiLightbox();
     /* sposta il focus FUORI dalla scheda prima di nasconderla con aria-hidden,
        altrimenti il browser blocca aria-hidden su un elemento con un discendente
        che ha ancora il focus (es. il bottone di chiusura appena cliccato) */
