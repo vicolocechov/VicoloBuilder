@@ -2625,7 +2625,32 @@ requestAnimationFrame(riposiziona);
      un singolo HTML statico senza passaggio di build che possa iniettarlo) - aggiornata a mano a
      ogni commit che tocca questo file, cosi' il log dice sempre quale versione ha caricato il
      telefono senza dover confrontare il sorgente a occhio. */
-  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=scrollx-dentro-reflow-2026-10-15', durataMs:0 });
+  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=clip-overflow-2026-10-15', durataMs:0 });
+  /* Interruttore sperimentale ?clip=1 (sessionStorage, ?clip=0 lo azzera - stesso schema di
+     ?noreset/?rotfix): dal log GEOMETRIA-STAGE il documento e' davvero piu' largo del viewport
+     (docScrollWidth=1560 contro innerWidth=390 in verticale, fino a 3376/5064 in orizzontale),
+     con overflowXHtml=visible - ipotesi per cui il trascinamento a due dita non si aggancia piu'
+     (iOS rimpicciolisce oltre la scala normale, innerWidth cresce a 536/596/624 con vvScale=1.000:
+     sta "mostrando" tutto quel contenuto sporgente). overflow-x:hidden SOLO su html e sul
+     contenitore dello stage (main, il genitore di #vcStage) - mai position:fixed su html/body,
+     che romperebbe lo scroll verticale nativo delle .vc-panel. Applicato SUBITO qui (prima che il
+     pannello iniziale da hash venga impostato sotto), cosi' la misura di verifica piu' sotto
+     riflette gia' lo stato con clip attivo. SENZA il parametro nessun cambiamento. */
+  const VC_CLIP_KEY='vc-clip-v1';
+  (function(){
+    try{
+      const qp=new URLSearchParams(location.search).get('clip');
+      if(qp==='1') sessionStorage.setItem(VC_CLIP_KEY,'1');
+      else if(qp==='0') sessionStorage.removeItem(VC_CLIP_KEY);
+    }catch(e){}
+  })();
+  function clipAttivo(){ try{ return sessionStorage.getItem(VC_CLIP_KEY)==='1'; }catch(e){ return false; } }
+  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'CLIP-MODO', motivo:`CLIP-MODO=${clipAttivo()?'on':'off'}`, durataMs:0 });
+  if(clipAttivo()){
+    document.documentElement.style.overflowX='hidden';
+    const contenitoreStage=stage.parentElement;
+    if(contenitoreStage) contenitoreStage.style.overflowX='hidden';
+  }
   /* ROTAZIONE DEVICE (orientationchange): su iOS il primo scatto dell'evento puo' arrivare con
      window.innerWidth ancora transitorio (non ancora assestato sulla nuova orientazione) - un
      reflow() immediato rischia quindi di calcolare basePos() con una larghezza sbagliata, e anche
@@ -2682,6 +2707,13 @@ requestAnimationFrame(riposiziona);
   }
   if(startPanel>-1){ stage.style.transition='none'; vaiPannello(startPanel, startScene); requestAnimationFrame(()=>{ stage.style.transition=''; }); }
   else { posiziona(basePos()); disegnaDots(); }
+  /* Verifica ?clip (vedi sopra): logga DOPO che il pannello iniziale da hash e' gia' impostato,
+     cosi' il valore riflette il pannello davvero caricato (es. #corsi -> pannello 2) invece che
+     sempre il pannello 0 di partenza. Da confrontare tra un caricamento su pannello 0 e uno su
+     pannello 2 (atteso con clip attivo: docScrollWidth uguale, o quasi, a innerWidth). */
+  if(clipAttivo()){
+    vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'CLIP-GEOMETRIA', motivo:`correntePanel=${correntePanel}(${panelIds[correntePanel]||'?'}) docScrollWidth=${document.documentElement.scrollWidth} docClientWidth=${document.documentElement.clientWidth} bodyScrollWidth=${document.body.scrollWidth} innerWidth=${window.innerWidth}`, durataMs:0 });
+  }
 })();
 
 /* ===== LE PAURE: le tre frasi si accendono di nero a rotazione, da sole (loop) ===== */
