@@ -2625,26 +2625,23 @@ requestAnimationFrame(riposiziona);
      un singolo HTML statico senza passaggio di build che possa iniettarlo) - aggiornata a mano a
      ogni commit che tocca questo file, cosi' il log dice sempre quale versione ha caricato il
      telefono senza dover confrontare il sorgente a occhio. */
-  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=clip-overflow-2026-10-15', durataMs:0 });
-  /* Interruttore sperimentale ?clip=1 (sessionStorage, ?clip=0 lo azzera - stesso schema di
-     ?noreset/?rotfix): dal log GEOMETRIA-STAGE il documento e' davvero piu' largo del viewport
-     (docScrollWidth=1560 contro innerWidth=390 in verticale, fino a 3376/5064 in orizzontale),
-     con overflowXHtml=visible - ipotesi per cui il trascinamento a due dita non si aggancia piu'
-     (iOS rimpicciolisce oltre la scala normale, innerWidth cresce a 536/596/624 con vvScale=1.000:
-     sta "mostrando" tutto quel contenuto sporgente). overflow-x:hidden SOLO su html e sul
-     contenitore dello stage (main, il genitore di #vcStage) - mai position:fixed su html/body,
-     che romperebbe lo scroll verticale nativo delle .vc-panel. Applicato SUBITO qui (prima che il
-     pannello iniziale da hash venga impostato sotto), cosi' la misura di verifica piu' sotto
-     riflette gia' lo stato con clip attivo. SENZA il parametro nessun cambiamento. */
+  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=clip-default-2026-10-15', durataMs:0 });
+  /* Confronto sul telefono vero (risultato, build a33d6bc): sia con ?clip=0 sia con ?clip=1 tutto
+     ok (pinch, rotazione, trascinamento a due dita) - overflow-x:hidden su html e sul contenitore
+     dello stage (main) e' quindi diventato il comportamento di DEFAULT, stesso schema di
+     ?noreset/?rotfix. ?clip=0 resta come interruttore di emergenza per tornare al vecchio
+     comportamento (mai applicato), persistito in sessionStorage; ?clip=1 resta equivalente al
+     default, esplicito per i test, e azzera un ?clip=0 precedente. Mai position:fixed su
+     html/body, che romperebbe lo scroll verticale nativo delle .vc-panel. */
   const VC_CLIP_KEY='vc-clip-v1';
   (function(){
     try{
       const qp=new URLSearchParams(location.search).get('clip');
       if(qp==='1') sessionStorage.setItem(VC_CLIP_KEY,'1');
-      else if(qp==='0') sessionStorage.removeItem(VC_CLIP_KEY);
+      else if(qp==='0') sessionStorage.setItem(VC_CLIP_KEY,'0');
     }catch(e){}
   })();
-  function clipAttivo(){ try{ return sessionStorage.getItem(VC_CLIP_KEY)==='1'; }catch(e){ return false; } }
+  function clipAttivo(){ try{ return sessionStorage.getItem(VC_CLIP_KEY)!=='0'; }catch(e){ return true; } }
   vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'CLIP-MODO', motivo:`CLIP-MODO=${clipAttivo()?'on':'off'}`, durataMs:0 });
   if(clipAttivo()){
     document.documentElement.style.overflowX='hidden';
