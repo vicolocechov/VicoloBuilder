@@ -2513,19 +2513,6 @@ requestAnimationFrame(riposiziona);
       ricontrolloInstabileId=setTimeout(()=>{
         ricontrolloInstabileId=null;
         if(reflowInSospesoPerZoom) reflow('ricontrollo-post-instabile');
-        /* FIX (bug: dopo un pinch resta uno scarto orizzontale anche a translateX gia' corretto):
-           un residuo di scroll NATIVO del documento (window.scrollX) non e' qualcosa che reflow()
-           possa mai correggere - basePos()/translateX sono calcolati dalla posizione RELATIVA tra
-           pannello e stage (getBoundingClientRect), indifferenti a uno scroll orizzontale globale,
-           quindi anche un reflow() riuscito lo lascia intatto (confermato da log reale: translateX
-           corretto, scrollX=6 invariato). Corretto SOLO a gesto davvero concluso (non zoomato(),
-           non viewportInstabile(), nessun dito sullo schermo) per non interferire con un pinch/
-           pan ancora in corso; scrollY non toccato. */
-        if(!zoomato() && !viewportInstabile() && ditaAttuali===0 && Math.abs(window.scrollX)>0.5){
-          const scrollXPrima=window.scrollX;
-          window.scrollTo(0, window.scrollY);
-          vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'SCROLLX-CORRETTO', motivo:`scrollXPrima=${scrollXPrima} scrollXDopo=${window.scrollX} scrollY=${window.scrollY}`, durataMs:0 });
-        }
       }, 350);
       return;
     }
@@ -2533,6 +2520,21 @@ requestAnimationFrame(riposiziona);
     reflowInSospesoPerZoom=false;
     ultimoReflowEsito='chiamato'; ultimoReflowT=performance.now();
     vcLog({ t:Date.now(), panel:panelIdPrima, origine:origineGesto, esito:'REFLOW-CHIAMATO', motivo:`da=${origineChiamata||'?'} correntePanel=${correntePanel}(${panelIdPrima}) innerWidth=${window.innerWidth} vvWidth=${vv?Math.round(vv.width):'?'} vvScale=${vv?vv.scale.toFixed(3):'?'} vvOffsetLeft=${vv?Math.round(vv.offsetLeft):'?'} basePos=${basePos()} transformPrima=${posPrima} stageNascosta=${stageNascostaPerRotazione} stageOpacity=${stage.style.opacity||'(default)'}`, durataMs:0 });
+    /* FIX (bug: dopo un pinch resta uno scarto orizzontale anche a translateX gia' corretto):
+       spostato QUI (dentro reflow(), non piu' solo nel ricontrollo di 98d0e0b) perche' un reflow()
+       riuscito per la via NORMALE (resize/vv-debounced) cancella il ricontrollo differito PRIMA
+       che possa mai scattare (vedi sopra) - confermato da log reale: il fix non si attivava mai in
+       quel caso. Qui dentro scatta ad ogni reflow() davvero eseguito, sia per la via normale sia
+       per il ricontrollo (che richiama reflow() stesso, una riga sopra) - un solo punto, nessuna
+       duplicazione. window.scrollX e' un residuo di scroll NATIVO del documento che basePos()/
+       translateX (posizione RELATIVA tra pannello e stage) non toccano mai da soli. Corretto SOLO
+       a gesto davvero concluso (non zoomato(), non viewportInstabile(), nessun dito sullo
+       schermo) per non interferire con un pinch/pan ancora in corso; scrollY non toccato. */
+    if(!zoomato() && !viewportInstabile() && ditaAttuali===0 && Math.abs(window.scrollX)>0.5){
+      const scrollXPrima=window.scrollX;
+      window.scrollTo(0, window.scrollY);
+      vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:origineGesto, esito:'SCROLLX-CORRETTO', motivo:`scrollXPrima=${scrollXPrima} scrollXDopo=${window.scrollX} scrollY=${window.scrollY}`, durataMs:0 });
+    }
     const t = stage.style.transition;
     stage.style.transition = 'none';
     posiziona(basePos());
@@ -2623,7 +2625,7 @@ requestAnimationFrame(riposiziona);
      un singolo HTML statico senza passaggio di build che possa iniettarlo) - aggiornata a mano a
      ogni commit che tocca questo file, cosi' il log dice sempre quale versione ha caricato il
      telefono senza dover confrontare il sorgente a occhio. */
-  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=rotfix-default-2026-10-15', durataMs:0 });
+  vcLog({ t:Date.now(), panel:panelIds[correntePanel]||'?', origine:'avvio', esito:'BUILD-VERSIONE', motivo:'BUILD-VERSIONE=scrollx-dentro-reflow-2026-10-15', durataMs:0 });
   /* ROTAZIONE DEVICE (orientationchange): su iOS il primo scatto dell'evento puo' arrivare con
      window.innerWidth ancora transitorio (non ancora assestato sulla nuova orientazione) - un
      reflow() immediato rischia quindi di calcolare basePos() con una larghezza sbagliata, e anche
