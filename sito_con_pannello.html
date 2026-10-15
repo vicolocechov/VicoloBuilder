@@ -1361,16 +1361,19 @@ html.sede-monte #s3-slide1{display:none}
 .s4-lightbox.s4-lightbox-foto-singola .s4-lightbox-arrow{display:none}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
 @media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
-   display:contents su .s4-slide2-detail-row (stesso trucco gia' usato in landscape, b6b1416)
-   portano galleria/info/head/copy/btn tutte a celle dirette della griglia, nell'ordine chiesto
-   (galleria, chip, titolo, sinossi+cast, bottone) - nessun elemento/id/classe esistente toccato,
-   solo l'ordine VISIVO cambia. Nessuna di queste regole tocca il desktop (fuori da questa media
-   query). */
-.s4-slide2-detail{display:grid;grid-template-columns:1fr;grid-template-areas:"gallery" "info" "head" "copy" "btn";row-gap:14px;width:100%;max-height:94svh;padding:2px;padding-bottom:calc(20px + var(--vc-safe-bottom));padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right))}
-.s4-slide2-detail-row{display:contents}
-/* altezza FISSA (non legata alla singola foto, vedi richiesta): niente "salto" di misura della
-   scheda passando da una foto verticale a una orizzontale nella stessa galleria. */
-.s4-slide2-detail-gallery{grid-area:gallery;height:48svh;position:relative;flex:none}
+   display:contents su .s4-slide2-detail-row E su .s4-slide2-detail-copy (il trucco gia' usato
+   in landscape, b6b1416, applicato ora a UN LIVELLO IN PIU': dissolvere anche .copy porta
+   sinossi e cast, normalmente insieme li' dentro, a essere DUE celle separate della griglia -
+   serve a far scorrere solo la sinossi, lasciando "Con: ..." fermo subito sotto autore/regia
+   nel blocco intestazione) - nessun elemento/id/classe esistente toccato, solo l'ordine e il
+   comportamento di scorrimento VISIVI cambiano. Nessuna di queste regole tocca il desktop
+   (fuori da questa media query). */
+.s4-slide2-detail{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;grid-template-areas:"gallery" "info" "head" "cast" "sinossi" "btn";row-gap:10px;width:100%;height:94svh;max-height:94svh;overflow:hidden;padding:2px;padding-bottom:calc(20px + var(--vc-safe-bottom));padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right))}
+.s4-slide2-detail-row,.s4-slide2-detail-copy{display:contents}
+/* altezza FISSA ridotta (35-45svh, non piu' 48svh): la scheda ora NON scorre piu' nel suo
+   insieme (vedi sopra, overflow:hidden), quindi galleria+intestazione devono stare in altezza
+   lasciando spazio reale alla sinossi (almeno 3-4 righe visibili, richiesta esplicita). */
+.s4-slide2-detail-gallery{grid-area:gallery;height:38svh;position:relative;flex:none}
 /* scorrimento NATIVO con scroll-snap (non piu' il transform via JS, riservato al desktop dove
    .s4-slide2-gallery-track resta overflow:visible/hidden come oggi - setG() nel JS sceglie il
    meccanismo giusto leggendo overflow-x calcolato, invece di duplicare qui la logica). */
@@ -1386,23 +1389,30 @@ html.sede-monte #s3-slide1{display:none}
 /* con una sola foto: niente frecce/puntini/contatore (openShow() aggiunge questa classe, vedi JS) */
 .s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
 /* Scheda senza copertina/galleria (galleryImgs.length===0): qui, a differenza del vecchio stack
-   verticale, .s4-slide2-detail-gallery ha ora un'altezza FISSA (48svh) riservata nella griglia -
-   senza questa regola resterebbe comunque un riquadro vuoto alto quasi meta' schermo. */
-.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-areas:"info" "head" "copy" "btn"}
+   verticale, .s4-slide2-detail-gallery ha ora un'altezza FISSA riservata nella griglia - senza
+   questa regola resterebbe comunque un riquadro vuoto. */
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-areas:"info" "head" "cast" "sinossi" "btn"}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
 .s4-slide2-detail-info{grid-area:info;gap:6px;margin:0}
 .s4-slide2-detail-info span{padding:8px 11px;font-size:11px}
-.s4-slide2-detail-head{grid-area:head;margin:0 auto;max-width:100%}
+/* text-align:left (non piu' center, richiesta esplicita): max-width:none perche' il
+   centraggio della base (max-width:720px;margin:0 auto) non serve piu' da sinistra. */
+.s4-slide2-detail-head{grid-area:head;margin:0;max-width:none;text-align:left}
 .s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}
 .s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}
-/* riga vuota (sottotitolo/regia/cast non compilati) non deve lasciare spazio: openShow() non
-   crea gia' gli span di sottotitolo/regia se assenti (nessun cambiamento li'), ma .autore e
-   .cast restano comunque nel DOM come contenitori vuoti - :empty li collassa del tutto. */
-.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty{display:none}
-.s4-slide2-detail-copy{grid-area:copy;padding-top:0}
-.s4-slide2-detail-sinossi{font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}
-.s4-slide2-detail-cast{font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}
-.s4-slide2-detail-btn{grid-area:btn;justify-self:center;margin-top:4px;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
+/* riga vuota (sottotitolo/regia/cast/sinossi non compilati) non deve lasciare spazio: openShow()
+   non crea gia' gli span di sottotitolo/regia se assenti (nessun cambiamento li'), ma .autore,
+   .cast e .sinossi restano comunque nel DOM come contenitori eventualmente vuoti - :empty li
+   collassa del tutto. */
+.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty,.s4-slide2-detail-sinossi:empty{display:none}
+/* "Con: ..." subito sotto autore/regia, nel blocco intestazione - FERMO, non scorre con la
+   sinossi (vedi commento sopra su display:contents su .copy, che li separa). */
+.s4-slide2-detail-cast{grid-area:cast;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:4px;padding-top:0}
+/* SOLO la sinossi scorre, al suo interno, se non ci sta nello spazio rimasto (grid-row 1fr). */
+.s4-slide2-detail-sinossi{grid-area:sinossi;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}
+.s4-slide2-detail-sinossi::-webkit-scrollbar{display:none;width:0;height:0}
+/* fuori dall'area che scorre, sempre visibile, centrato (regola principale). */
+.s4-slide2-detail-btn{grid-area:btn;justify-self:center;align-self:end;margin-top:4px;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
 .s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:44px;height:44px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
 /* Mobile ORIZZONTALE (telefono ruotato: pochissima altezza disponibile) - qui la priorita' e'
    che TUTTO resti visibile/proporzionato senza sforare, non ingrandire come in verticale */
@@ -1428,47 +1438,55 @@ html.sede-monte #s3-slide1{display:none}
    in cima resta quasi sempre dentro lo schermo attuale. */
 .s4-slide2-overlay{padding:8px;padding-top:calc(48px + var(--vc-safe-top));padding-bottom:calc(8px + var(--vc-safe-bottom));padding-left:calc(8px + var(--vc-safe-left));padding-right:calc(8px + var(--vc-safe-right));align-items:flex-start}
 /* Due colonne (locandina a sinistra, ferma; dettagli a destra) invece dello stack verticale:
-   display:grid su .s4-slide2-detail e display:contents su .s4-slide2-detail-row "dissolvono" la
-   riga cosi' i suoi due figli (galleria e copy) diventano celle dirette della griglia, senza
-   toccare l'HTML. .s4-slide2-detail e' ora anche il contenitore che scorre (overflow-y:auto):
-   la galleria resta ferma con position:sticky;top:0 (la sua altezza riempie gia' tutto lo
-   spazio verticale, quindi lo "sticky" non la fa mai muovere), e il bottone Prenota resta
-   SEMPRE visibile con position:sticky;bottom:0 - tutto il resto (titolo, chip, sinossi/cast)
-   scorre insieme come un solo blocco nella colonna destra. */
-.s4-slide2-detail{display:grid;grid-template-columns:47% 1fr;column-gap:16px;height:calc(100svh - 60px);max-height:calc(100svh - 60px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right));padding-bottom:calc(8px + var(--vc-safe-bottom))}
-.s4-slide2-detail-row{display:contents}
+   display:grid su .s4-slide2-detail, display:contents su .s4-slide2-detail-row E su
+   .s4-slide2-detail-copy (un livello in piu' di dissolvimento, come nel verticale sopra: separa
+   sinossi da "Con: ...", che resta fermo nel blocco intestazione invece di scorrere con essa).
+   .s4-slide2-detail NON scorre piu' nel suo insieme (overflow:hidden): solo .s4-slide2-detail-
+   sinossi scorre al suo interno (grid-row 1fr) - il bottone Prenota ha una riga TUTTA SUA,
+   riservata, fuori dall'area che scorre, non puo' mai sovrapporsi al testo. La galleria riempie
+   un'altezza fissa (100%) identica a quella del contenitore (nessuno "sticky" piu' necessario:
+   non c'e' piu' nulla da cui "staccarsi", dato che nulla scorre eccetto la sinossi). */
+/* row-gap:4px ESPLICITO (non solo column-gap): la regola base (desktop) imposta gap:22px, che
+   vale per ENTRAMBI row-gap e column-gap - sovrascrivendo qui solo column-gap, row-gap restava
+   a 22px ereditato dalla base, abbastanza da far traboccare la colonna destra fuori dai 230px
+   disponibili su schermi molto bassi (844x290 reale) e tagliare via il bottone. */
+.s4-slide2-detail{display:grid;grid-template-columns:46% 1fr;grid-template-rows:auto auto auto minmax(0,1fr) auto;column-gap:16px;row-gap:4px;height:calc(100svh - 60px);max-height:calc(100svh - 60px);overflow:hidden;padding:2px;padding-left:calc(2px + var(--vc-safe-left));padding-right:calc(2px + var(--vc-safe-right));padding-bottom:calc(8px + var(--vc-safe-bottom))}
+.s4-slide2-detail-row,.s4-slide2-detail-copy{display:contents}
 /* Scheda senza copertina/galleria (galleryImgs.length===0): openShow() aggiunge questa classe
    all'overlay (vedi JS) - niente colonna sinistra vuota, il testo prende tutta la larghezza.
-   grid-column:1 va ripetuto su head/info/copy/btn: senza, restando ancorati alla colonna 2 (che
-   con una sola colonna esplicita non esiste piu') la griglia ne crea una implicita strettissima
-   invece di usare tutto lo spazio disponibile. */
+   grid-column:1 va ripetuto su head/cast/info/sinossi/btn: senza, restando ancorati alla
+   colonna 2 (che con una sola colonna esplicita non esiste piu') la griglia ne crea una
+   implicita strettissima invece di usare tutto lo spazio disponibile. */
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:1fr}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
-.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-head,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-info,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-copy,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-btn{grid-column:1}
-.s4-slide2-detail-gallery{grid-column:1;grid-row:1/5;position:sticky;top:0;align-self:start;height:calc(100svh - 60px);max-height:none;flex:none;display:flex;flex-direction:column}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-head,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-cast,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-info,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-sinossi,.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-btn{grid-column:1}
+.s4-slide2-detail-gallery{grid-column:1;grid-row:1/6;height:100%;max-height:none;flex:none;display:flex;flex-direction:column}
 /* scorrimento NATIVO con scroll-snap (vedi anche il verticale sopra): stesso meccanismo,
    setG() nel JS sceglie da solo se usare lo scroll nativo o il vecchio transform (riservato
    al desktop) leggendo l'overflow-x calcolato, invece di duplicare qui la logica. */
 .s4-slide2-gallery-track{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .s4-slide2-gallery-track::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-gallery-track img{flex:0 0 100%;height:100%;max-height:none;width:100%;object-fit:contain;scroll-snap-align:center;scroll-snap-stop:always}
-.s4-slide2-gallery-nav{flex:none;margin-top:5px}
-.s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:36px;background:rgba(0,0,0,.55);color:#fff;font:600 10px/1 'Poppins',sans-serif;padding:4px 8px;border-radius:999px}
+/* puntini dentro l'area visibile, con almeno 8px liberi sotto + safe-area (richiesta esplicita) */
+.s4-slide2-gallery-nav{flex:none;margin-top:5px;padding-bottom:calc(8px + var(--vc-safe-bottom))}
+.s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:calc(36px + var(--vc-safe-bottom));background:rgba(0,0,0,.55);color:#fff;font:600 10px/1 'Poppins',sans-serif;padding:4px 8px;border-radius:999px}
 /* "tocca per ingrandire" nascosto in landscape (schermo troppo basso per un'etichetta in piu') */
 .s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
 .s4-slide2-detail-head{grid-column:2;grid-row:1;max-width:none;margin:0;text-align:left}
-.s4-slide2-detail-titolo{font-size:calc(clamp(20px,4vw,30px) * var(--s4-slide2-detail-titolo-scale,1))}
-.s4-slide2-detail-autore{font-size:calc(11.5px * var(--s4-slide2-detail-autore-scale,1))}
+.s4-slide2-detail-titolo{font-size:calc(clamp(18px,3.6vw,26px) * var(--s4-slide2-detail-titolo-scale,1))}
+.s4-slide2-detail-autore{font-size:calc(10.5px * var(--s4-slide2-detail-autore-scale,1))}
 .s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:3px}
-.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty{display:none}
-.s4-slide2-detail-info{grid-column:2;grid-row:2;justify-content:flex-start;gap:6px;margin:8px 0}
+.s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty,.s4-slide2-detail-sinossi:empty{display:none}
+/* "Con: ..." subito sotto autore/regia, nel blocco intestazione - FERMO, non scorre. */
+.s4-slide2-detail-cast{grid-column:2;grid-row:2;font-size:calc(10.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:4px;padding-top:0}
+.s4-slide2-detail-info{grid-column:2;grid-row:3;justify-content:flex-start;gap:6px;margin:6px 0}
 .s4-slide2-detail-info span{padding:6px 9px;font-size:9.5px}
-.s4-slide2-detail-copy{grid-column:2;grid-row:3;padding-top:0}
-.s4-slide2-detail-sinossi{font-size:calc(13px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}
-.s4-slide2-detail-cast{font-size:calc(11px * var(--s4-slide2-detail-cast-scale,1));margin-top:6px}
-/* bottone CENTRATO e fisso in fondo alla colonna destra (sticky, non alla colonna sinistra): lo
-   sfondo pieno evita che il testo che scorre dietro si veda sotto il bottone quando e' "attaccato". */
-.s4-slide2-detail-btn{grid-column:2;grid-row:4;justify-self:center;align-self:end;position:sticky;bottom:0;margin-top:8px;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1))}
+/* SOLO la sinossi scorre, al suo interno, se non ci sta nello spazio rimasto (grid-row 1fr). */
+.s4-slide2-detail-sinossi{grid-column:2;grid-row:4;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;font-size:calc(12px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}
+.s4-slide2-detail-sinossi::-webkit-scrollbar{display:none;width:0;height:0}
+/* riga TUTTA SUA, riservata, fuori dall'area che scorre - non si sovrappone mai al testo
+   (regola principale). Centrato nella colonna destra. */
+.s4-slide2-detail-btn{grid-column:2;grid-row:5;justify-self:center;align-self:end;margin-top:4px;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1))}
 .s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
