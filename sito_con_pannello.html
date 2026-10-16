@@ -1355,10 +1355,15 @@ html.sede-monte #s3-slide1{display:none}
 .s4-lightbox-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
 .s4-lightbox-stage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:0 0;will-change:transform;touch-action:none;-webkit-user-drag:none;user-select:none}
 .s4-lightbox-close{position:absolute;top:calc(14px + var(--vc-safe-top));right:calc(14px + var(--vc-safe-right));width:52px;height:52px;border:1px solid rgba(255,255,255,.3);background:rgba(20,20,20,.75);color:#fff;border-radius:50%;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
-.s4-lightbox-arrow{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border:0;border-radius:50%;background:rgba(20,20,20,.6);color:#fff;font-size:28px;cursor:pointer;z-index:2}
+/* piu' piccole e discrete (36px, meno opache): il gesto di swipe e' ora il comando
+   principale, le frecce restano solo come alternativa secondaria (vedi JS). */
+.s4-lightbox-arrow{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:rgba(20,20,20,.38);color:rgba(255,255,255,.85);font-size:19px;cursor:pointer;z-index:2}
 .s4-lightbox-prev{left:calc(10px + var(--vc-safe-left))}
 .s4-lightbox-next{right:calc(10px + var(--vc-safe-right))}
 .s4-lightbox.s4-lightbox-foto-singola .s4-lightbox-arrow{display:none}
+/* contatore "2 / 4" in alto, discreto - nascosto con una sola foto come counter/nav/arrow */
+.s4-lightbox-counter{position:absolute;top:calc(14px + var(--vc-safe-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);color:#fff;font:600 12px/1 'Poppins',sans-serif;padding:5px 11px;border-radius:999px;z-index:2}
+.s4-lightbox.s4-lightbox-foto-singola .s4-lightbox-counter{display:none}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
 @media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
    display:contents su .s4-slide2-detail-row E su .s4-slide2-detail-copy (il trucco gia' usato
@@ -1382,10 +1387,10 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-gallery-track img{flex:0 0 100%;width:100%;height:100%;max-height:none;object-fit:contain;scroll-snap-align:center;scroll-snap-stop:always;border-radius:12px}
 .s4-slide2-gallery-arrow{width:44px;height:44px;font-size:22px}
 .s4-slide2-gallery-nav{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin-top:0;background:rgba(0,0,0,.3);padding:5px 8px;border-radius:999px}
-/* contatore in basso A DESTRA e suggerimento in alto a sinistra (non in basso, dove si
-   sovrapporrebbe ai puntini) - vedi richiesta esplicita. */
+/* contatore in basso a destra, suggerimento in basso a sinistra: stessa riga dei puntini
+   (che restano al centro), piccolo e discreto - non piu' in alto a coprire la foto. */
 .s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font:600 11px/1 'Poppins',sans-serif;padding:5px 9px;border-radius:999px}
-.s4-slide2-gallery-hint{display:block;position:absolute;left:8px;top:8px;background:rgba(0,0,0,.55);color:#fff;font:500 10px/1 'Poppins',sans-serif;padding:5px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+.s4-slide2-gallery-hint{display:block;position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.4);color:rgba(255,255,255,.85);font-size:12px;line-height:1;padding:4px 6px;border-radius:999px;pointer-events:none}
 /* con una sola foto: niente frecce/puntini/contatore (openShow() aggiunge questa classe, vedi JS) */
 .s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
 /* Scheda senza copertina/galleria (galleryImgs.length===0): qui, a differenza del vecchio stack
@@ -1395,9 +1400,10 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
 .s4-slide2-detail-info{grid-area:info;gap:6px;margin:0}
 .s4-slide2-detail-info span{padding:8px 11px;font-size:11px}
-/* text-align:left (non piu' center, richiesta esplicita): max-width:none perche' il
-   centraggio della base (max-width:720px;margin:0 auto) non serve piu' da sinistra. */
-.s4-slide2-detail-head{grid-area:head;margin:0;max-width:none;text-align:left}
+/* CENTRATO (richiesta esplicita, solo in verticale - l'orizzontale resta a sinistra
+   sotto, nella sua media query separata): max-width:none perche' il centraggio della
+   base (max-width:720px;margin:0 auto) centrerebbe il BLOCCO, qui basta il testo. */
+.s4-slide2-detail-head{grid-area:head;margin:0;max-width:none;text-align:center}
 .s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}
 .s4-slide2-detail-autore{font-size:calc(13px * var(--s4-slide2-detail-autore-scale,1))}
 /* riga vuota (sottotitolo/regia/cast/sinossi non compilati) non deve lasciare spazio: openShow()
@@ -1406,8 +1412,11 @@ html.sede-monte #s3-slide1{display:none}
    collassa del tutto. */
 .s4-slide2-detail-autore:empty,.s4-slide2-detail-cast:empty,.s4-slide2-detail-sinossi:empty{display:none}
 /* "Con: ..." subito sotto autore/regia, nel blocco intestazione - FERMO, non scorre con la
-   sinossi (vedi commento sopra su display:contents su .copy, che li separa). */
-.s4-slide2-detail-cast{grid-area:cast;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:4px;padding-top:0}
+   sinossi (vedi commento sopra su display:contents su .copy, che li separa). CENTRATO come
+   titolo/autore/regia (richiesta esplicita): .copy ha text-align:left di base (desktop) e
+   .cast ne eredita il valore tramite il DOM (display:contents non lo impedisce), va quindi
+   sovrascritto qui esplicitamente. */
+.s4-slide2-detail-cast{grid-area:cast;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:4px;padding-top:0;text-align:center}
 /* SOLO la sinossi scorre, al suo interno, se non ci sta nello spazio rimasto (grid-row 1fr). */
 .s4-slide2-detail-sinossi{grid-area:sinossi;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;font-size:calc(15px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.5}
 .s4-slide2-detail-sinossi::-webkit-scrollbar{display:none;width:0;height:0}
@@ -1922,7 +1931,7 @@ html.sede-monte #s3-slide1{display:none}
       </div>
       <div class="s4-slide2-month-panels"><div class="s4-slide2-month-panel is-active" data-month-panel="novembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="dicembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="gennaio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="febbraio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="marzo"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="aprile"><div class="s4-slide2-pages"></div></div></div>
       </div>
-      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div><div class="s4-slide2-gallery-counter" id="s4Slide2GalleryCounter"></div><div class="s4-slide2-gallery-hint" id="s4Slide2GalleryHint">Tocca per ingrandire</div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
+      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div><div class="s4-slide2-gallery-counter" id="s4Slide2GalleryCounter"></div><div class="s4-slide2-gallery-hint" id="s4Slide2GalleryHint" title="Tocca per ingrandire" aria-hidden="true">🔍</div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
     </section>
   </section><!-- /vc-panel vicolo-off -->
 
@@ -3039,9 +3048,9 @@ requestAnimationFrame(riposiziona);
   let lightboxImgs=[], lightboxIdx=0;
   const lightbox=document.createElement('div');
   lightbox.className='s4-lightbox'; lightbox.id='s4Lightbox'; lightbox.setAttribute('aria-hidden','true');
-  lightbox.innerHTML='<button class="s4-lightbox-close" id="s4LightboxClose" type="button">×</button><div class="s4-lightbox-stage" id="s4LightboxStage"><img id="s4LightboxImg" alt="" draggable="false"></div><button class="s4-lightbox-arrow s4-lightbox-prev" id="s4LightboxPrev" type="button">‹</button><button class="s4-lightbox-arrow s4-lightbox-next" id="s4LightboxNext" type="button">›</button>';
+  lightbox.innerHTML='<button class="s4-lightbox-close" id="s4LightboxClose" type="button">×</button><div class="s4-lightbox-counter" id="s4LightboxCounter"></div><div class="s4-lightbox-stage" id="s4LightboxStage"><img id="s4LightboxImg" alt="" draggable="false"></div><button class="s4-lightbox-arrow s4-lightbox-prev" id="s4LightboxPrev" type="button">‹</button><button class="s4-lightbox-arrow s4-lightbox-next" id="s4LightboxNext" type="button">›</button>';
   document.body.appendChild(lightbox);
-  const lbStage=document.getElementById('s4LightboxStage'), lbImg=document.getElementById('s4LightboxImg'), lbClose=document.getElementById('s4LightboxClose'), lbPrev=document.getElementById('s4LightboxPrev'), lbNext=document.getElementById('s4LightboxNext');
+  const lbStage=document.getElementById('s4LightboxStage'), lbImg=document.getElementById('s4LightboxImg'), lbClose=document.getElementById('s4LightboxClose'), lbPrev=document.getElementById('s4LightboxPrev'), lbNext=document.getElementById('s4LightboxNext'), lbCounter=document.getElementById('s4LightboxCounter');
 
   let lbScale=1, lbX=0, lbY=0;
   function lbApplica(){ lbImg.style.transform='translate('+lbX+'px,'+lbY+'px) scale('+lbScale+')'; }
@@ -3050,7 +3059,8 @@ requestAnimationFrame(riposiziona);
     const rect=lbImg.getBoundingClientRect(); if(!rect.width || !rect.height) return;
     lbImg.style.transformOrigin=((clientX-rect.left)/rect.width*100).toFixed(2)+'% '+((clientY-rect.top)/rect.height*100).toFixed(2)+'%';
   }
-  function mostraLightboxImg(){ lbImg.src=lightboxImgs[lightboxIdx]||''; lbReset(); }
+  function lbCounterAggiorna(){ if(lbCounter) lbCounter.textContent=lightboxImgs.length?((lightboxIdx+1)+' / '+lightboxImgs.length):''; }
+  function mostraLightboxImg(){ lbImg.src=lightboxImgs[lightboxIdx]||''; lbReset(); lbCounterAggiorna(); }
   function apriLightbox(idx){
     lightboxImgs=[...track.children].map(im=>im.src);
     if(!lightboxImgs.length) return;
@@ -3072,23 +3082,58 @@ requestAnimationFrame(riposiziona);
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && lightbox.classList.contains('open')) chiudiLightbox(); });
 
   /* gesti: pinch a 2 dita (clamp 1x-4x), trascinamento di 1 dito quando ingrandita, doppio
-     tocco per alternare 1x/2x - tutto fatto a mano (touch-action:none in CSS), nessun gesto
-     nativo del browser deve intromettersi qui dentro. */
+     tocco per alternare 1x/2x, SWIPE orizzontale di 1 dito (a 1x, non ingrandita) per passare
+     alla foto successiva/precedente - tutto fatto a mano (touch-action:none in CSS), nessun
+     gesto nativo del browser deve intromettersi qui dentro. */
   let lbPinchDist0=0, lbPinchScale0=1, lbPanAttivo=false, lbPanX0=0, lbPanY0=0, lbX0=0, lbY0=0, lbUltimoTapT=0;
+  let lbSwipeAttivo=false, lbSwipeOrizzontale=null, lbSwipeX0=0, lbSwipeY0=0, lbSwipeTimer=null;
   function lbDist(t1,t2){ const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY; return Math.sqrt(dx*dx+dy*dy); }
+  /* cambio foto animato dallo swipe: la foto corrente finisce di uscire nella direzione del
+     trascinamento (dir>0 verso sinistra = foto successiva), poi quella nuova entra dal lato
+     opposto e scorre fino al centro - lightboxVai() (usato dalle frecce) resta invece istantaneo. */
+  function lbSlideTo(dir){
+    if(lightboxImgs.length<2) return;
+    const stageW=lbStage.clientWidth||window.innerWidth;
+    const uscita=dir>0?-stageW:stageW;
+    lbImg.style.transition='transform .2s ease';
+    lbScale=1; lbX=uscita; lbY=0; lbApplica();
+    if(lbSwipeTimer) clearTimeout(lbSwipeTimer);
+    lbSwipeTimer=setTimeout(()=>{
+      lightboxIdx=(lightboxIdx+dir+lightboxImgs.length)%lightboxImgs.length;
+      lbImg.style.transition='none';
+      lbImg.src=lightboxImgs[lightboxIdx]||'';
+      lbImg.style.transformOrigin='center center';
+      lbX=-uscita; lbY=0; lbApplica();
+      lbCounterAggiorna();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        lbImg.style.transition='transform .2s ease';
+        lbX=0; lbApplica();
+        lbSwipeTimer=setTimeout(()=>{ lbImg.style.transition=''; lbSwipeTimer=null; }, 220);
+      }));
+    }, 200);
+  }
+  function lbSlideIndietro(){
+    lbImg.style.transition='transform .2s ease';
+    lbX=0; lbY=0; lbApplica();
+    if(lbSwipeTimer) clearTimeout(lbSwipeTimer);
+    lbSwipeTimer=setTimeout(()=>{ lbImg.style.transition=''; lbSwipeTimer=null; }, 220);
+  }
   lbStage.addEventListener('touchstart', e=>{
+    if(lbSwipeTimer){ clearTimeout(lbSwipeTimer); lbSwipeTimer=null; }
+    lbImg.style.transition='';
     if(e.touches.length===2){
-      lbPinchDist0=lbDist(e.touches[0], e.touches[1]); lbPinchScale0=lbScale; lbPanAttivo=false;
+      lbPinchDist0=lbDist(e.touches[0], e.touches[1]); lbPinchScale0=lbScale; lbPanAttivo=false; lbSwipeAttivo=false;
       lbImpostaOrigine((e.touches[0].clientX+e.touches[1].clientX)/2, (e.touches[0].clientY+e.touches[1].clientY)/2);
     } else if(e.touches.length===1){
       const ora=performance.now();
       if(ora-lbUltimoTapT<300){
         lbImpostaOrigine(e.touches[0].clientX, e.touches[0].clientY);
         if(lbScale>1){ lbReset(); } else { lbScale=2; lbX=0; lbY=0; lbApplica(); }
-        lbUltimoTapT=0;
+        lbUltimoTapT=0; lbSwipeAttivo=false;
       } else {
         lbUltimoTapT=ora;
         if(lbScale>1){ lbPanAttivo=true; lbPanX0=e.touches[0].clientX; lbPanY0=e.touches[0].clientY; lbX0=lbX; lbY0=lbY; }
+        else if(lightboxImgs.length>1){ lbSwipeAttivo=true; lbSwipeOrizzontale=null; lbSwipeX0=e.touches[0].clientX; lbSwipeY0=e.touches[0].clientY; }
       }
     }
   }, { passive:true });
@@ -3099,12 +3144,24 @@ requestAnimationFrame(riposiziona);
     } else if(e.touches.length===1 && lbPanAttivo){
       e.preventDefault();
       lbX=lbX0+(e.touches[0].clientX-lbPanX0); lbY=lbY0+(e.touches[0].clientY-lbPanY0); lbApplica();
+    } else if(e.touches.length===1 && lbSwipeAttivo){
+      const dx=e.touches[0].clientX-lbSwipeX0, dy=e.touches[0].clientY-lbSwipeY0;
+      if(lbSwipeOrizzontale===null && (Math.abs(dx)>8 || Math.abs(dy)>8)) lbSwipeOrizzontale=Math.abs(dx)>Math.abs(dy);
+      if(lbSwipeOrizzontale){ e.preventDefault(); lbX=dx; lbApplica(); }
     }
   }, { passive:false });
   lbStage.addEventListener('touchend', e=>{
     if(e.touches.length===0){
-      lbPanAttivo=false; lbPinchDist0=0;
-      if(lbScale<=1.02) lbReset();
+      if(lbSwipeAttivo && lbSwipeOrizzontale){
+        const stageW=lbStage.clientWidth||window.innerWidth;
+        const soglia=Math.max(60, stageW*0.18);
+        if(lbX<=-soglia) lbSlideTo(1);
+        else if(lbX>=soglia) lbSlideTo(-1);
+        else lbSlideIndietro();
+      } else if(lbScale<=1.02){
+        lbReset();
+      }
+      lbSwipeAttivo=false; lbSwipeOrizzontale=null; lbPanAttivo=false; lbPinchDist0=0;
       try{ window.__vcSegnalaPinch && window.__vcSegnalaPinch(); }catch(err){}
     }
   }, { passive:true });
