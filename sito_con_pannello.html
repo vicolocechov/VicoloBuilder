@@ -1377,7 +1377,13 @@ html.sede-monte #s3-slide1{display:none}
    telefono stretto IN ORIZZONTALE, es. iPhone SE 667x375): "solo verticale" richiesto
    esplicitamente, la scheda-spettacolo landscape qui sotto non va toccata. */
 @media (orientation:portrait){
-.s4-slide2-pages.s4-pagine-multiple{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-y}
+/* touch-action:pan-x (NON pan-y, bug reale trovato su iPhone): pan-y impedisce al browser
+   il pan ORIZZONTALE su questo elemento, quindi lo scroll-snap nativo non partiva mai col
+   dito (funzionavano solo i puntini). pan-x lascia partire lo scroll nativo quando il gesto
+   e' orizzontale; quando e' verticale lo prende il motore (vedi onTouchMove/
+   zonaOrizzontaleScorrevole() nello script separato), che con pan-x non viene mai scavalcato
+   da uno scroll nativo del pannello sottostante. */
+.s4-slide2-pages.s4-pagine-multiple{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x}
 .s4-slide2-pages.s4-pagine-multiple::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-pages.s4-pagine-multiple .s4-slide2-page{display:block;flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
 /* puntini piu' visibili (10px, non piu' 7) con area di tocco di almeno 44px (il quadrato del
@@ -1458,7 +1464,17 @@ html.sede-monte #s3-slide1{display:none}
 @media (max-width:767px) and (orientation:portrait){
 /* header + 74px: spazio minimo perche' l'occhiello non tocchi la sottolineatura del link attivo
    della nav sopra (misurato sul sito reale, non un calcolo teorico). */
-#s4-slide2{padding-top:calc(var(--header-h,46px) + 74px);padding-bottom:calc(20px + var(--vc-safe-bottom))}
+/* touch-action:pan-x pinch-zoom (non piu' solo "pinch-zoom" eredidato da .vc-scena base):
+   SENZA questo override il pan-x impostato sulle due zone scorrevoli qui sotto (locandine,
+   riga mesi) veniva comunque azzerato dall'intersezione con l'antenato - .vc-scena vieta
+   OGNI pan, zone figlie comprese, a prescindere dal loro touch-action (BUG reale trovato su
+   iPhone: lo scroll-snap nativo non partiva mai col dito). pinch-zoom resta permesso (il
+   pinch nativo del sito non cambia). pan-y resta escluso anche qui: il verticale, ovunque
+   nella scena, passa sempre dal motore via JS (stepScena), mai dallo scroll nativo del
+   pannello sottostante. */
+#s4-slide2{touch-action:pan-x pinch-zoom;padding-top:calc(var(--header-h,46px) + 74px);padding-bottom:calc(20px + var(--vc-safe-bottom))}
+#vicolo-off{touch-action:pan-x pinch-zoom}
+#vcStage{touch-action:pan-x pinch-zoom}
 .s4-slide2-eyebrow{font-size:calc(9px * var(--s4-slide2-eyebrow-scale,1))}
 .s4-slide2-titolo{font-size:calc(30px * var(--s4-slide2-titolo-scale,1));margin-top:4px}
 /* "Scegli il mese e poi la locandina.": nascosta, non serve piu' spazio per lei qui. */
@@ -2297,6 +2313,10 @@ requestAnimationFrame(riposiziona);
 
   /* ---- dito: swipe orizzontale = cambia sezione, swipe verticale = cambia slide ---- */
   let tx0=0,ty0=0,tmoved=false,uno=false,tStart0=0,scrollTopStart=0,bailReason='';
+  /* stato del "gesto partito da una zona scorrevole di lato" (vedi zonaOrizzontaleScorrevole()
+     e onTouchMove sotto): origineZonaScorrevole si fissa a touchstart, le altre due si decidono
+     durante il movimento, una sola volta per gesto. */
+  let origineZonaScorrevole=false, direzioneCeduta=false, direzioneDecisaVerticale=false;
   /* Solo bookkeeping (nessun effetto su swipe/pinch): quante dita sono APPOGGIATE ORA sullo
      schermo, aggiornato dai 4 handler touch esistenti senza cambiarne la logica - serve al
      ricontrollo differito di reflow() per sapere se puo' correggere lo scrollX residuo (sotto)
@@ -2388,12 +2408,25 @@ requestAnimationFrame(riposiziona);
      invece di indovinare l'orientamento qui, lascia alla CSS l'unica fonte di verita' su quale
      dei due casi si applica, stessa filosofia di galleriaInScrollNativo() nello script separato
      della scheda-spettacolo. Con una sola pagina questa classe non c'e' affatto: lo swipe sulle
-     locandine deve continuare a cambiare sezione come prima, nessuna esclusione). Quinto caso,
-     stesso principio: la riga dei mesi (.s4-slide2-months), scorrevole di lato solo in verticale
-     (vedi CSS) - fuori da quella riga lo swipe cambia ancora sezione come prima. */
+     locandine deve continuare a cambiare sezione come prima, nessuna esclusione). BUG reale
+     trovato su iPhone (e corretto qui): questi due casi NON possono essere esclusi del tutto a
+     touchstart come gli altri tre - la slide 2 della sezione 4 e' quasi tutta zona-locandine/
+     riga-mesi, quindi un cambio-scena VERTICALE che parte li' veniva ignorato dal motore e
+     lasciato al browser, che faceva scorrere il pannello in modo nativo (scrollTop fuori sync
+     con correnteScena, poi lo scatto a scena non funzionava piu'). Spostati in una funzione
+     separata, zonaOrizzontaleScorrevole() sotto: l'esclusione per questi due casi va decisa
+     SOLO quando il gesto risulta orizzontale (vedi onTouchMove), mai a touchstart. */
   function fuoriDalMotore(target){
+    return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')));
+  }
+  /* true se il gesto e' partito su una zona che scorre di lato in modo nativo (pagine di
+     locandine con 2+ pagine, o riga dei mesi) - letto dallo stile calcolato (overflow-x:'auto'
+     solo quando la media query verticale e' quella attiva), stessa filosofia di
+     galleriaInScrollNativo() nello script separato della scheda-spettacolo. NON basta per
+     escludere il gesto dal motore: lo esclude solo onTouchMove, e solo se risulta orizzontale
+     (vedi sotto) - un gesto verticale partito da qui deve cambiare scena come sempre. */
+  function zonaOrizzontaleScorrevole(target){
     if(!(target && target.closest)) return false;
-    if(target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')) return true;
     const paginePagine=target.closest('.s4-slide2-pages.s4-pagine-multiple');
     if(paginePagine){ try{ return getComputedStyle(paginePagine).overflowX==='auto'; }catch(e){ return false; } }
     const rigaMesi=target.closest('.s4-slide2-months');
@@ -2434,6 +2467,11 @@ requestAnimationFrame(riposiziona);
       tStart0=performance.now();
       scrollTopStart = panels[correntePanel] ? panels[correntePanel].scrollTop : 0;
       gestoMultiTouch=false;   /* gesto pulito a un dito che riparte: azzera il flag del gesto precedente */
+      /* NON si esclude qui: si registra solo che il gesto e' partito da una zona scorrevole di
+         lato - la decisione (lasciarlo al nativo o prenderlo il motore) arriva in onTouchMove,
+         appena la direzione e' chiara (vedi commento su zonaOrizzontaleScorrevole() sopra). */
+      origineZonaScorrevole=zonaOrizzontaleScorrevole(e.target);
+      direzioneCeduta=false; direzioneDecisaVerticale=false;
     } else if(e.touches.length>1){
       /* multi-touch iniziato: azzera comunque tmoved, cosi' anche se questo touchstart non
          azzera "uno" (gia' false da prima) non resta traccia di un dx/dy accumulato dal singolo
@@ -2454,6 +2492,13 @@ requestAnimationFrame(riposiziona);
     if(!uno || e.touches.length!==1 || zoomato() || schedaAperta()){
       if(uno && !bailReason){ bailReason = zoomato()?'zoom-attivo':(schedaAperta()?'scheda-aperta':'multi-touch'); }
       uno=false; tmoved=false; return;
+    }
+    if(direzioneCeduta) return;   /* gia' deciso orizzontale in zona scorrevole: lasciato al nativo, il motore non tocca piu' nulla per il resto di questo gesto */
+    if(origineZonaScorrevole && !direzioneDecisaVerticale){
+      const dx=e.touches[0].clientX-tx0, dy=e.touches[0].clientY-ty0;
+      if(Math.abs(dx)<=6 && Math.abs(dy)<=6) return;   /* troppo presto per capire il verso: non decidere, non chiamare preventDefault (lascerebbe partire comunque lo scroll nativo orizzontale, se e' quello il caso) */
+      if(Math.abs(dx)>Math.abs(dy)){ direzioneCeduta=true; uno=false; tmoved=false; return; }   /* orizzontale: lo prende lo scroll nativo (pagine/mesi), il motore lo ignora */
+      direzioneDecisaVerticale=true;   /* verticale: lo prende il motore come sempre, da qui fino a touchend */
     }
     e.preventDefault(); tmoved=true;
   }
