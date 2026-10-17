@@ -567,6 +567,30 @@ body{overflow:hidden}
   /* SLIDE 3 paure */
 }
 
+/* ===== DESKTOP/LAPTOP (>=1200, qualunque larghezza) · home slide 1 su schermi BASSI =====
+   Bug reale: .hero-title dipende SOLO dalla larghezza (clamp/vw) - su laptop larghi e bassi
+   (1366x640, 1280x600, ecc.) il titolo risultava alto ~420px e il resto non ci stava: il
+   bottone "Scopri i nostri corsi" finiva fuori schermo. Qui il font-size del titolo diventa
+   il MINIMO tra la misura da larghezza di sempre (fs-base, scale - builder invariati, letti
+   via var()) e una misura dall'ALTEZZA disponibile: su schermi alti (1920x1080, 2560x1300…)
+   il minimo lo decide sempre la larghezza (nessuna riduzione), su schermi bassi lo decide
+   l'altezza. Margini di sub/corpo/bottone passano da fissi a clamp() legati a vh, cosi' si
+   restringono anch'essi sugli schermi bassi invece di "mangiarsi" da soli lo spazio: il tetto
+   massimo di ciascun clamp e' il valore fisso di oggi (nessun cambiamento sopra 1080px di
+   altezza), il minimo e' un pavimento che evita margini troppo schiacciati.
+   Formula calcolata misurando il sito reale (non a sensazione): con tutto il resto al suo
+   posto (padding 118px/26px, riga sub/corpo/bottone alla loro altezza naturale, margini come
+   sopra) il titolo ha a disposizione circa (0.9244 * altezza - 275px) di spazio verticale;
+   diviso per l'altezza di riga del titolo (line-height .87 su due righe, fattore ~1.5225)
+   da' il font-size massimo che ci sta per intero, con almeno i 26px di padding-bottom (>24px
+   richiesti) liberi sotto il bottone. */
+@media (min-width:1200px){
+  .hero-sub{margin-top:clamp(2px,.56vh,6px)}
+  .hero-body{margin-top:clamp(16px,4.1vh,44px)}
+  .hero-btn{margin-top:clamp(12px,2.9vh,31px)}
+  .hero-title{font-size:min(calc(var(--s1-slide1-titolo-fs-base,clamp(48px,15.5vw,300px)) * var(--s1-slide1-titolo-scale,1)),calc(60.7vh - 184px))}
+}
+
 /* ===== LAPTOP COMPATTO — 1025–1199 ===== */
 @media (min-width:1025px) and (max-width:1199px){
   /* SLIDE 1 hero */ :root{--s1-slide1-titolo-fs-base:clamp(48px,15vw,240px)}
