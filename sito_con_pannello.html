@@ -1449,6 +1449,46 @@ html.sede-monte #s3-slide1{display:none}
 /* fuori dall'area che scorre, sempre visibile, centrato (regola principale). */
 .s4-slide2-detail-btn{grid-area:btn;justify-self:center;align-self:end;margin-top:4px;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
 .s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:44px;height:44px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
+/* Compattamento dell'intestazione "Gli spettacoli" SOLO in verticale su telefono (PARTE 1,
+   mancante nel giro precedente): su schermi come 390x699 testo/filtri/mesi occupavano da soli
+   circa 285px, lasciando alla parete locandine meno spazio di quanto le due file da 2 (col
+   nuovo swipe tra pagine) ne richiedano - la seconda fila e i puntini "1 / 2" uscivano dal
+   basso dello schermo. Query combinata (non solo max-width:767px, che prenderebbe anche il
+   landscape stretto): qui NON tocchiamo l'orizzontale/desktop, che restano sulle regole sopra. */
+@media (max-width:767px) and (orientation:portrait){
+/* header + 74px: spazio minimo perche' l'occhiello non tocchi la sottolineatura del link attivo
+   della nav sopra (misurato sul sito reale, non un calcolo teorico). */
+#s4-slide2{padding-top:calc(var(--header-h,46px) + 74px);padding-bottom:calc(20px + var(--vc-safe-bottom))}
+.s4-slide2-eyebrow{font-size:calc(9px * var(--s4-slide2-eyebrow-scale,1))}
+.s4-slide2-titolo{font-size:calc(30px * var(--s4-slide2-titolo-scale,1));margin-top:4px}
+/* "Scegli il mese e poi la locandina.": nascosta, non serve piu' spazio per lei qui. */
+.s4-slide2-corpo{display:none}
+/* i 3 filtri su UNA riga, senza andare a capo, piu' piccoli. */
+.s4-slide2-catfilter{flex-wrap:nowrap;gap:5px;margin-top:6px}
+.s4-slide2-catbtn{padding:4px 8px;font-size:7.5px}
+/* i mesi su UNA riga che scorre di lato (non piu' a capo su due righe): stesso schema a
+   scroll nativo gia' usato per le locandine/foto - touch-action:pan-x lascia il verticale
+   della pagina libero, l'orizzontale lo intercetta questa riga. padding laterale (non un
+   margine negativo "a sfondare"): il primo mese resta leggermente staccato dal bordo, gli
+   altri esco oltre il bordo destro cosi' si capisce che si puo' scorrere. flex:none sui
+   singoli mesi: in una riga nowrap altrimenti si stringerebbero invece di sporgere. */
+/* width:100% (non piu' "auto"/shrink-to-fit): .vc-scena ha align-items:center, quindi senza
+   una larghezza esplicita .s4-slide2-months si allargherebbe quanto il suo contenuto SENZA
+   capo (6 mesi affiancati, qui ~436px) ignorando lo schermo - overflow-x:auto non ha alcun
+   effetto su un contenitore che si allarga sempre per contenere tutto. box-sizing:border-box
+   perche' il padding laterale resti DENTRO il 100%, non lo sfori. */
+.s4-slide2-months{width:100%;box-sizing:border-box;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x;padding:0 14px;margin-top:6px;margin-left:0;margin-right:0}
+.s4-slide2-months::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-month{flex:none}
+.s4-slide2-month-panels{margin-top:6px}
+/* larghezza del muro dall'ALTEZZA disponibile (non piu' solo dalla larghezza): a schermo
+   basso (es. 390x844 con tanta UI sopra) le locandine si rimpiccioliscono quanto serve perche'
+   le 2 file da 2 (con lo swipe tra pagine) entrino intere, puntini compresi. 300px e' lo
+   spazio stimato preso da tutto il resto qui sopra/sotto (intestazione compattata + puntini +
+   margine in basso) - .714 e' l'altezza approssimativa di 2 file di locandine (5:7) rispetto
+   alla larghezza del muro, +10px il gap verticale tra le due file. */
+.s4-slide2-wall{width:min(86vw,calc((100svh - 300px) * .714 + 10px));margin-left:auto;margin-right:auto;gap:10px}
+}
 /* Mobile ORIZZONTALE (telefono ruotato: pochissima altezza disponibile) - qui la priorita' e'
    che TUTTO resti visibile/proporzionato senza sforare, non ingrandire come in verticale */
 @media (orientation:landscape) and (max-height:550px){#s4-slide2{padding-top:calc(var(--header-h,48px) + 4px);padding-bottom:6px}.s4-slide2-eyebrow{margin-bottom:1px}.s4-slide2-titolo{font-size:calc(clamp(18px,3.6vw,24px) * var(--s4-slide2-titolo-scale,1));margin-top:1px}
@@ -2348,12 +2388,16 @@ requestAnimationFrame(riposiziona);
      invece di indovinare l'orientamento qui, lascia alla CSS l'unica fonte di verita' su quale
      dei due casi si applica, stessa filosofia di galleriaInScrollNativo() nello script separato
      della scheda-spettacolo. Con una sola pagina questa classe non c'e' affatto: lo swipe sulle
-     locandine deve continuare a cambiare sezione come prima, nessuna esclusione). */
+     locandine deve continuare a cambiare sezione come prima, nessuna esclusione). Quinto caso,
+     stesso principio: la riga dei mesi (.s4-slide2-months), scorrevole di lato solo in verticale
+     (vedi CSS) - fuori da quella riga lo swipe cambia ancora sezione come prima. */
   function fuoriDalMotore(target){
     if(!(target && target.closest)) return false;
     if(target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')) return true;
     const paginePagine=target.closest('.s4-slide2-pages.s4-pagine-multiple');
     if(paginePagine){ try{ return getComputedStyle(paginePagine).overflowX==='auto'; }catch(e){ return false; } }
+    const rigaMesi=target.closest('.s4-slide2-months');
+    if(rigaMesi){ try{ return getComputedStyle(rigaMesi).overflowX==='auto'; }catch(e){ return false; } }
     return false;
   }
   /* Traccia RAW (solo eventi multi-touch/zoom, per non intasare il log normale dello swipe a un
