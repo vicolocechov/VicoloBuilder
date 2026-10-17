@@ -1365,7 +1365,33 @@ html.sede-monte #s3-slide1{display:none}
 .s4-lightbox-counter{position:absolute;top:calc(14px + var(--vc-safe-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);color:#fff;font:600 12px/1 'Poppins',sans-serif;padding:5px 11px;border-radius:999px;z-index:2}
 .s4-lightbox.s4-lightbox-foto-singola .s4-lightbox-counter{display:none}
 @media (max-width:1100px){.s4-slide2-wall{width:min(900px,91vw);gap:12px}}
-@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
+@media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+/* Scorrimento con il dito tra le pagine di locandine (mesi con piu' di 4 spettacoli): stesso
+   schema NATIVO scroll-snap gia' usato per la galleria foto della scheda - segue il dito e
+   scatta in posizione da solo, nessun calcolo di drag a mano, nessun bordo-oltre-l'ultima-pagina
+   da gestire (lo fa gia' lo scroll nativo). La classe s4-pagine-multiple la mette render() (JS)
+   solo quando ci sono 2+ pagine: con una sola pagina questa regola non si applica affatto,
+   .s4-slide2-pages resta un blocco normale (nessun overflow-x, nessun touch-action) e lo swipe
+   passa al motore del sito come prima - vedi anche fuoriDalMotore() sopra. @media innestata
+   con orientation:portrait (non solo max-width:767px, che da solo prenderebbe anche qualche
+   telefono stretto IN ORIZZONTALE, es. iPhone SE 667x375): "solo verticale" richiesto
+   esplicitamente, la scheda-spettacolo landscape qui sotto non va toccata. */
+@media (orientation:portrait){
+.s4-slide2-pages.s4-pagine-multiple{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-y}
+.s4-slide2-pages.s4-pagine-multiple::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-pages.s4-pagine-multiple .s4-slide2-page{display:block;flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
+/* puntini piu' visibili (10px, non piu' 7) con area di tocco di almeno 44px (il quadrato del
+   bottone: il pallino vero e' solo lo pseudo-elemento centrale) ed etichetta "1 / 2" accanto -
+   SOLO i puntini delle PAGINE: quelli delle FOTO dentro la scheda (.s4-slide2-gallery-dot)
+   restano come sono, nessun cambiamento li'. */
+.s4-slide2-page-dots{display:flex;align-items:center;justify-content:center;gap:2px;margin-top:4px}
+.s4-slide2-page-dot{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;padding:0;cursor:pointer}
+.s4-slide2-page-dot.is-active{background:transparent}
+.s4-slide2-page-dot::after{content:'';width:10px;height:10px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent}
+.s4-slide2-page-dot.is-active::after{background:#fff;border-color:#fff}
+.s4-slide2-page-label{font:600 11px/1 'Poppins',sans-serif;color:#8f8f8f;margin-left:4px}
+}
+.s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
    display:contents su .s4-slide2-detail-row E su .s4-slide2-detail-copy (il trucco gia' usato
    in landscape, b6b1416, applicato ora a UN LIVELLO IN PIU': dissolvere anche .copy porta
    sinossi e cast, normalmente insieme li' dentro, a essere DUE celle separate della griglia -
@@ -2311,12 +2337,24 @@ requestAnimationFrame(riposiziona);
      per costruzione la misura PIU' PICCOLA possibile) copre, lasciando una fascia scoperta che
      nessun elemento del DOM statico occupa. Ascoltare su document invece che sui singoli
      contenitori rende la copertura indipendente da QUALE elemento (o nessuno) si trovi sotto il
-     dito in quella fascia. Tre casi da escludere esplicitamente, perche' non devono mai essere
-     trattati come inizio-swipe: il pannello admin (#vc-admin-host, shadow DOM), questo stesso
-     overlay diagnostico (#vcDebugOverlayRoot), e la lightbox a tutto schermo della scheda
-     spettacolo (#s4Lightbox, script separato) che gestisce da sola pinch/pan/doppio-tocco. */
+     dito in quella fascia. Quattro casi da escludere esplicitamente, perche' non devono mai
+     essere trattati come inizio-swipe: il pannello admin (#vc-admin-host, shadow DOM), questo
+     stesso overlay diagnostico (#vcDebugOverlayRoot), la lightbox a tutto schermo della scheda
+     spettacolo (#s4Lightbox, script separato) che gestisce da sola pinch/pan/doppio-tocco, e
+     (quarto caso, dinamico) la zona delle locandine quando ha davvero piu' di una pagina E lo
+     scorrimento nativo e' quello attivo in questo momento (solo verticale: la classe
+     s4-pagine-multiple la mette render() in QUALSIASI orientamento quando ci sono 2+ pagine,
+     ma overflow-x diventa 'auto' solo nella media query verticale - leggere lo stile calcolato,
+     invece di indovinare l'orientamento qui, lascia alla CSS l'unica fonte di verita' su quale
+     dei due casi si applica, stessa filosofia di galleriaInScrollNativo() nello script separato
+     della scheda-spettacolo. Con una sola pagina questa classe non c'e' affatto: lo swipe sulle
+     locandine deve continuare a cambiare sezione come prima, nessuna esclusione). */
   function fuoriDalMotore(target){
-    return !!(target && target.closest && (target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')));
+    if(!(target && target.closest)) return false;
+    if(target.closest('#vc-admin-host') || target.closest('#vcDebugOverlayRoot') || target.closest('#s4Lightbox')) return true;
+    const paginePagine=target.closest('.s4-slide2-pages.s4-pagine-multiple');
+    if(paginePagine){ try{ return getComputedStyle(paginePagine).overflowX==='auto'; }catch(e){ return false; } }
+    return false;
   }
   /* Traccia RAW (solo eventi multi-touch/zoom, per non intasare il log normale dello swipe a un
      dito): registra ogni touchstart/touchmove con 2+ dita o a zoom attivo, con lo stato uno/tmoved
@@ -2949,6 +2987,9 @@ requestAnimationFrame(riposiziona);
   }
   const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
   let lastOpener=null;
+  /* sopprime il click-fantasma su una locandina subito dopo uno swipe tra le pagine (stesso
+     principio della lightbox: un vero trascinamento del dito non e' mai un tocco). */
+  let locandinaTrascinataRecente=false, locandinaTrascinataTimer=null;
 
   function pages(m){
     const all=byMonth[m]||[];
@@ -2963,9 +3004,35 @@ requestAnimationFrame(riposiziona);
     b.className='s4-slide2-poster s4-slide2-poster'+id; b.type='button'; b.dataset.show=id;
     const im=document.createElement('img'); im.className='s4-slide2-poster-img'; im.src=d.cover||(d.gallery&&d.gallery[0])||''; im.alt=d.title||'';
     b.appendChild(im);
-    b.onclick=()=>{ lastOpener=b; openShow(id, 'clickLocandina'); };
+    b.onclick=()=>{ if(locandinaTrascinataRecente) return; lastOpener=b; openShow(id, 'clickLocandina'); };
     slot.appendChild(b);
     return slot;
+  }
+
+  /* Due meccanismi sotto lo stesso nome "pagina" esattamente come galleriaInScrollNativo()/
+     setG() per le foto della scheda: su DESKTOP/ORIZZONTALE (nessuna modifica li', fuori dalla
+     media query verticale) .s4-slide2-pages resta un blocco qualsiasi (overflow-x calcolato
+     "visible"), le pagine si alternano con display:none/block com'era e il cambio pagina e'
+     un render() completo. Sul VERTICALE invece e' davvero scorrevole con scroll-snap nativo
+     (vedi CSS): leggere l'overflow-x CALCOLATO lascia alla CSS l'unica fonte di verita'. */
+  function pagineInScrollNativo(host){ try{ return getComputedStyle(host).overflowX==='auto'; }catch(e){ return false; } }
+  function aggiornaPaginaUI(host){
+    const dotsBar=host.parentNode && host.parentNode.querySelector('.s4-slide2-page-dots');
+    const n=host.children.length; if(!n || !dotsBar) return;
+    const w=host.clientWidth||1;
+    activePage=Math.max(0, Math.min(Math.round(host.scrollLeft/w), n-1));
+    [...dotsBar.querySelectorAll('.s4-slide2-page-dot')].forEach((d,k)=>d.classList.toggle('is-active', k===activePage));
+    const etichetta=dotsBar.querySelector('.s4-slide2-page-label'); if(etichetta) etichetta.textContent=(activePage+1)+' / '+n;
+  }
+  function vaiPagina(host, k){
+    activePage=k;
+    if(pagineInScrollNativo(host)){
+      const pag=host.children[k];
+      if(pag) host.scrollTo({ left: pag.offsetLeft, behavior:'smooth' });
+      aggiornaPaginaUI(host);
+    } else {
+      render(activeMonth);
+    }
   }
 
   function render(m){
@@ -2977,6 +3044,11 @@ requestAnimationFrame(riposiziona);
     const host=panel.querySelector('.s4-slide2-pages'), ps=pages(m);
     if(activePage>=ps.length) activePage=0;
     host.innerHTML='';
+    /* con una sola pagina: nessuno swipe e nessun puntino, come prima di questa modifica -
+       la classe non c'e' affatto, niente scroll nativo, niente esclusione dal motore (vedi
+       fuoriDalMotore() nello script separato del sito). */
+    const multiPagina=ps.length>1;
+    host.classList.toggle('s4-pagine-multiple', multiPagina);
     ps.forEach((ids,pi)=>{
       const page=document.createElement('div'); page.className='s4-slide2-page'+(pi===activePage?' is-active':'');
       const wall=document.createElement('div'); wall.className='s4-slide2-wall';
@@ -2988,14 +3060,61 @@ requestAnimationFrame(riposiziona);
         wall.appendChild(empty);
       }
       page.appendChild(wall);
-      if(ps.length>1){
-        const dots=document.createElement('div'); dots.className='s4-slide2-page-dots';
-        ps.forEach((_,k)=>{ const dd=document.createElement('button'); dd.type='button'; dd.className='s4-slide2-page-dot'+(k===activePage?' is-active':''); dd.onclick=()=>{ activePage=k; render(activeMonth); }; dots.appendChild(dd); });
-        page.appendChild(dots);
-      }
       host.appendChild(page);
     });
+    /* un solo riquadro di puntini, FUORI dalle pagine (stesso schema dei puntini della galleria
+       foto, mai duplicati per-pagina): dentro una pagina scorrerebbero via insieme a lei non
+       appena si cambia pagina in verticale. Creato/distrutto una volta per mese, non per pagina. */
+    let dotsBar=panel.querySelector('.s4-slide2-page-dots');
+    if(multiPagina){
+      if(!dotsBar){ dotsBar=document.createElement('div'); dotsBar.className='s4-slide2-page-dots'; host.insertAdjacentElement('afterend', dotsBar); }
+      dotsBar.innerHTML='';
+      ps.forEach((_,k)=>{
+        const dd=document.createElement('button'); dd.type='button'; dd.className='s4-slide2-page-dot'+(k===activePage?' is-active':'');
+        dd.setAttribute('aria-label','Pagina '+(k+1)+' di '+ps.length);
+        dd.onclick=()=>vaiPagina(host, k);
+        dotsBar.appendChild(dd);
+      });
+      const etichetta=document.createElement('span'); etichetta.className='s4-slide2-page-label'; etichetta.textContent=(activePage+1)+' / '+ps.length;
+      dotsBar.appendChild(etichetta);
+    } else if(dotsBar){
+      dotsBar.remove();
+    }
+    if(pagineInScrollNativo(host)){
+      const pag=host.children[activePage];
+      host.scrollLeft=pag?pag.offsetLeft:0;
+    }
   }
+
+  /* un pagesHost per mese (6 in tutto, fissi nel markup, mai ricreati da render() che tocca
+     solo i FIGLI del host): un solo paio di listener a testa basta, stesso principio del
+     listener di scroll della galleria foto (setG()/galleriaInScrollNativo()). */
+  const pagesHosts=panels.map(p=>p.querySelector('.s4-slide2-pages')).filter(Boolean);
+  pagesHosts.forEach(host=>{
+    let scrollRAF=null;
+    host.addEventListener('scroll', ()=>{
+      if(!pagineInScrollNativo(host) || scrollRAF) return;
+      scrollRAF=requestAnimationFrame(()=>{ scrollRAF=null; aggiornaPaginaUI(host); });
+    }, { passive:true });
+    let tx0=0, trascinata=false, attiva=false;
+    host.addEventListener('touchstart', e=>{
+      attiva=pagineInScrollNativo(host) && e.touches.length===1;
+      trascinata=false;
+      if(attiva) tx0=e.touches[0].clientX;
+    }, { passive:true });
+    host.addEventListener('touchmove', e=>{
+      if(!attiva || e.touches.length!==1) return;
+      if(Math.abs(e.touches[0].clientX-tx0)>6) trascinata=true;
+    }, { passive:true });
+    host.addEventListener('touchend', ()=>{
+      if(attiva && trascinata){
+        locandinaTrascinataRecente=true;
+        clearTimeout(locandinaTrascinataTimer);
+        locandinaTrascinataTimer=setTimeout(()=>{ locandinaTrascinataRecente=false; }, 300);
+      }
+      attiva=false; trascinata=false;
+    }, { passive:true });
+  });
 
   /* Due meccanismi di scorrimento della galleria sotto lo stesso setG(): il DESKTOP (nessuna
      modifica li', fuori dalle due media query mobile) resta sul transform via JS di sempre
