@@ -700,7 +700,7 @@ body{overflow:hidden}
   .porta-testo{line-height:1.35}
   .scena-porte{padding-left:34px;padding-right:34px}   /* spazio per non toccare i pallini a destra */
   #s1-slide5 .porte-eyebrow{margin-bottom:10px}
-  #s1-slide5 .porte-titolo{margin-bottom:12px}
+  #s1-slide5 .porte-titolo{margin-bottom:12px;font-family:'Akkordeon',sans-serif;font-weight:400}
   #s1-slide5 .porte-cards{gap:10px}
   #s1-slide5 .porta{padding:13px 12px;gap:5px}
   #s1-slide5 .porta-testo{line-height:1.3}
@@ -820,7 +820,7 @@ body{overflow:hidden}
     overflow:hidden;
   }
   .porte-eyebrow{margin-bottom:5px;font-size:11px;transform:translate(var(--s1-slide5-eyebrow-x,0px),var(--s1-slide5-eyebrow-y,0px))}
-  .porte-titolo{margin-bottom:7px;transform:translate(var(--s1-slide5-titolo-x,0px),var(--s1-slide5-titolo-y,0px))}
+  .porte-titolo{margin-bottom:7px;font-family:'Akkordeon',sans-serif;font-weight:400;transform:translate(var(--s1-slide5-titolo-x,0px),var(--s1-slide5-titolo-y,0px))}
   /* larghezza ridotta per lasciare libero il corridoio dei puntini a destra (.vc-dots) - stesso
      motivo delle altre griglie a card corrette in questo blocco. */
   .porte-cards{gap:6px;width:calc(100% - 28px - var(--vc-safe-right));max-width:900px}
@@ -915,7 +915,7 @@ body{overflow:hidden}
      disposizione a 3 card affiancate gia' validata per il breakpoint esatto width:844px (iPhone 12
      Pro, sotto in questo stesso foglio) - qui c'e' pero' 50px di altezza in meno (340 contro 390),
      quindi titolo/corpo/card sono compattati ulteriormente rispetto a quella versione. */
-  #s1-slide6{padding-top:calc(46px + 24px);padding-bottom:calc(10px + var(--vc-safe-bottom))}
+  #s1-slide6{padding-top:calc(46px + 10px);padding-bottom:calc(10px + var(--vc-safe-bottom))}
   :root{
     --s1-slide6-titolo-fs-base:36px;
     --s1-slide6-corpo-fs-base:12.5px;
@@ -1008,15 +1008,14 @@ body{overflow:hidden}
     font-size:12.5px;
     line-height:1.3;
   }
-  /* Slide 6 mobile landscape: alza testo e card del 10% complessivo rispetto alla posizione iniziale. */
   #s1-slide6 .s1-slide6-titolo{
-    transform:translate(var(--s1-slide6-titolo-x,0px),calc(-10vh + var(--s1-slide6-titolo-y,0px)));
+    transform:translate(var(--s1-slide6-titolo-x,0px),var(--s1-slide6-titolo-y,0px));
   }
   #s1-slide6 .s1-slide6-corpo{
-    transform:translate(var(--s1-slide6-corpo-x,0px),calc(-10vh + var(--s1-slide6-corpo-y,0px)));
+    transform:translate(var(--s1-slide6-corpo-x,0px),var(--s1-slide6-corpo-y,0px));
   }
   #s1-slide6 .voci-grid{
-    transform:translateY(-10vh);
+    transform:none;
   }
 }
 
