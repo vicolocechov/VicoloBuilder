@@ -874,6 +874,129 @@
   }
   function posterParseDay(dateStr){ if(!dateStr) return null; var m=String(dateStr).match(/(\d{1,2})/); return m?parseInt(m[1],10):null; }
 
+  /* Repliche a cavallo di mese (giro 9): una replica puo' cadere nel mese PRIMA o DOPO quello
+     della locandina (es. locandina "Novembre" con repliche "Sabato 31 Ottobre" e "Domenica 1
+     Novembre") - la stagione vera e propria resta i soli 6 mesi di prima (novembre..aprile, e'
+     quella con cui il muro organizza le locandine), qui si aggiungono solo ottobre e maggio
+     come possibili mesi di CONFINE per una singola replica, mai per la locandina stessa. */
+  var POSTER_MONTHS_EXT=['ottobre','novembre','dicembre','gennaio','febbraio','marzo','aprile','maggio'];
+  var POSTER_MONTH_IDX_EXT={ottobre:9,novembre:10,dicembre:11,gennaio:0,febbraio:1,marzo:2,aprile:3,maggio:4};
+  function posterYearForMonthExt(m){ return (m==='ottobre'||m==='novembre'||m==='dicembre') ? 2026 : 2027; }
+  function posterDaysInMonthExt(m){ var mi=POSTER_MONTH_IDX_EXT[m]; if(mi==null) return 30; return new Date(posterYearForMonthExt(m), mi+1, 0).getDate(); }
+  function posterAdjacentMonths(m){
+    var i=POSTER_MONTHS_EXT.indexOf(m); if(i<0) return [m];
+    var out=[]; if(i>0) out.push(POSTER_MONTHS_EXT[i-1]); out.push(m); if(i<POSTER_MONTHS_EXT.length-1) out.push(POSTER_MONTHS_EXT[i+1]);
+    return out;
+  }
+  function posterParseMonth(giornoStr){
+    if(!giornoStr) return null;
+    var s=String(giornoStr).toLowerCase();
+    for(var i=0;i<POSTER_MONTHS_EXT.length;i++){ if(s.indexOf(POSTER_MONTHS_EXT[i])!==-1) return POSTER_MONTHS_EXT[i]; }
+    return null;
+  }
+
+  /* ===================== REPLICHE (giro 7, esteso giro 9) =====================
+     Una locandina puo' avere fino a 3 repliche (giorno+ora), non piu' una sola data/ora fissa -
+     es. "Sabato 31 Ottobre"/"21:00" e "Domenica 1 Novembre"/"18:00". Editor condiviso tra
+     "Aggiungi locandina" e "Modifica locandina": un pulsante +/× per aggiungere/togliere righe
+     (max 3). RETROCOMPATIBILE: non tocca ne' rinomina i vecchi campi d.date/d.time - vedi dove
+     viene chiamato, piu' sotto, per come restano scritti anche loro.
+     Ogni riga ha ORA un proprio selettore di MESE (oltre a giorno/ora): una singola replica puo'
+     cadere nel mese prima o dopo quello della locandina (vedi posterAdjacentMonths sopra),
+     diversamente dalla locandina stessa che resta sempre nel mese scelto in cima al tool. Il
+     giorno della settimana e' sempre calcolato dalla data VERA (mese+giorno scelti per quella
+     riga), mai dal mese della locandina. */
+  function buildReplicaRow(posterMonthSel, giorno, ora, onChange, onRemove){
+    var row=document.createElement('div'); row.className='postertool-replica-row';
+    var mSel=document.createElement('select'); mSel.className='postertool-replica-month';
+    var dateSel=document.createElement('select');
+    function popolaMesi(){
+      var preferito=mSel.value || posterParseMonth(giorno) || posterMonthSel.value;
+      mSel.innerHTML='';
+      posterAdjacentMonths(posterMonthSel.value).forEach(function(m){
+        var o=document.createElement('option'); o.value=m; o.textContent=m.charAt(0).toUpperCase()+m.slice(1); mSel.appendChild(o);
+      });
+      var match=Array.prototype.some.call(mSel.options, function(o){ return o.value===preferito; });
+      mSel.value=match?preferito:posterMonthSel.value;
+    }
+    function popolaGiorni(){
+      var mi=POSTER_MONTH_IDX_EXT[mSel.value], y=posterYearForMonthExt(mSel.value), n=posterDaysInMonthExt(mSel.value);
+      var prevDay=dateSel.options.length?parseInt(dateSel.value,10):posterParseDay(giorno);
+      dateSel.innerHTML='';
+      for(var d=1; d<=n; d++){ var dow=new Date(y, mi, d).getDay(); var o=document.createElement('option'); o.value=String(d); o.textContent=POSTER_WD_ABBR[dow]+' '+d; dateSel.appendChild(o); }
+      if(prevDay && prevDay<=n) dateSel.value=String(prevDay);
+    }
+    popolaMesi(); popolaGiorni();
+    var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
+    var hourSel=document.createElement('select');
+    for(var h=0; h<24; h++){ var ho=document.createElement('option'); var hv=String(h).padStart(2,'0'); ho.value=hv; ho.textContent=hv; hourSel.appendChild(ho); }
+    var timeSep=document.createElement('span'); timeSep.className='postertool-timesep'; timeSep.textContent=':';
+    var minSel=document.createElement('select');
+    ['00','15','30','45'].forEach(function(mm){ var mo=document.createElement('option'); mo.value=mm; mo.textContent=mm; minSel.appendChild(mo); });
+    var oraParts=String(ora||'').replace(/^ore\s*/i,'').split(':');
+    hourSel.value=(oraParts[0]&&hourSel.querySelector('option[value="'+oraParts[0]+'"]'))?oraParts[0]:'21';
+    minSel.value=(oraParts[1]&&minSel.querySelector('option[value="'+oraParts[1]+'"]'))?oraParts[1]:'00';
+    timeWrap.appendChild(hourSel); timeWrap.appendChild(timeSep); timeWrap.appendChild(minSel);
+    var rmBtn=document.createElement('button'); rmBtn.type='button'; rmBtn.className='postertool-replica-rm'; rmBtn.textContent='×'; rmBtn.title='Togli questa replica';
+    /* due righe (mese+giorno sopra, ora+x sotto), non piu' una sola - su una riga sola i 5
+       controlli sforavano la larghezza del pannello (il campo minuti tagliato, la x per
+       togliere la riga nemmeno visibile). */
+    var rowTop=document.createElement('div'); rowTop.className='postertool-replica-row-top';
+    var rowBottom=document.createElement('div'); rowBottom.className='postertool-replica-row-bottom';
+    rowTop.appendChild(mSel); rowTop.appendChild(dateSel);
+    rowBottom.appendChild(timeWrap); rowBottom.appendChild(rmBtn);
+    row.appendChild(rowTop); row.appendChild(rowBottom);
+    mSel.addEventListener('change', function(){ popolaGiorni(); onChange(); });
+    dateSel.addEventListener('change', onChange);
+    hourSel.addEventListener('change', onChange);
+    minSel.addEventListener('change', onChange);
+    rmBtn.addEventListener('click', onRemove);
+    return { el:row, monthSel:mSel, dateSel:dateSel, hourSel:hourSel, minSel:minSel, popolaMesi:popolaMesi, popolaGiorni:popolaGiorni };
+  }
+  function buildReplicheEditor(posterMonthSel, initialRepliche, onChange){
+    var wrap=document.createElement('div'); wrap.className='postertool-repliche';
+    var rows=[];
+    var addBtn=document.createElement('button'); addBtn.type='button'; addBtn.className='postertool-replica-add'; addBtn.textContent='+ Aggiungi data';
+    function renderRows(){
+      wrap.innerHTML='';
+      rows.forEach(function(r){ wrap.appendChild(r.el); });
+      addBtn.disabled=rows.length>=3;
+      wrap.appendChild(addBtn);
+    }
+    function addRow(giorno, ora){
+      var r=buildReplicaRow(posterMonthSel, giorno, ora, onChange, function(){
+        var i=rows.indexOf(r); if(i>-1) rows.splice(i,1);
+        renderRows(); onChange();
+      });
+      rows.push(r);
+    }
+    (initialRepliche||[]).slice(0,3).forEach(function(r){ addRow(r.giorno, r.ora); });
+    addBtn.addEventListener('click', function(){ if(rows.length<3){ addRow('', '21:00'); renderRows(); onChange(); } });
+    renderRows();
+    function computeRepliche(){
+      return rows.map(function(r){
+        var dDay=parseInt(r.dateSel.value,10);
+        if(!dDay) return null;
+        var mi=POSTER_MONTH_IDX_EXT[r.monthSel.value], y=posterYearForMonthExt(r.monthSel.value);
+        var dDow=POSTER_WD_FULL[new Date(y,mi,dDay).getDay()];
+        var giorno=dDow+' '+dDay+' '+(r.monthSel.options[r.monthSel.selectedIndex].textContent);
+        return { giorno:giorno, ora:r.hourSel.value+':'+r.minSel.value };
+      }).filter(Boolean);
+    }
+    /* la locandina ha cambiato mese: la finestra di mesi adiacenti offerti a ogni replica si
+       sposta di conseguenza (rifatta da zero, non solo ripopolata). */
+    function refreshMonth(){ rows.forEach(function(r){ r.popolaMesi(); r.popolaGiorni(); }); }
+    return { el:wrap, computeRepliche:computeRepliche, refreshMonth:refreshMonth };
+  }
+  /* stesso fallback usato sul sito (getRepliche() in sito_con_pannello.html): una locandina
+     salvata prima di questo giro ha solo i vecchi d.date/d.time, non d.repliche - qui diventa
+     la riga iniziale dell'editor, cosi' la si vede e modifica come le altre senza perdere nulla. */
+  function posterGetRepliche(d){
+    if(Array.isArray(d.repliche) && d.repliche.length) return d.repliche.slice(0,3);
+    if(d.date||d.time) return [{giorno:d.date||'', ora:d.time||''}];
+    return [];
+  }
+
   /* Le foto vere di un telefono (spesso diversi MB l'una) esaurivano in fretta lo spazio di
      localStorage (in genere 5-10MB per sito): il salvataggio falliva in silenzio dopo poche
      locandine, che sparivano al ricaricamento della pagina senza nessun avviso. Ridimensionando
@@ -934,22 +1057,12 @@
     var castInp=document.createElement('input'); castInp.type='text'; castInp.placeholder='Nomi separati da virgola';
     row('Cast').appendChild(castInp);
 
-    /* Data: selettore dei giorni del mese scelto (non testo libero). La stagione
+    /* Repliche: fino a 3 date/ora (es. "Sabato 31 Ottobre"/"21:00" e "Domenica 1 Novembre"/
+       "18:00") - una riga di base gia' pronta, pulsante per aggiungerne/toglierne. La stagione
        "26/27" -> novembre/dicembre sono 2026, gennaio-aprile sono 2027. */
-    var dateSel=document.createElement('select');
-    posterPopulateDateOptions(monthSel, dateSel);
-    monthSel.addEventListener('change', function(){ posterPopulateDateOptions(monthSel, dateSel); });
-    row('Data').appendChild(dateSel);
-
-    var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
-    var hourSel=document.createElement('select');
-    for(var h=0; h<24; h++){ var ho=document.createElement('option'); var hv=String(h).padStart(2,'0'); ho.value=hv; ho.textContent=hv; hourSel.appendChild(ho); }
-    hourSel.value='21';
-    var timeSep=document.createElement('span'); timeSep.className='postertool-timesep'; timeSep.textContent=':';
-    var minSel=document.createElement('select');
-    ['00','15','30','45'].forEach(function(mm){ var mo=document.createElement('option'); mo.value=mm; mo.textContent=mm; minSel.appendChild(mo); });
-    timeWrap.appendChild(hourSel); timeWrap.appendChild(timeSep); timeWrap.appendChild(minSel);
-    row('Ora').appendChild(timeWrap);
+    var replicheEditor=buildReplicheEditor(monthSel, [{giorno:'', ora:'21:00'}], function(){});
+    monthSel.addEventListener('change', function(){ replicheEditor.refreshMonth(); });
+    row('Repliche').appendChild(replicheEditor.el);
 
     var tagSel=document.createElement('select');
     ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; tagSel.appendChild(o); });
@@ -1062,17 +1175,19 @@
       var title=(titleInp.value||'').trim();
       if(!title){ errEl.textContent='Serve almeno il titolo.'; return; }
       if(!coverImage){ errEl.textContent='Carica una copertina (la locandina che appare sul muro).'; return; }
-      var dDay=parseInt(dateSel.value,10), dMi=POSTER_MONTH_IDX[monthSel.value], dY=posterYearForMonth(monthSel.value);
-      var dDow=POSTER_WD_FULL[new Date(dY,dMi,dDay).getDay()];
-      var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
+      /* i vecchi campi date/time restano scritti (non rinominati, retrocompatibilita'): rispecchiano
+         la PRIMA replica, cosi' chi legge ancora solo quei due campi vede comunque qualcosa di
+         corretto. repliche e' il campo nuovo, con tutte le date/ora inserite (fino a 3). */
+      var repliche=replicheEditor.computeRepliche();
       var info={
         title:title,
         sottotitolo:(sottotitoloInp.value||'').trim(),
         regia:(regiaInp.value||'').trim(),
         synopsis:(synInp.value||'').trim(),
         cast:(castInp.value||'').trim(),
-        date:dateStr,
-        time:hourSel.value+':'+minSel.value,
+        date:repliche.length?repliche[0].giorno:'',
+        time:repliche.length?repliche[0].ora:'',
+        repliche:repliche,
         tag:tagSel.value,
         meta:tagSel.value,
         cover:coverImage,
@@ -1142,24 +1257,11 @@
     var castInp=document.createElement('input'); castInp.type='text'; castInp.placeholder='Nomi separati da virgola'; castInp.value=d.cast||'';
     row('Cast').appendChild(castInp);
 
-    var dateSel=document.createElement('select');
-    posterPopulateDateOptions(monthSel, dateSel);
-    var prevDay=posterParseDay(d.date);
-    if(prevDay) dateSel.value=String(prevDay);
-    monthSel.addEventListener('change', function(){ posterPopulateDateOptions(monthSel, dateSel); commit(); });
-    row('Data').appendChild(dateSel);
-
-    var timeWrap=document.createElement('div'); timeWrap.className='postertool-timewrap';
-    var hourSel=document.createElement('select');
-    for(var h=0; h<24; h++){ var ho=document.createElement('option'); var hv=String(h).padStart(2,'0'); ho.value=hv; ho.textContent=hv; hourSel.appendChild(ho); }
-    var timeSep=document.createElement('span'); timeSep.className='postertool-timesep'; timeSep.textContent=':';
-    var minSel=document.createElement('select');
-    ['00','15','30','45'].forEach(function(mm){ var mo=document.createElement('option'); mo.value=mm; mo.textContent=mm; minSel.appendChild(mo); });
-    var dTime=(d.time||'').split(':');
-    hourSel.value=(dTime[0]&&hourSel.querySelector('option[value="'+dTime[0]+'"]'))?dTime[0]:'21';
-    minSel.value=(dTime[1]&&minSel.querySelector('option[value="'+dTime[1]+'"]'))?dTime[1]:'00';
-    timeWrap.appendChild(hourSel); timeWrap.appendChild(timeSep); timeWrap.appendChild(minSel);
-    row('Ora').appendChild(timeWrap);
+    /* editor precompilato con le repliche gia' salvate - stesso fallback del sito (una locandina
+       con solo i vecchi date/time diventa qui la sua unica riga, modificabile come le altre). */
+    var replicheEditor=buildReplicheEditor(monthSel, posterGetRepliche(d), function(){ commit(); });
+    monthSel.addEventListener('change', function(){ replicheEditor.refreshMonth(); commit(); });
+    row('Repliche').appendChild(replicheEditor.el);
 
     var tagSel=document.createElement('select');
     ['Prosa','Improvvisazione','Musica'].forEach(function(t){ var o=document.createElement('option'); o.value=t; o.textContent=t; if(t===d.tag) o.selected=true; tagSel.appendChild(o); });
@@ -1204,17 +1306,16 @@
       if(!title){ errEl.textContent='Il titolo non puo\' restare vuoto.'; return; }
       if(!coverImage){ errEl.textContent='Serve sempre una copertina (la locandina che appare sul muro).'; return; }
       errEl.textContent='';
-      var dDay=parseInt(dateSel.value,10), dMi=POSTER_MONTH_IDX[monthSel.value], dY=posterYearForMonth(monthSel.value);
-      var dDow=dDay?POSTER_WD_FULL[new Date(dY,dMi,dDay).getDay()]:'';
-      var dateStr=dDay?(dDow+' '+dDay+' '+(monthSel.options[monthSel.selectedIndex].textContent)):'';
+      var repliche=replicheEditor.computeRepliche();
       var info={
         title:title,
         sottotitolo:(sottotitoloInp.value||'').trim(),
         regia:(regiaInp.value||'').trim(),
         synopsis:(synInp.value||'').trim(),
         cast:(castInp.value||'').trim(),
-        date:dateStr,
-        time:hourSel.value+':'+minSel.value,
+        date:repliche.length?repliche[0].giorno:'',
+        time:repliche.length?repliche[0].ora:'',
+        repliche:repliche,
         tag:tagSel.value,
         meta:tagSel.value,
         cover:coverImage,
@@ -1235,9 +1336,6 @@
 
     [titleInp, sottotitoloInp, regiaInp, castInp].forEach(function(inp){ inp.addEventListener('input', scheduleCommit); });
     synInp.addEventListener('input', scheduleCommit);
-    dateSel.addEventListener('change', commit);
-    hourSel.addEventListener('change', commit);
-    minSel.addEventListener('change', commit);
     tagSel.addEventListener('change', commit);
 
     function renderCoverPreview(){
@@ -1642,6 +1740,16 @@
     '.postertool-timewrap{display:flex;align-items:center;gap:6px}'+
     '.postertool-timewrap select{flex:1;min-width:0}'+
     '.postertool-timesep{color:#888;font-weight:600}'+
+    '.postertool-repliche{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}'+
+    '.postertool-replica-row{display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid #333;border-radius:6px}'+
+    '.postertool-replica-row-top{display:flex;align-items:center;gap:6px}'+
+    '.postertool-replica-row-bottom{display:flex;align-items:center;gap:6px}'+
+    '.postertool-replica-row-top select{flex:1;min-width:0}'+
+    '.postertool-replica-row select{background:#1c1c1c;color:#fff;border:1px solid #444;border-radius:6px;padding:6px 8px;font:12px/1.35 Poppins,sans-serif;font-family:inherit}'+
+    '.postertool-replica-row .postertool-timewrap{flex:0 0 auto}'+
+    '.postertool-replica-rm{background:transparent;color:#ff8a80;border:1px solid #444;border-radius:6px;width:26px;height:26px;line-height:1;cursor:pointer;flex:none;margin-left:auto}'+
+    '.postertool-replica-add{background:#1c1c1c;color:#fcc454;border:1px dashed #555;border-radius:6px;padding:6px 8px;font:600 11px Poppins,sans-serif;cursor:pointer}'+
+    '.postertool-replica-add:disabled{opacity:.35;cursor:default}'+
     '.postertool-coverpreview{margin:6px 0 8px}'+
     '.postertool-coveritem{position:relative;width:64px}'+
     '.postertool-coveritem img{display:block;width:64px;height:90px;object-fit:cover;border-radius:4px;border:1px solid #444}'+

@@ -1399,7 +1399,7 @@ html.sede-monte #s3-slide1{display:none}
    e' larga esattamente quanto la galleria+margine e resta vuota, le colonne 2+3 ospitano tutto
    il testo - data e ora affiancate stanno nelle colonne 2 e 3 della loro riga, tutte le altre
    righe usano lo stesso nome su entrambe le colonne (quindi restano a tutta larghezza). */
-.s4-slide2-detail{width:min(1040px,94vw);height:auto;max-height:86vh;overflow:hidden;display:grid;grid-template-columns:calc(var(--s4-gall-w) + var(--s4-gall-gap)) auto 1fr;grid-template-areas:"side cat cat" "side head head" "side data1 data2" "side sinossi sinossi" "side con con" "side btn btn";padding-right:clamp(24px,3.4vw,48px);position:relative;background:#1f1f1b;border-radius:20px;box-shadow:0 30px 70px rgba(0,0,0,.5);touch-action:pan-y;--s4-gall-w:44%;--s4-gall-gap:40px}
+.s4-slide2-detail{width:min(1040px,94vw);height:auto;max-height:86vh;overflow:hidden;display:grid;grid-template-columns:calc(var(--s4-gall-w) + var(--s4-gall-gap)) 1fr 1fr;grid-template-areas:"side cat cat" "side head head" "side data data" "side sinossi sinossi" "side con con" "side btn btn";padding-right:clamp(24px,3.4vw,48px);position:relative;background:#1f1f1b;border-radius:20px;box-shadow:0 30px 70px rgba(0,0,0,.5);touch-action:pan-y;--s4-gall-w:44%;--s4-gall-gap:40px}
 .s4-slide2-detail::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-detail-head{grid-area:head;max-width:none;text-align:left;margin:32px 0 0}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Titolo -> --s4-slide2-detail-titolo-{scale|x|y|lh|ls|color} */
@@ -1408,18 +1408,20 @@ html.sede-monte #s3-slide1{display:none}
 /* colore giallo (var(--sede)), e linea sottile sotto (il "divider 1" richiesto prima della riga
    data/ora - border-bottom su questo elemento, che e' sempre a tutta larghezza della colonna
    testo, invece di un elemento separato apposta). */
-.s4-slide2-detail-autore{font-family:'Poppins',sans-serif;font-size:calc(15px * var(--s4-slide2-detail-autore-scale,1));line-height:var(--s4-slide2-detail-autore-lh,1.3);letter-spacing:var(--s4-slide2-detail-autore-ls,.4px);color:var(--s4-slide2-detail-autore-color,var(--sede));margin:0;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1);transform:translate(var(--s4-slide2-detail-autore-x,0px),var(--s4-slide2-detail-autore-y,0px))}
+.s4-slide2-detail-autore{font-family:'Poppins',sans-serif;font-size:calc(15px * var(--s4-slide2-detail-autore-scale,1));line-height:var(--s4-slide2-detail-autore-lh,1.3);letter-spacing:var(--s4-slide2-detail-autore-ls,.4px);margin:0;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1);transform:translate(var(--s4-slide2-detail-autore-x,0px),var(--s4-slide2-detail-autore-y,0px))}
 .s4-slide2-detail-autore:empty{display:none;padding:0;border:0}
-/* sottotitolo e regia: due righe separate, staccate tra loro, a sinistra (eredita text-align:left di .s4-slide2-detail-head) */
-.s4-slide2-detail-autore-line{display:block}
+/* sottotitolo e regia: due righe separate, staccate tra loro, a sinistra (eredita text-align:left di .s4-slide2-detail-head). Colori diversi (non possono essere entrambi gialli, si confonderebbero) - ognuna mantiene il proprio colore anche quando l'altra riga manca. */
+.s4-slide2-detail-autore-line{display:block;color:#e6e6e6}
+.s4-slide2-detail-autore-sottotitolo{color:#e6e6e6}
+.s4-slide2-detail-autore-regia{color:var(--s4-slide2-detail-autore-color,var(--sede))}
 .s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:6px}
 /* display:contents su row/copy/info: i loro figli (galleria, sinossi, cast, data, ora,
    categoria) diventano figli diretti della griglia di .s4-slide2-detail qui sopra, ciascuno
    con il proprio grid-area. */
-.s4-slide2-detail-row,.s4-slide2-detail-copy,.s4-slide2-detail-info{display:contents}
+.s4-slide2-detail-scroll{display:contents}
 /* senza galleria: via la colonna "side" (vuota, serviva solo a riservare lo spazio della
    galleria) - il testo prende tutta la larghezza su due sole colonne. */
-.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:auto 1fr;grid-template-areas:"cat cat" "head head" "data1 data2" "sinossi sinossi" "con con" "btn btn"}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-columns:1fr 1fr;grid-template-areas:"cat cat" "head head" "data data" "sinossi sinossi" "con con" "btn btn"}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Sinossi -> --s4-slide2-detail-sinossi-{scale|x|y|lh|ls|color} */
 /* SOLO la sinossi scorre (non piu' tutta la scheda): max-height propria, calcolata per lasciare
@@ -1427,7 +1429,7 @@ html.sede-monte #s3-slide1{display:none}
    sinossi lunghissima il bottone Prenota resta sempre visibile, senza bisogno che tutta la
    scheda sia ad altezza fissa (che lasciava un buco quando il testo era corto). Linea sottile
    sopra (il "divider 2" richiesto dopo la riga data/ora). */
-.s4-slide2-detail-sinossi{grid-area:sinossi;min-height:0;max-height:min(320px,max(140px,calc(86vh - 445px)));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;margin:0;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-family:'Montserrat',sans-serif;font-size:calc(clamp(15px,1.25vw,18px) * var(--s4-slide2-detail-sinossi-scale,1));line-height:var(--s4-slide2-detail-sinossi-lh,1.65);letter-spacing:var(--s4-slide2-detail-sinossi-ls,0px);color:var(--s4-slide2-detail-sinossi-color,#cfcfcf);max-width:640px;transform:translate(var(--s4-slide2-detail-sinossi-x,0px),var(--s4-slide2-detail-sinossi-y,0px))}
+.s4-slide2-detail-sinossi{grid-area:sinossi;min-height:0;max-height:min(320px,max(140px,calc(86vh - 445px - (var(--s4-replica-extra-rows,0) * 26px))));overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;margin:0;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);font-family:'Montserrat',sans-serif;font-size:calc(clamp(15px,1.25vw,18px) * var(--s4-slide2-detail-sinossi-scale,1));line-height:var(--s4-slide2-detail-sinossi-lh,1.65);letter-spacing:var(--s4-slide2-detail-sinossi-ls,0px);color:var(--s4-slide2-detail-sinossi-color,#cfcfcf);max-width:640px;transform:translate(var(--s4-slide2-detail-sinossi-x,0px),var(--s4-slide2-detail-sinossi-y,0px))}
 .s4-slide2-detail-sinossi:empty{display:none}
 .s4-slide2-detail-sinossi::-webkit-scrollbar{display:none;width:0;height:0}
 /* MASCHERINO — VICOLO OFF · Scheda spettacolo · Cast -> --s4-slide2-detail-cast-{scale|x|y|lh|ls|color} */
@@ -1437,26 +1439,21 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-detail-cast{grid-area:con;margin:18px 0 0;font-family:'Montserrat',sans-serif;font-size:calc(12.5px * var(--s4-slide2-detail-cast-scale,1));line-height:var(--s4-slide2-detail-cast-lh,1.5);letter-spacing:var(--s4-slide2-detail-cast-ls,0px);color:var(--s4-slide2-detail-cast-color,#8f8f8f);transform:translate(var(--s4-slide2-detail-cast-x,0px),var(--s4-slide2-detail-cast-y,0px))}
 .s4-slide2-detail-cast:empty{display:none}
 .s4-slide2-detail-cast::before{content:'Con';display:block;font:600 10px/1 'Poppins',sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#8a8a8a;margin-bottom:5px}
-/* MASCHERINO — VICOLO OFF · Scheda spettacolo · riga Data/Ora -> --s4-slide2-detail-info-{scale|x|y}
-   .detail-info e' dissolta (display:contents, vedi sopra): la sua riga/gap/transform non
-   servono piu' per il layout (data e ora affiancate arrivano dalla griglia: due grid-area
-   diverse nella stessa riga), ma il transform del builder (scale/x/y) resta applicato ai due
-   span via la variabile qui sotto, letta anche da loro. */
-#s4Slide2DetailDate{grid-area:data1;justify-self:start;margin:16px 0;transform:translate(var(--s4-slide2-detail-info-x,0px),var(--s4-slide2-detail-info-y,0px)) scale(var(--s4-slide2-detail-info-scale,1));transform-origin:left center}
-#s4Slide2DetailTime{grid-area:data2;justify-self:start;margin:16px 0 16px 28px;transform:translate(var(--s4-slide2-detail-info-x,0px),var(--s4-slide2-detail-info-y,0px)) scale(var(--s4-slide2-detail-info-scale,1));transform-origin:left center}
-/* DATA/ORA come blocco etichetta-sopra+valore-sotto (via ::before), non piu' pillole: stesso
-   linguaggio del blocco "CON" qui sopra. */
-.s4-slide2-detail-info span:not(.s4-slide2-detail-tag){border:0;border-radius:0;padding:0;display:block;font:600 18px/1.1 'Poppins',sans-serif;letter-spacing:0;text-transform:none;color:#fff}
-.s4-slide2-detail-info span::before{content:'Data';display:block;font:600 10px/1 'Poppins',sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#8a8a8a;margin-bottom:5px}
-/* la categoria (.detail-tag) e' ANCHE UNO SPAN dentro .detail-info nel markup - senza questa
-   esclusione erediterebbe pure lei l'etichetta "Data" dalla regola qui sopra. content:none
-   rimuove lo pseudo-elemento del tutto (non basta un content vuoto, che lascerebbe comunque
-   una riga residua per via di display:block/margin-bottom). #s4Slide2DetailTag (id, non solo
-   la classe): serve una specificita' piu' alta di ".s4-slide2-detail-info span::before" qui
-   sopra (classe+tipo+pseudo-elemento) per vincere davvero. */
-#s4Slide2DetailTag::before{content:none;display:none}
-.s4-slide2-detail-info span#s4Slide2DetailTime::before{content:'Ora'}
-.s4-slide2-detail-info span:empty{display:none}
+/* MASCHERINO — VICOLO OFF · Scheda spettacolo · blocco repliche (Data/Ora) -> --s4-slide2-detail-info-{scale|x|y}
+   .detail-repliche e' una griglia propria (2 colonne: giorno/ora, larghezza automatica, 28px
+   tra loro) con grid-area:data nella griglia di .detail - cosi' le etichette "Data"/"Ora" stanno
+   UNA sola volta in cima e sotto una riga per ogni replica (fino a 3), con gli orari allineati
+   in colonna perche' tutte le "ora" condividono la stessa colonna di griglia. Il transform del
+   builder (scale/x/y) resta sul contenitore, non piu' sui singoli valori. */
+.s4-slide2-detail-repliche{grid-area:data;display:grid;grid-template-columns:auto auto;column-gap:28px;row-gap:6px;justify-content:start;margin:16px 0;transform:translate(var(--s4-slide2-detail-info-x,0px),var(--s4-slide2-detail-info-y,0px)) scale(var(--s4-slide2-detail-info-scale,1));transform-origin:left center}
+.s4-slide2-detail-repliche:empty{display:none;margin:0}
+/* ogni "item" (giorno+ora di una replica) dissolto: i due span tornano colonne separate della
+   griglia qui sopra, allineate su piu' righe - esattamente come prima di raggrupparli. */
+.s4-slide2-replica-item{display:contents}
+.s4-slide2-replica-label{font:600 10px/1 'Poppins',sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#8a8a8a}
+/* etichetta combinata "Date e orari" (orizzontale, vedi piu' sotto): nascosta qui, restano Data/Ora separate */
+.s4-slide2-replica-label-combo{display:none}
+.s4-slide2-replica-giorno,.s4-slide2-replica-ora{font:600 18px/1.1 'Poppins',sans-serif;color:#fff}
 /* categoria: ora una riga di griglia propria ("cat"), sopra il titolo - testo semplice, non
    piu' una pillola: niente bordo/sfondo, colore della categoria (o grigio di default). */
 .s4-slide2-detail-tag{grid-area:cat;margin:32px 0 0;border:0!important;background:none!important;border-radius:0;padding:0;font:600 11px/1 'Poppins',sans-serif;letter-spacing:1.6px;text-transform:uppercase;color:var(--sede)!important}
@@ -1560,11 +1557,20 @@ html.sede-monte #s3-slide1{display:none}
    piu' volte in questo file. justify-content:flex-start su .s4-slide2-eyebrow: vince sul
    "center" di ".eyebrow" generico (il pallino+testo altrimenti restano centrati anche con
    testo a sinistra). */
+/* CORREZIONE (giro 9, estesa giro 10): tutto centrato (non piu' a sinistra) - titolo, occhiello,
+   "Scegli il mese e poi la locandina." E la riga dei mesi, stesso allineamento in tutta la
+   fascia 768-1199px (prima erano incoerenti: a sinistra a 1024x768, la frase fuori posto a
+   900px). Riga mesi: justify-content:center con flex-wrap:wrap, cosi' se non entrano tutti su
+   una riga vanno a capo centrati invece di scorrere lateralmente (non ha senso scorrere una
+   riga gia' centrata). I puntini/etichetta pagina restano VISIBILI qui (giro 10: tornano come
+   prima - in questa fascia non esiste lo swipe nativo tra pagine di locandine, senza i puntini
+   un mese con 5+ spettacoli non sarebbe piu' navigabile). */
 @media (min-width:768px) and (max-width:1199px){
-#s4-slide2 .s4-slide2-inner{text-align:left}
-.s4-slide2-eyebrow{justify-content:flex-start;width:100%;text-align:left}
-.s4-slide2-titolo,.s4-slide2-corpo{width:100%;text-align:left}
-.s4-slide2-months{justify-content:flex-start;width:100%}
+#s4-slide2 .s4-slide2-inner{text-align:center}
+.s4-slide2-eyebrow{justify-content:center;width:100%;text-align:center;margin-top:22px}
+.s4-slide2-titolo{width:100%;text-align:center;margin-bottom:16px}
+.s4-slide2-corpo{width:100%;text-align:center}
+.s4-slide2-months{justify-content:center;flex-wrap:wrap;width:100%}
 }
 @media (max-width:767px){#s4-slide2{padding-left:3vw;padding-right:3vw}.s4-slide2-titolo{font-size:calc(clamp(34px,10vw,54px) * var(--s4-slide2-titolo-scale,1))}.s4-slide2-months{gap:5px;margin-top:8px}.s4-slide2-month{padding:5px 8px;font-size:8px}.s4-slide2-month-panels{margin-top:8px}.s4-slide2-wall{width:min(88vw,520px);grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 /* Scorrimento con il dito tra le pagine di locandine (mesi con piu' di 4 spettacoli): stesso
@@ -1591,12 +1597,24 @@ html.sede-monte #s3-slide1{display:none}
    bottone: il pallino vero e' solo lo pseudo-elemento centrale) ed etichetta "1 / 2" accanto -
    SOLO i puntini delle PAGINE: quelli delle FOTO dentro la scheda (.s4-slide2-gallery-dot)
    restano come sono, nessun cambiamento li'. */
-.s4-slide2-page-dots{display:flex;align-items:center;justify-content:center;gap:2px;margin-top:4px}
+/* nascosti (giro 7, richiesta esplicita): solo display:none, nessun cambiamento JS - lo
+   swipe nativo tra pagine (.s4-pagine-multiple, scroll-snap) resta identico e funzionante,
+   semplicemente senza questa barra sotto. Lo spazio guadagnato va alle righe della lista
+   (vedi gap di .s4-slide2-wall e margini di eyebrow/titolo/mesi qui sopra). */
+.s4-slide2-page-dots{display:none}
 .s4-slide2-page-dot{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;padding:0;cursor:pointer}
 .s4-slide2-page-dot.is-active{background:transparent}
 .s4-slide2-page-dot::after{content:'';width:10px;height:10px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:transparent}
 .s4-slide2-page-dot.is-active::after{background:#fff;border-color:#fff}
 .s4-slide2-page-label{font:600 11px/1 'Poppins',sans-serif;color:#8f8f8f;margin-left:4px}
+/* .vc-dots (giro 10): indicatore VERTICALE di sezione/slide del sito intero (un pallino per
+   slide della sezione corrente - qui "Vicolo Off" ne ha 2, slide1+slide2), NON i puntini delle
+   pagine di locandine qui sopra - elemento globale, non solo di questa sezione. Qui tocca la
+   prima riga dell'elenco verticale: piu' piccolo (6px, non 7) e piu' vicino al bordo destro
+   (3px, non 16) cosi' resta fuori dalla colonna di testo delle locandine, solo in questo
+   formato (telefono verticale) - su tablet/desktop/orizzontale resta come sempre. */
+.vc-dots{right:calc(3px + var(--vc-safe-right));gap:7px}
+.vc-dots i{width:6px;height:6px}
 }
 .s4-slide2-overlay{padding:14px;padding-top:calc(14px + var(--vc-safe-top));padding-bottom:calc(14px + var(--vc-safe-bottom));padding-left:calc(14px + var(--vc-safe-left));padding-right:calc(14px + var(--vc-safe-right))}/* Rifacimento scheda spettacolo mobile verticale: display:grid su .s4-slide2-detail +
    display:contents su .s4-slide2-detail-row E su .s4-slide2-detail-copy (il trucco gia' usato
@@ -1616,11 +1634,15 @@ html.sede-monte #s3-slide1{display:none}
    ora nella loro riga - tutte le altre aree ripetono lo stesso nome su entrambe le colonne,
    quindi restano a tutta larghezza come prima. padding:22px (non piu' 2px) sui lati, come
    richiesto; padding-bottom invariato (gia' pensato per la safe-area). */
-.s4-slide2-detail{display:grid;grid-template-columns:auto 1fr;grid-template-rows:minmax(140px,1fr) auto auto auto 100px auto auto;grid-template-areas:"gallery gallery" "cat cat" "head head" "data1 data2" "sinossi sinossi" "con con" "btn btn";row-gap:2px;width:100%;height:94svh;max-height:94svh;overflow:hidden;padding:20px 22px;padding-bottom:calc(20px + var(--vc-safe-bottom));padding-left:calc(22px + var(--vc-safe-left));padding-right:calc(22px + var(--vc-safe-right));border-radius:22px 22px 0 0}
-.s4-slide2-detail-row,.s4-slide2-detail-copy,.s4-slide2-detail-info{display:contents}
+/* RIPIEGO ESTREMO (giro 7, stesso meccanismo del telefono orizzontale piu' sotto): con 3
+   repliche e testi tutti lunghi insieme, anche la galleria al suo minimo (140px) puo' non
+   bastare piu' - overflow-y:auto (non piu' hidden) invece di tagliare, con Prenota ancorato in
+   fondo via position:sticky (vedi .detail-btn): tutta la scheda scorre, Prenota resta sempre
+   raggiungibile. Invisibile/nessun effetto quando il contenuto ci sta gia' (il caso normale). */
+.s4-slide2-detail{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(140px,1fr) auto auto auto 100px auto auto;grid-template-areas:"gallery gallery" "cat cat" "head head" "data data" "sinossi sinossi" "con con" "btn btn";row-gap:2px;width:100%;height:94svh;max-height:94svh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding:20px 22px;padding-bottom:calc(20px + var(--vc-safe-bottom));padding-left:calc(22px + var(--vc-safe-left));padding-right:calc(22px + var(--vc-safe-right));border-radius:22px 22px 0 0}
+.s4-slide2-detail::-webkit-scrollbar{display:none;width:0;height:0}
+.s4-slide2-detail-scroll{display:contents}
 .s4-slide2-detail-tag{grid-area:cat;position:static;left:auto;top:auto;margin-top:14px;margin-bottom:4px}
-#s4Slide2DetailDate{grid-area:data1}
-#s4Slide2DetailTime{grid-area:data2}
 /* altezza FISSA ridotta (35-45svh, non piu' 48svh): la scheda ora NON scorre piu' nel suo
    insieme (vedi sopra, overflow:hidden), quindi galleria+intestazione devono stare in altezza
    lasciando spazio reale alla sinossi (almeno 3-4 righe visibili, richiesta esplicita). */
@@ -1647,13 +1669,13 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
 /* Scheda senza copertina/galleria (galleryImgs.length===0): .s4-slide2-detail-gallery ha
    un'altezza FISSA riservata nella griglia - senza questa regola resterebbe un riquadro vuoto. */
-.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-areas:"cat cat" "head head" "data1 data2" "sinossi sinossi" "con con" "btn btn"}
+.s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail{grid-template-areas:"cat cat" "head head" "data data" "sinossi sinossi" "con con" "btn btn"}
 .s4-slide2-overlay.s4-slide2-senza-galleria .s4-slide2-detail-gallery{display:none}
 /* CORREZIONE (giro 3): stesso ordine/allineamento a sinistra di desktop/tablet/orizzontale -
    niente piu' centrato. padding:0 qui (il padding generale e' gia' sui lati di .detail sopra). */
-.s4-slide2-detail-info{gap:16px;margin:0;padding:0}
-.s4-slide2-detail-info span:not(.s4-slide2-detail-tag){font-size:15px}
-.s4-slide2-detail-info span::before{font-size:9px}
+.s4-slide2-detail-repliche{column-gap:24px;row-gap:4px}
+.s4-slide2-replica-giorno,.s4-slide2-replica-ora{font-size:15px}
+.s4-slide2-replica-label{font-size:9px}
 .s4-slide2-detail-tag{font-size:10px}
 .s4-slide2-detail-head{grid-area:head;margin:0;max-width:none;text-align:left;padding:0}
 .s4-slide2-detail-titolo{font-size:calc(clamp(32px,10vw,50px) * var(--s4-slide2-detail-titolo-scale,1))}
@@ -1673,7 +1695,7 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-detail-sinossi::-webkit-scrollbar{display:none;width:0;height:0}
 /* fuori dall'area che scorre, sempre visibile, A TUTTA LARGHEZZA (richiesta esplicita, non piu'
    centrato ne' stretto al contenuto). */
-.s4-slide2-detail-btn{grid-area:btn;justify-self:stretch;align-self:end;width:100%;text-align:center;margin:12px 0 0;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
+.s4-slide2-detail-btn{position:sticky;bottom:0;z-index:2;grid-area:btn;justify-self:stretch;align-self:end;width:100%;text-align:center;margin:12px 0 0;padding:calc(15px * var(--s4-slide2-detail-btn-scale,1)) calc(22px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(14px * var(--s4-slide2-detail-btn-scale,1))}
 .s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:44px;height:44px;background:rgba(27,27,27,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:6}}
 /* Compattamento dell'intestazione "Gli spettacoli" SOLO in verticale su telefono (PARTE 1,
    mancante nel giro precedente): su schermi come 390x699 testo/filtri/mesi occupavano da soli
@@ -1697,8 +1719,11 @@ html.sede-monte #s3-slide1{display:none}
 #vcStage{touch-action:pan-x pinch-zoom}
 /* CORREZIONE (giro 2): allineamento a sinistra come Lovable (non piu' centrato) - stesso
    principio width:100%+text-align:left gia' usato per il tablet qui sopra. */
-.s4-slide2-eyebrow{justify-content:flex-start;width:100%;text-align:left;font-size:calc(9px * var(--s4-slide2-eyebrow-scale,1))}
-.s4-slide2-titolo{width:100%;text-align:left;font-size:calc(36px * var(--s4-slide2-titolo-scale,1));margin-top:4px}
+/* CORREZIONE (giro 7): centrati (non piu' a sinistra) e piu' staccati dal menu - lo spazio
+   guadagnato nascondendo i puntini/etichetta "1/2" delle pagine (vedi .s4-slide2-page-dots
+   piu' sotto) va alle righe della lista, non qui: margin-top fisso e moderato basta. */
+.s4-slide2-eyebrow{justify-content:center;width:100%;text-align:center;margin-top:22px;font-size:calc(9px * var(--s4-slide2-eyebrow-scale,1))}
+.s4-slide2-titolo{width:100%;text-align:center;font-size:calc(36px * var(--s4-slide2-titolo-scale,1));margin-top:4px}
 /* "Scegli il mese e poi la locandina.": nascosta, non serve piu' spazio per lei qui. */
 .s4-slide2-corpo{display:none}
 /* i 3 filtri su UNA riga, senza andare a capo, piu' piccoli. */
@@ -1715,7 +1740,7 @@ html.sede-monte #s3-slide1{display:none}
    capo (6 mesi affiancati, qui ~436px) ignorando lo schermo - overflow-x:auto non ha alcun
    effetto su un contenitore che si allarga sempre per contenere tutto. box-sizing:border-box
    perche' il padding laterale resti DENTRO il 100%, non lo sfori. */
-.s4-slide2-months{width:100%;box-sizing:border-box;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x;padding:0 14px;margin-top:6px;margin-left:0;margin-right:0}
+.s4-slide2-months{width:100%;box-sizing:border-box;flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x;padding:0 14px;margin-top:16px;margin-left:0;margin-right:0}
 .s4-slide2-months::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-month{flex:none}
 /* CORREZIONE: pillole piu' leggibili qui (non piu' la vecchia regola minuscola ne' i 42px/14px
@@ -1735,7 +1760,7 @@ html.sede-monte #s3-slide1{display:none}
    stessa specificita' della regola base, qui dopo nel foglio. L'altezza della riga segue da
    sola quella della locandina (90px) perche' align-items e' "center", nessuna altezza fissa da
    mantenere sincronizzata a mano. */
-.s4-slide2-wall{display:grid;grid-template-columns:1fr;width:100%;max-width:none;margin:0;gap:8px}
+.s4-slide2-wall{display:grid;grid-template-columns:1fr;width:100%;max-width:none;margin:0;gap:11px}
 /* card in riga: niente "gap" tra foto e testo (gap:0, non piu' 10px) - i due si toccano e
    condividono lo sfondo/angoli complementari (foto arrotondata a sinistra, testo a destra),
    stessa logica "fusa" della card verticale qui sopra, cosi' la riga legge come un'unica card. */
@@ -1756,7 +1781,10 @@ html.sede-monte #s3-slide1{display:none}
 /* 7.5px (non 8.5px): verificato dal vivo (ridimensionando la colonna/il font a 844x290 e
    rimisurando l'altezza reale) che SOLO a 7.5px o meno il testo "Gli spettacoli - Stagione
    26/27" entra su una riga sola nei 220px disponibili - a 8px o piu' va comunque a capo. */
-.s4-slide2-eyebrow{justify-content:flex-start;margin-bottom:1px;font-size:calc(7.5px * var(--s4-slide2-eyebrow-scale,1))}
+/* spostati in basso e centrati verticalmente rispetto alle locandine (non piu' attaccati al
+   menu): margin-top fisso, verificato dal vivo (misurato lo spazio reale sotto l'header e
+   l'altezza della colonna sinistra a questa altezza) - lascia sempre >=14px sotto il menu. */
+.s4-slide2-eyebrow{justify-content:flex-start;margin-top:65px;margin-bottom:1px;font-size:calc(7.5px * var(--s4-slide2-eyebrow-scale,1))}
 .s4-slide2-titolo{font-size:calc(clamp(18px,3.6vw,24px) * var(--s4-slide2-titolo-scale,1));margin-top:4px}
 /* "Scegli il mese e poi la locandina." nascosto SOLO in questa fascia (altezza reale <=290px,
    iPhone 12 orizzontale misurato): a quell'altezza non c'e' margine per una riga di testo puramente
@@ -1799,11 +1827,28 @@ html.sede-monte #s3-slide1{display:none}
    piu' ampia - doppio vincolo (vw disponibile DOPO la colonna sinistra E altezza disponibile)
    per restare sempre dentro lo schermo su qualsiasi telefono in orizzontale, verificato con
    screenshot+bounding box a 844x290 (iPhone 12 orizzontale, il caso reale segnalato). */
-.s4-slide2-wall{grid-template-columns:repeat(4,minmax(0,1fr));width:min(calc(100vw - 342px),calc((100svh - 70px) * 2.857 + 18px));gap:6px;margin:4px auto}
-/* didascalia una riga, solo data+titolo (niente categoria: non c'e' posto a questa altezza). */
-.s4-slide2-poster-caption{margin-top:3px;gap:1px}
-.s4-slide2-poster-caption-data{font-size:7.5px}
-.s4-slide2-poster-caption-titolo{font-size:9.5px;line-height:1.1;-webkit-line-clamp:1}
+/* Larghezza ricalcolata (giro 9): didascalia ora compatta (max ~4 righe: 2 date + titolo su max
+   2 - niente piu' "ore" davanti all'ora, categoria nascosta, vedi sotto) - serve molta meno
+   riserva di spazio che nel giro precedente (quando arrivava a 5 righe con la categoria), quindi
+   le locandine possono tornare grandi. 110px di riserva (non piu' 185): verificato dal vivo che
+   basta a lasciare le locandine a >=105px di larghezza con >=16px liberi sotto l'ultima
+   didascalia, anche a 844x270 con 2 repliche e titolo lungo. */
+.s4-slide2-wall{grid-template-columns:repeat(4,minmax(0,1fr));width:min(calc(100vw - 342px),calc((100svh - 122px) * 2.857 + 18px));gap:6px;margin:4px auto}
+.s4-slide2-poster-caption{margin-top:1px;padding:3px 5px 4px;gap:0}
+/* niente piu' troncamento con "…": il testo vero (lungo) e' reso invisibile (font-size:0, non
+   occupa spazio) e sostituito dalla sua forma breve calcolata (data-short, vedi
+   abbreviaGiorno() in JS) via ::before - "SAB 31 OTT · 21:00" invece di
+   "Sabato 31 Ottobre · ore 21:00" tagliato. Se la forma breve non si puo' calcolare, data-short
+   e' il testo intero (quel caso, raro, puo' ancora andare a capo - qui pero' niente "ore"
+   davanti all'ora e la locandina e' abbastanza larga che il caso normale sta su una riga sola,
+   richiesta esplicita: white-space:nowrap). */
+.s4-slide2-poster-caption-data{font-size:0;line-height:1.15}
+.s4-slide2-poster-caption-data::before{content:attr(data-short);display:block;font-size:7px;line-height:1.15;white-space:nowrap;overflow:hidden}
+/* titolo su 2 righe (non piu' 1 troncata) */
+.s4-slide2-poster-caption-titolo{font-size:9px;line-height:1.1;-webkit-line-clamp:2}
+/* categoria nascosta qui (richiesta esplicita, solo in questo formato): non c'e' piu' posto per
+   lei nella didascalia compatta - resta comunque visibile nella scheda e nelle didascalie degli
+   altri formati, nessun dato perso. */
 .s4-slide2-poster-caption-cat{display:none}
 /* align-items:flex-start (non center): quando l'intera sezione (occhiello+titolo+testo+muro)
    e' piu' alta di un solo schermo - frequente in orizzontale - centrare la scheda rispetto a
@@ -1814,11 +1859,18 @@ html.sede-monte #s3-slide1{display:none}
    regola base (desktop/tablet) qui sopra - vedi il commento esteso li'. Qui sotto solo le
    differenze: colonna piu' stretta (40%), font/margini piu' piccoli, sinossi con un tetto molto
    piu' basso (questa fascia ha solo ~230px disponibili in tutto). */
-.s4-slide2-detail{height:auto;max-height:calc(100svh - 16px - var(--vc-safe-top) - var(--vc-safe-bottom));overflow:hidden;padding:16px 64px 18px 22px;padding-right:calc(64px + var(--vc-safe-right));padding-bottom:calc(18px + var(--vc-safe-bottom));--s4-gall-w:36%;--s4-gall-gap:16px}
-/* padding-left sulla griglia stessa (non piu' sul "side", che qui non esiste - la larghezza
-   della colonna 1 e' gia' esattamente 40%+16px tramite le due variabili sopra): la safe-area
-   a sinistra va sommata al padding generale della card. */
-.s4-slide2-detail{padding-left:calc(22px + var(--vc-safe-left))}
+/* RIPIEGO ESTREMO (giro 8, sostituisce lo sticky del giro 7 - quello poteva ancora sovrapporsi
+   al testo scorrendo, qui invece MAI): la colonna di testo e' divisa in due righe di griglia
+   VERE - "scroll" (1fr: categoria->titolo->regia->date/ora->sinossi->cast, scorre al suo
+   interno se serve) e "btn" (auto: Prenota, sempre sotto, sulla sua riga, mai sovrapposta) -
+   con un row-gap REALE di 8px tra le due, non piu' un bottone "incollato sopra" via sticky.
+   La galleria resta un elemento assoluto FUORI da .detail-scroll (ferma, non scorre mai con
+   lui); .detail-scroll e .detail-btn condividono lo stesso margin-left (= galleria+margine)
+   per restare nella colonna di testo, non piu' una colonna griglia dedicata ("side"). Colonna
+   foto ridotta al 32% (non piu' 36%): piu' largo il testo, meno probabile dover scorrere. */
+.s4-slide2-detail{height:calc(100svh - 16px - var(--vc-safe-top) - var(--vc-safe-bottom));max-height:calc(100svh - 16px - var(--vc-safe-top) - var(--vc-safe-bottom));overflow:hidden;display:grid;grid-template-columns:1fr;grid-template-rows:1fr auto;grid-template-areas:"scroll" "btn";row-gap:8px;padding:16px 64px 18px 22px;padding-right:calc(64px + var(--vc-safe-right));padding-bottom:calc(18px + var(--vc-safe-bottom));padding-left:calc(22px + var(--vc-safe-left));--s4-gall-w:32%;--s4-gall-gap:16px}
+.s4-slide2-detail-scroll{display:block;grid-area:scroll;overflow-y:auto;overflow-x:hidden;min-height:0;margin-left:calc(var(--s4-gall-w) + var(--s4-gall-gap));-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.s4-slide2-detail-scroll::-webkit-scrollbar{display:none;width:0;height:0}
 .s4-slide2-detail-gallery{min-height:0}
 /* scorrimento NATIVO con scroll-snap (vedi anche il verticale sopra): stesso meccanismo,
    setG() nel JS sceglie da solo se usare lo scroll nativo o il vecchio transform (riservato
@@ -1831,28 +1883,31 @@ html.sede-monte #s3-slide1{display:none}
 .s4-slide2-gallery-counter{display:block;position:absolute;right:8px;bottom:calc(36px + var(--vc-safe-bottom));background:rgba(0,0,0,.4);color:rgba(255,255,255,.85);font:600 9px/1 'Poppins',sans-serif;padding:3px 7px;border-radius:999px}
 /* "tocca per ingrandire" nascosto in landscape (schermo troppo basso per un'etichetta in piu') */
 .s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-arrow,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-nav,.s4-slide2-overlay.s4-slide2-foto-singola .s4-slide2-gallery-counter{display:none}
-/* CORREZIONE: margini ulteriormente ridotti dopo verifica con sinossi/titolo/cast lunghi - con
-   i margini del primo tentativo il bottone usciva dal fondo (misurato: 295px di bottom contro
-   290px di schermo reale). */
-.s4-slide2-detail-tag{margin-top:6px}
-.s4-slide2-detail-head{padding:0;margin-top:6px}
+/* categoria ora e' il primo elemento di .detail-scroll (vedi markup): niente piu' grid-area,
+   solo margine vero in cima alla colonna di testo. */
+.s4-slide2-detail-tag{margin:0 0 4px;font-size:9px;letter-spacing:1px}
+.s4-slide2-detail-head{padding:0;margin-top:0}
 .s4-slide2-detail-titolo{font-size:calc(clamp(18px,3.6vw,26px) * var(--s4-slide2-detail-titolo-scale,1))}
-.s4-slide2-detail-autore{font-size:calc(10.5px * var(--s4-slide2-detail-autore-scale,1));padding-bottom:4px;margin-top:2px}
+.s4-slide2-detail-autore{font-size:calc(10.5px * var(--s4-slide2-detail-autore-scale,1));line-height:1.1;padding-bottom:4px;margin-top:2px}
 .s4-slide2-detail-autore-line+.s4-slide2-detail-autore-line{margin-top:2px}
-.s4-slide2-detail-cast{font-size:calc(10.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:10px}
+.s4-slide2-detail-cast{font-size:calc(10.5px * var(--s4-slide2-detail-cast-scale,1));margin-top:8px}
 .s4-slide2-detail-cast::before{font-size:8px;margin-bottom:1px}
-.s4-slide2-detail-info{gap:16px;margin-top:3px}
-.s4-slide2-detail-info span:not(.s4-slide2-detail-tag){font-size:12px}
-.s4-slide2-detail-info span::before{font-size:8px;margin-bottom:1px}
-.s4-slide2-detail-tag{font-size:9px;letter-spacing:1px}
-/* tetto molto piu' basso qui (solo ~230px disponibili in tutto): la sinossi resta comunque
-   l'unica parte che scorre, il bottone resta sempre visibile sotto. 8svh (non piu' 15svh):
-   verificato con una sinossi/titolo/cast lunghi insieme che il bottone resta dentro lo
-   schermo (vedi anche i margini ridotti qui sopra). */
-.s4-slide2-detail-sinossi{max-height:max(50px,calc(100svh - 16px - var(--vc-safe-top) - var(--vc-safe-bottom) - 220px));padding-top:4px;font-size:calc(12px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.4}
-/* niente piu' "align-self:end": qui il bottone segue il testo (come nel resto delle fasce
-   larghe), non e' piu' ancorato in fondo a una card ad altezza fissa. */
-.s4-slide2-detail-btn{justify-self:start;margin:4px 0;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1))}
+/* repliche in ORIZZONTALE (flex-wrap, circa 2 per riga) invece che in colonna, per risparmiare
+   altezza: ogni "item" (giorno+ora di una replica) qui NON e' piu' dissolto (resta un blocco
+   vero, una "pillola" affiancabile alle altre) - diverso dalla regola base, dove invece si
+   dissolve per restare in due colonne allineate verticalmente. Un'unica etichetta "Date e
+   orari" (non piu' Data/Ora separate, pensate per le due colonne della regola base). */
+.s4-slide2-detail-repliche{display:flex;flex-wrap:wrap;column-gap:14px;row-gap:2px;margin:6px 0}
+.s4-slide2-replica-item{display:flex}
+.s4-slide2-replica-label-data,.s4-slide2-replica-label-ora{display:none}
+.s4-slide2-replica-label-combo{display:block;width:100%;font-size:8px;margin-bottom:1px}
+.s4-slide2-replica-giorno,.s4-slide2-replica-ora{font-size:11px}
+.s4-slide2-replica-giorno::after{content:' · ore ';color:#8a8a8a}
+/* la sinossi non ha piu' un tetto/scroll proprio: scorre insieme al resto della colonna
+   (.detail-scroll qui sopra) invece che da sola - mostra sempre almeno 2 righe (richiesta
+   esplicita) perche' niente la taglia piu' artificialmente, solo lo scroll esterno se serve. */
+.s4-slide2-detail-sinossi{max-height:none;overflow:visible;padding-top:4px;font-size:calc(12px * var(--s4-slide2-detail-sinossi-scale,1));line-height:1.35}
+.s4-slide2-detail-btn{grid-area:btn;margin:0;margin-left:calc(var(--s4-gall-w) + var(--s4-gall-gap));justify-self:start;padding:calc(10px * var(--s4-slide2-detail-btn-scale,1)) calc(16px * var(--s4-slide2-detail-btn-scale,1));font-size:calc(12px * var(--s4-slide2-detail-btn-scale,1))}
 .s4-slide2-close{top:calc(6px + var(--vc-safe-top));right:calc(6px + var(--vc-safe-right));width:32px;height:32px}}
 
 /* ===== SEZIONE 5 TOLFAMA · SLIDE 1 ===== */
@@ -2288,7 +2343,7 @@ html.sede-monte #s3-slide1{display:none}
       </div>
       <div class="s4-slide2-month-panels"><div class="s4-slide2-month-panel is-active" data-month-panel="novembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="dicembre"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="gennaio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="febbraio"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="marzo"><div class="s4-slide2-pages"></div></div><div class="s4-slide2-month-panel" data-month-panel="aprile"><div class="s4-slide2-pages"></div></div></div>
       </div>
-      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-row"><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div><div class="s4-slide2-gallery-counter" id="s4Slide2GalleryCounter"></div><div class="s4-slide2-gallery-hint" id="s4Slide2GalleryHint" title="Tocca per ingrandire" aria-hidden="true">🔍</div></div><div class="s4-slide2-detail-copy"><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div></div><div class="s4-slide2-detail-info"><span id="s4Slide2DetailDate"></span><span id="s4Slide2DetailTime"></span><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
+      <div class="s4-slide2-overlay" id="s4Slide2Overlay" aria-hidden="true"><div class="s4-slide2-detail"><button class="s4-slide2-close" id="s4Slide2Close" type="button">×</button><div class="s4-slide2-detail-gallery"><div class="s4-slide2-gallery-track" id="s4Slide2GalleryTrack"></div><button class="s4-slide2-gallery-arrow s4-slide2-gallery-prev" id="s4Slide2GalleryPrev" type="button">‹</button><button class="s4-slide2-gallery-arrow s4-slide2-gallery-next" id="s4Slide2GalleryNext" type="button">›</button><div class="s4-slide2-gallery-nav" id="s4Slide2GalleryNav"></div><div class="s4-slide2-gallery-counter" id="s4Slide2GalleryCounter"></div><div class="s4-slide2-gallery-hint" id="s4Slide2GalleryHint" title="Tocca per ingrandire" aria-hidden="true">🔍</div></div><div class="s4-slide2-detail-scroll"><span class="s4-slide2-detail-tag" id="s4Slide2DetailTag"></span><div class="s4-slide2-detail-head"><h3 class="s4-slide2-detail-titolo" id="s4Slide2DetailTitle"></h3><p class="s4-slide2-detail-autore" id="s4Slide2DetailAutore"></p></div><div class="s4-slide2-detail-repliche" id="s4Slide2DetailRepliche"></div><p class="s4-slide2-detail-sinossi" id="s4Slide2DetailSynopsis"></p><p class="s4-slide2-detail-cast" id="s4Slide2DetailCast"></p></div><a class="s4-slide2-detail-btn" id="s4Slide2DetailBtn" href="mailto:info@vicolocechov.it?subject=Prenotazione%20spettacolo%20Vicolo%20Off">Prenota</a></div></div>
     </section>
   </section><!-- /vc-panel vicolo-off -->
 
@@ -3379,7 +3434,40 @@ requestAnimationFrame(riposiziona);
     if(overlayFratelloSuccessivoOriginale) overlayGenitoreOriginale.insertBefore(overlay, overlayFratelloSuccessivoOriginale);
     else overlayGenitoreOriginale.appendChild(overlay);
   }
-  const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elDate=document.getElementById('s4Slide2DetailDate'), elTime=document.getElementById('s4Slide2DetailTime'), elTag=document.getElementById('s4Slide2DetailTag');
+  const elTitle=document.getElementById('s4Slide2DetailTitle'), elAutore=document.getElementById('s4Slide2DetailAutore'), elSyn=document.getElementById('s4Slide2DetailSynopsis'), elCast=document.getElementById('s4Slide2DetailCast'), elRepliche=document.getElementById('s4Slide2DetailRepliche'), elTag=document.getElementById('s4Slide2DetailTag');
+  /* Repliche (giro 7, additivo): una locandina puo' avere fino a 3 date/ora (es. "Sabato 31
+     Ottobre"/"21:00" e "Domenica 1 Novembre"/"18:00"). Campo nuovo d.repliche:[{giorno,ora}],
+     SENZA rinominare i vecchi d.date/d.time: una locandina salvata prima di questo giro (solo
+     i vecchi campi) continua a mostrare la sua unica riga esattamente come oggi. */
+  function getRepliche(d){
+    if(Array.isArray(d.repliche) && d.repliche.length) return d.repliche.slice(0,3);
+    if(d.date||d.time) return [{giorno:d.date||'', ora:d.time||''}];
+    return [];
+  }
+  function renderRepliche(d){
+    elRepliche.innerHTML='';
+    const repliche=getRepliche(d);
+    document.documentElement.style.setProperty('--s4-replica-extra-rows', Math.max(0, repliche.length-1));
+    if(!repliche.length) return;
+    /* due etichette (Data/Ora, desktop/verticale: colonne separate) + una combinata (Date e
+       orari, orizzontale: le repliche affiancate come "pillole" - vedi .s4-slide2-replica-item
+       piu' sotto). Quale delle due si vede e' deciso solo dal CSS per fascia, mai da qui. */
+    const lblData=document.createElement('span'); lblData.className='s4-slide2-replica-label s4-slide2-replica-label-data'; lblData.textContent='Data';
+    const lblOra=document.createElement('span'); lblOra.className='s4-slide2-replica-label s4-slide2-replica-label-ora'; lblOra.textContent='Ora';
+    const lblCombo=document.createElement('span'); lblCombo.className='s4-slide2-replica-label s4-slide2-replica-label-combo'; lblCombo.textContent='Date e orari';
+    elRepliche.appendChild(lblData); elRepliche.appendChild(lblOra); elRepliche.appendChild(lblCombo);
+    /* ogni replica e' un "item" che raggruppa giorno+ora: su desktop/verticale e' dissolto
+       (display:contents) cosi' i due span tornano colonne separate e allineate come prima;
+       in orizzontale invece resta un blocco vero (chip), per poter affiancare piu' repliche
+       con flex-wrap senza bisogno di una struttura diversa a seconda della fascia. */
+    repliche.forEach(r=>{
+      const item=document.createElement('div'); item.className='s4-slide2-replica-item';
+      const g=document.createElement('span'); g.className='s4-slide2-replica-giorno'; g.textContent=r.giorno||'';
+      const o=document.createElement('span'); o.className='s4-slide2-replica-ora'; o.textContent=r.ora||'';
+      item.appendChild(g); item.appendChild(o);
+      elRepliche.appendChild(item);
+    });
+  }
   let lastOpener=null;
   /* sopprime il click-fantasma su una locandina subito dopo uno swipe tra le pagine (stesso
      principio della lightbox: un vero trascinamento del dito non e' mai un tocco). */
@@ -3392,6 +3480,21 @@ requestAnimationFrame(riposiziona);
     return p.length?p:[[]];
   }
 
+  /* Forma breve di un "giorno" gia' formattato (es. "Sabato 31 Ottobre" -> "SAB 31 OTT"),
+     calcolata dal dato strutturato (nomi di giorno/mese riconosciuti), non da un taglio del
+     testo: usata nelle didascalie strette (muro orizzontale) al posto del troncamento con "…".
+     Se il formato non e' quello atteso (giorno/numero/mese) torna null: chi chiama allora lascia
+     il testo intero e lo fa andare a capo invece di tagliarlo (vedi CSS .poster-caption-data). */
+  const VC_GIORNI_ABBR={domenica:'DOM',lunedi:'LUN','lunedì':'LUN',martedi:'MAR','martedì':'MAR',mercoledi:'MER','mercoledì':'MER',giovedi:'GIO','giovedì':'GIO',venerdi:'VEN','venerdì':'VEN',sabato:'SAB'};
+  const VC_MESI_ABBR={gennaio:'GEN',febbraio:'FEB',marzo:'MAR',aprile:'APR',maggio:'MAG',giugno:'GIU',luglio:'LUG',agosto:'AGO',settembre:'SET',ottobre:'OTT',novembre:'NOV',dicembre:'DIC'};
+  function abbreviaGiorno(giorno){
+    if(!giorno) return null;
+    const m=String(giorno).trim().match(/^(\S+)\s+(\d{1,2})\s+(\S+)$/);
+    if(!m) return null;
+    const wd=VC_GIORNI_ABBR[m[1].toLowerCase()], mo=VC_MESI_ABBR[m[3].toLowerCase()];
+    if(!wd||!mo) return null;
+    return wd+' '+m[2]+' '+mo;
+  }
   /* Prova grafica (Lovable, adattata): didascalia sotto/accanto ogni locandina con data/ora,
      titolo e categoria - SOLO campi gia' esistenti (date, time, title, tag), nessun dato nuovo.
      Additiva: un elemento in piu' nel DOM, fuori dal <button> della locandina (sibling, non
@@ -3404,8 +3507,19 @@ requestAnimationFrame(riposiziona);
     cap.className='s4-slide2-poster-caption';
     cap.setAttribute('aria-hidden','true');
     let haContenuto=false;
-    const dataOra=[d.date,d.time].filter(Boolean).join(' · ');
-    if(dataOra){ const r=document.createElement('span'); r.className='s4-slide2-poster-caption-data'; r.textContent=dataOra; cap.appendChild(r); haContenuto=true; }
+    /* fino a 3 righe "giorno · ora", una per replica (stesso fallback di getRepliche() per le
+       locandine salvate prima di questo giro, con solo i vecchi d.date/d.time). data-short e'
+       la forma breve (o il testo intero se non calcolabile): solo il CSS decide se mostrare
+       quella o il testo normale, in base alla fascia/larghezza. */
+    getRepliche(d).forEach(r=>{
+      const dataOra=[r.giorno,r.ora].filter(Boolean).join(' · ');
+      if(dataOra){
+        const el=document.createElement('span'); el.className='s4-slide2-poster-caption-data'; el.textContent=dataOra;
+        const breve=abbreviaGiorno(r.giorno);
+        el.setAttribute('data-short', (breve||r.giorno||'')+(r.ora?(' · '+r.ora):''));
+        cap.appendChild(el); haContenuto=true;
+      }
+    });
     if(d.title){ const r=document.createElement('span'); r.className='s4-slide2-poster-caption-titolo'; r.textContent=d.title; cap.appendChild(r); haContenuto=true; }
     if(d.tag){ const r=document.createElement('span'); r.className='s4-slide2-poster-caption-cat'; r.textContent=d.tag; cap.appendChild(r); haContenuto=true; }
     return haContenuto?cap:null;
@@ -3724,9 +3838,12 @@ requestAnimationFrame(riposiziona);
     elTitle.textContent=d.title||'';
     /* sottotitolo e regia su due righe separate (non piu' unite con " · " sulla stessa riga) */
     elAutore.innerHTML='';
-    if(d.sottotitolo){ const s=document.createElement('span'); s.className='s4-slide2-detail-autore-line'; s.textContent=d.sottotitolo; elAutore.appendChild(s); }
-    if(d.regia){ const r=document.createElement('span'); r.className='s4-slide2-detail-autore-line'; r.textContent=d.regia; elAutore.appendChild(r); }
-    elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast||''; elDate.textContent=d.date||''; elTime.textContent=d.time||''; elTag.textContent=d.tag||'';
+    /* sottotitolo e regia non possono essere entrambi gialli (si confonderebbero): classi
+       diverse per i due casi, ognuna con il proprio colore di default - se c'e' solo uno dei
+       due mantiene comunque il proprio colore. */
+    if(d.sottotitolo){ const s=document.createElement('span'); s.className='s4-slide2-detail-autore-line s4-slide2-detail-autore-sottotitolo'; s.textContent=d.sottotitolo; elAutore.appendChild(s); }
+    if(d.regia){ const r=document.createElement('span'); r.className='s4-slide2-detail-autore-line s4-slide2-detail-autore-regia'; r.textContent=d.regia; elAutore.appendChild(r); }
+    elSyn.textContent=d.synopsis||''; elCast.textContent=d.cast||''; renderRepliche(d); elTag.textContent=d.tag||'';
     elTag.classList.remove('tag-prosa','tag-improvvisazione','tag-musica');
     if(d.tag) elTag.classList.add('tag-'+d.tag.toLowerCase());
     overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
