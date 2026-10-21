@@ -438,7 +438,7 @@ body{overflow:hidden}
  
   .scena-posto{
     justify-content:flex-start;
-    padding-top:280px;
+    padding-top:238px;
   }
 
   :root{--s1-slide4-titolo-fs-base:clamp(38px,11vw,70px)}
@@ -450,16 +450,19 @@ body{overflow:hidden}
   .postoA{font-size:1.3em}
   .postoB{font-size:1.60em;margin-top:-5px}
   .postoC{font-size:1.85em;margin-top:-6px}
-  .postoD{font-size:2.1em;margin-top:20px}
+  .postoD{font-size:2.1em;margin-top:-6px}
 
   .posto-btn{
-    margin-top:24px;
+    flex-direction:column;
+    align-items:center;
+    margin-top:30px;
     gap:12px;
   }
+  .btn-primario,.btn-outline{width:min(320px,100%);box-sizing:border-box;text-align:center}
 
   :root{
-    --s1-slide4-btn1-fs-base:11px;--s1-slide4-btn1-pad-v-base:12px;--s1-slide4-btn1-pad-h-base:22px;
-    --s1-slide4-btn2-fs-base:11px;--s1-slide4-btn2-pad-v-base:12px;--s1-slide4-btn2-pad-h-base:22px;
+    --s1-slide4-btn1-fs-base:14px;--s1-slide4-btn1-pad-v-base:16px;--s1-slide4-btn1-pad-h-base:22px;
+    --s1-slide4-btn2-fs-base:14px;--s1-slide4-btn2-pad-v-base:16px;--s1-slide4-btn2-pad-h-base:22px;
   }
 
 }
@@ -666,7 +669,7 @@ body{overflow:hidden}
   .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;margin-top:2px;text-align:center;width:100%}
   .hero-body{line-height:var(--s1-slide1-corpo-lh,1.5);max-width:100%;margin-top:8px;text-align:center}
   :root{--s1-slide1-sub-fs-base:clamp(12px,3.6vw,20px);--s1-slide1-corpo-fs-base:clamp(10px,3vw,14px)}
-  .hero-btn{margin-top:10px;align-self:center}
+  .hero-btn{margin-top:28px;align-self:center}
   :root{--s1-slide1-btn-fs-base:14px;--s1-slide1-btn-pad-v-base:11px;--s1-slide1-btn-pad-h-base:20px}
   /* SLIDE 2 domanda */
   .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05);transform:translate(var(--s1-slide2-titolo-x,0px),calc(-30px + var(--s1-slide2-titolo-y,0px)))} .domanda-titolo .blocco{display:block} .domanda-testo{margin-top:22px}
@@ -679,7 +682,9 @@ body{overflow:hidden}
   /* SLIDE 3 paure */
   :root{--s1-slide3-frase-fs-base:clamp(40px,13vw,80px)}
   /* SLIDE 4 perfetto */ :root{--s1-slide4-titolo-fs-base:clamp(24px,6.5vw,40px)}
-  /* SLIDE 5 porte — 2×2, tutto a vista */
+  /* SLIDE 5 porte — 2×2, tutto a vista. .porta/.porta-btn/.porta-testo qui sopra (invariate) sono
+     condivise con le card Corsi (slide2/4/5): restano cosi' per loro. Le regole sotto, con prefisso
+     #s1-slide5, vincono solo qui per specificita' senza toccare le Corsi. */
   .porte-eyebrow{margin-bottom:10px}
   :root{--s1-slide5-titolo-fs-base:clamp(44px,12vw,72px)}
   .porte-titolo{margin-bottom:16px}
@@ -687,13 +692,19 @@ body{overflow:hidden}
   .porta{padding:12px 11px;gap:5px;border-radius:10px;min-height:0}
   .porta-btn{height:36px;min-height:36px;padding:0 10px;margin-top:auto}
   :root{
-    --s1-slide5-cards-tit-fs-base:clamp(15px,4.6vw,20px);
-    --s1-slide5-cards-testo-fs-base:clamp(10px,2.9vw,12px);
-    --s1-slide5-cards-num-fs-base:10px;
-    --s1-slide5-cards-btn-fs-base:11px;--s1-slide5-cards-btn-pad-v-base:8px;--s1-slide5-cards-btn-pad-h-base:10px;
+    --s1-slide5-cards-tit-fs-base:22px;
+    --s1-slide5-cards-testo-fs-base:12.5px;
+    --s1-slide5-cards-num-fs-base:10.5px;
+    --s1-slide5-cards-btn-fs-base:12.5px;--s1-slide5-cards-btn-pad-v-base:8px;--s1-slide5-cards-btn-pad-h-base:10px;
   }
   .porta-testo{line-height:1.35}
   .scena-porte{padding-left:34px;padding-right:34px}   /* spazio per non toccare i pallini a destra */
+  #s1-slide5 .porte-eyebrow{margin-bottom:10px}
+  #s1-slide5 .porte-titolo{margin-bottom:12px}
+  #s1-slide5 .porte-cards{gap:10px}
+  #s1-slide5 .porta{padding:13px 12px;gap:5px}
+  #s1-slide5 .porta-testo{line-height:1.3}
+  #s1-slide5 .porta-btn{height:40px;min-height:40px}
 
   /* SLIDE 2 CORSI (Improvvisazione) — titolo e card piu' leggibili su telefono verticale */
   :root{
@@ -1065,8 +1076,14 @@ body{overflow:hidden}
    nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
    quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
 #s1-slide7 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
+/* Sfondo bianco (non piu' .giallo-pieno/var(--sede) piena): la linea gialla del logo nell'header
+   spariva sopra lo sfondo giallo (e sopra il celeste di Montegiorgio). .giallo-pieno resta
+   invariata come classe (non usata altrove), qui la sovrascriviamo solo per #s1-slide7. */
+#s1-slide7{background:#fff}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Titolo "La prima volta può iniziare qui" -> --s1-slide7-titolo-{scale|x|y|lh|ls|color} */
 .s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s1-slide7-titolo-fs-base,clamp(44px,8vw,120px)) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#1b1b1b);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
+/* Evidenziatore dietro "può iniziare qui." -> colore = var(--sede) (giallo a Civitavecchia, celeste a Montegiorgio) */
+.s1-slide7-evid{background:linear-gradient(transparent 62%,var(--sede) 62%);padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Bottone "Vieni a provare" -> --s1-slide7-btn-{scale(dimensione)|x|y|lh|ls|color} */
 .s1-slide7-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s1-slide7-btn-scale,1));padding:calc(18px * var(--s1-slide7-btn-scale,1)) calc(22px * var(--s1-slide7-btn-scale,1));line-height:var(--s1-slide7-btn-lh,1);letter-spacing:var(--s1-slide7-btn-ls,0px);color:var(--s1-slide7-btn-color,#1b1b1b);background:#1b1b1b;border:2px solid #1b1b1b;transition:transform .2s,background .2s,color .2s;transform:translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px));}.s1-slide7-btn:hover{transform:translateY(-2px) translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px))}
 .s1-slide7-btn{background:#1b1b1b;color:#fff;border-color:#1b1b1b} .s1-slide7-btn:hover{background:transparent;color:#1b1b1b}
@@ -1080,10 +1097,18 @@ body{overflow:hidden}
 #s1-slide8 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
 /* MASCHERINO — HOME · Slide 8 (Footer) · Titolo "Vicolo Cechov" -> --s1-slide8-titolo-{scale|x|y|lh|ls|color} */
 .s1-slide8-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(22px,3vw,40px) * var(--s1-slide8-titolo-scale,1));line-height:var(--s1-slide8-titolo-lh,1.05);letter-spacing:var(--s1-slide8-titolo-ls,0px);color:var(--s1-slide8-titolo-color,#fff);transform:translate(var(--s1-slide8-titolo-x,0px),var(--s1-slide8-titolo-y,0px));}
+/* .banda .titolone{color:#fff} (regola generica banda scura) vince per specificita' su
+   .s1-slide8-titolo{color:var(...)} qui sopra: il titolo "Vicolo Cechov" restava sempre bianco.
+   Qui lo portiamo a giallo/celeste (var(--sede)) con selettore piu' specifico. */
+#s1-slide8 .s1-slide8-titolo{color:var(--s1-slide8-titolo-color,var(--sede))}
 /* MASCHERINO — HOME · Slide 8 (Footer) · Riga sedi + email -> --s1-slide8-corpo1-{scale|x|y|lh|ls|color} */
 .s1-slide8-corpo1{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s1-slide8-corpo1-scale,1));line-height:var(--s1-slide8-corpo1-lh,1.7);letter-spacing:var(--s1-slide8-corpo1-ls,0px);color:var(--s1-slide8-corpo1-color,#cfcfcf);transform:translate(var(--s1-slide8-corpo1-x,0px),var(--s1-slide8-corpo1-y,0px));margin-top:16px}
 /* MASCHERINO — HOME · Slide 8 (Footer) · Riga social/privacy -> --s1-slide8-corpo2-{scale|x|y|lh|ls|color} */
-.s1-slide8-corpo2{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(12px * var(--s1-slide8-corpo2-scale,1));line-height:var(--s1-slide8-corpo2-lh,1.6);letter-spacing:var(--s1-slide8-corpo2-ls,0px);color:var(--s1-slide8-corpo2-color,#8a8a8a);transform:translate(var(--s1-slide8-corpo2-x,0px),var(--s1-slide8-corpo2-y,0px));margin-top:22px}
+.s1-slide8-corpo2{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(12px * var(--s1-slide8-corpo2-scale,1));line-height:var(--s1-slide8-corpo2-lh,1.6);letter-spacing:var(--s1-slide8-corpo2-ls,0px);color:var(--s1-slide8-corpo2-color,#8a8a8a);transform:translate(var(--s1-slide8-corpo2-x,0px),var(--s1-slide8-corpo2-y,0px));margin-top:22px;text-decoration:none}
+/* Icone social (Instagram/Facebook) a contorno, dentro un cerchio 44x44 */
+.s1-slide8-social{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:24px}
+.s1-slide8-social-icon{width:44px;height:44px;border-radius:50%;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.s1-slide8-social-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Allenatori d'interni ===== */
 /* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s2-slide1, layout .vc-scena generico,
@@ -2035,6 +2060,18 @@ html.sede-monte #s3-slide1{display:none}
   }
 }
 
+/* ===== SLIDE 7 (fascia "La tua nuova prima volta...") — RITOCCHI MOBILE PORTRAIT ===== */
+@media (max-width:767px) and (orientation:portrait){
+  :root{--s1-slide7-titolo-fs-base:52px}
+}
+
+/* ===== SLIDE 8 FOOTER — RITOCCHI MOBILE PORTRAIT ===== */
+@media (max-width:767px) and (orientation:portrait){
+  #s1-slide8 .s1-slide8-titolo{font-size:calc(52px * var(--s1-slide8-titolo-scale,1));margin-bottom:12px}
+  #s1-slide8 .s1-slide8-corpo1{font-size:calc(18px * var(--s1-slide8-corpo1-scale,1))}
+  #s1-slide8 .s1-slide8-corpo2{font-size:calc(15px * var(--s1-slide8-corpo2-scale,1))}
+}
+
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
   #s1-slide6 .s1-slide6-titolo{
     font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * var(--s1-slide6-titolo-scale,1));
@@ -2211,7 +2248,7 @@ html.sede-monte #s3-slide1{display:none}
     <!-- ===== SLIDE 7 — FASCIA GIALLA ===== -->
     <section class="vc-scena giallo-pieno" id="s1-slide7" aria-label="La prima volta può iniziare qui">
       <div class="scena-inner">
-      <h2 class="titolone s1-slide7-titolo">La tua nuova prima volta<br>può iniziare qui.</h2>
+      <h2 class="titolone s1-slide7-titolo">La tua nuova prima volta<br><span class="s1-slide7-evid">può iniziare qui.</span></h2>
       <div class="spazio-btn"><a class="s1-slide7-btn" href="#s3-slide6">Vieni a provare</a></div>
       </div>
     </section>
@@ -2221,7 +2258,11 @@ html.sede-monte #s3-slide1{display:none}
       <div class="scena-inner">
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-corpo1">Civitavecchia · Montegiorgio<br><a href="mailto:info@vicolocechov.it" style="color:#fff">info@vicolocechov.it</a></p>
-      <p class="corpo s1-slide8-corpo2">Instagram · Facebook · Privacy</p>
+      <div class="s1-slide8-social">
+        <a class="s1-slide8-social-icon" href="#" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+        <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+      </div>
+      <a class="corpo s1-slide8-corpo2" href="#">Privacy</a>
       </div>
     </section>
 
