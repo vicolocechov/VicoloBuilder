@@ -639,6 +639,8 @@ body{overflow:hidden}
   /* SLIDE 3 paure */
 }
 
+.br-m{display:none}
+
 /* ===== MOBILE VERTICALE — <=767 · verticale ===== */
 @media (max-width:767px) and (orientation:portrait){
   /* HEADER (2 righe) */
@@ -693,26 +695,59 @@ body{overflow:hidden}
   .porta-testo{line-height:1.35}
   .scena-porte{padding-left:34px;padding-right:34px}   /* spazio per non toccare i pallini a destra */
 
+  /* SLIDE 2 CORSI (Improvvisazione) — titolo e card piu' leggibili su telefono verticale */
+  :root{
+    --s3-slide2-titolo-fs-base:52px;
+    --s3-slide2-cards-tit-fs-base:26px;
+    --s3-slide2-cards-meta-fs-base:12px;
+    --s3-slide2-cards-testo-fs-base:15px;
+    --s3-slide2-cards-btn-fs-base:16px;
+  }
+  #s3-slide2 .s3-slide2-eyebrow{font-size:calc(12px * var(--s3-slide2-eyebrow-scale,1));margin-bottom:8px}
+  #s3-slide2 .card-grid{gap:14px}
+  #s3-slide2 .porta{padding:20px;gap:6px}
+  /* .s3-slide2-card1-btn/-card2-btn (definite dopo nel foglio) impostano display:inline-block e
+     vincono su .porta-btn{display:flex} della slide "Le porte" qui sopra: il bottone "Scopri il
+     corso" non risultava centrato verticalmente. Lo riportiamo a flex solo qui. */
+  #s3-slide2 .porta-btn{display:flex;align-items:center;justify-content:center;height:auto;min-height:0;padding:11px 16px 15px;line-height:1}
+
+  /* SLIDE 3 CORSI (Impro Adulti) — titolo piu' grande, bottone ed eyebrow su una riga */
+  :root{--s3-slide3-titolo-fs-base:60px;--s3-slide3-corpo-fs-base:17px}
+  #s3-slide3 .s3-slide3-btn{font-size:calc(16.5px * var(--s3-slide3-btn-scale,1));padding:calc(20px * var(--s3-slide3-btn-scale,1)) calc(22px * var(--s3-slide3-btn-scale,1))}
+  #s3-slide3 .s3-slide3-eyebrow{font-size:calc(11px * var(--s3-slide3-eyebrow-scale,1));letter-spacing:var(--s3-slide3-eyebrow-ls,1.5px)}
+
   /* SLIDE 4/5 CORSI (Impro Adulti: "Si entra..." + "Non impari solo...") — stessa disposizione
      generica gia' presente (eyebrow/titolo/corpo/griglia card/bottone, card impilate a 1 colonna,
      .porta gia' compatta come sopra), ma titolo/corpo/testo card dimensionati apposta per la
      larghezza verticale mobile: non e' il blocco desktop rimpicciolito */
-  #s3-slide4,#s3-slide5{padding-bottom:calc(4px + var(--vc-safe-bottom))}
+  #s3-slide4,#s3-slide5{padding-top:98px;padding-bottom:calc(4px + var(--vc-safe-bottom))}
   :root{
-    --s3-slide4-titolo-fs-base:clamp(26px,7.5vw,38px);--s3-slide5-titolo-fs-base:clamp(26px,7.5vw,38px);
-    --s3-slide4-corpo-fs-base:clamp(13px,3.4vw,15px);--s3-slide5-corpo-fs-base:clamp(13px,3.4vw,15px);
-    --s3-slide4-cards-tit-fs-base:clamp(17px,4.6vw,20px);--s3-slide5-cards-tit-fs-base:clamp(17px,4.6vw,20px);
-    --s3-slide4-cards-testo-fs-base:clamp(12px,3vw,13px);--s3-slide5-cards-testo-fs-base:clamp(12px,3vw,13px);
-    --s3-slide4-cards-num-fs-base:9.5px;--s3-slide5-cards-num-fs-base:9.5px;
-    --s3-slide4-btn-fs-base:13.5px;--s3-slide5-btn-fs-base:13.5px;
+    --s3-slide4-titolo-fs-base:40px;--s3-slide5-titolo-fs-base:40px;
+    --s3-slide4-corpo-fs-base:14px;--s3-slide5-corpo-fs-base:14px;
+    --s3-slide4-cards-tit-fs-base:21px;--s3-slide5-cards-tit-fs-base:21px;
+    --s3-slide4-cards-testo-fs-base:13.5px;--s3-slide5-cards-testo-fs-base:13.5px;
+    --s3-slide4-cards-num-fs-base:10.5px;--s3-slide5-cards-num-fs-base:10.5px;
+    --s3-slide4-btn-fs-base:14px;--s3-slide5-btn-fs-base:14px;
+    --s3-slide4-eyebrow-fs-base:12px;--s3-slide5-eyebrow-fs-base:12px;
   }
+  #s3-slide4 .s3-slide4-eyebrow,#s3-slide5 .s3-slide5-eyebrow{margin-bottom:8px}
   #s3-slide4 .s3-slide4-corpo,#s3-slide5 .s3-slide5-corpo{margin-top:4px}
-  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{margin-top:6px;gap:10px}
+  #s3-slide4 .s3-slide4-card-grid,#s3-slide5 .s3-slide5-card-grid{margin-top:6px;gap:7px}
+  #s3-slide4 .porta,#s3-slide5 .porta{padding:10px 16px}
   #s3-slide4 [class$="-card1-tit"],#s3-slide4 [class$="-card2-tit"],#s3-slide4 [class$="-card3-tit"],
-  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:5px}
+  #s3-slide5 [class$="-card1-tit"],#s3-slide5 [class$="-card2-tit"],#s3-slide5 [class$="-card3-tit"]{margin-top:3px}
   #s3-slide4 [class$="-card1-testo"],#s3-slide4 [class$="-card2-testo"],#s3-slide4 [class$="-card3-testo"],
-  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:6px}
+  #s3-slide5 [class$="-card1-testo"],#s3-slide5 [class$="-card2-testo"],#s3-slide5 [class$="-card3-testo"]{margin-top:4px;line-height:1.3}
   #s3-slide4 .spazio-btn,#s3-slide5 .spazio-btn{margin-top:6px}
+  #s3-slide4 .s3-slide4-btn{padding:calc(11px * var(--s3-slide4-btn-scale,1)) calc(22px * var(--s3-slide4-btn-scale,1))}
+  #s3-slide5 .s3-slide5-btn{padding:calc(11px * var(--s3-slide5-btn-scale,1)) calc(22px * var(--s3-slide5-btn-scale,1))}
+
+  /* SLIDE 6 CORSI (chiusura "Prima si prova. Poi si decide.") — titolo/testo/bottone piu' grandi */
+  #s3-slide6 .s3-slide6-titolo{font-size:calc(54px * var(--s3-slide6-titolo-scale,1))}
+  #s3-slide6 .s3-slide6-corpo{font-size:calc(17px * var(--s3-slide6-corpo-scale,1))}
+  #s3-slide6 .s3-slide6-btn{font-size:calc(18px * var(--s3-slide6-btn-scale,1));padding:calc(19px * var(--s3-slide6-btn-scale,1)) calc(26px * var(--s3-slide6-btn-scale,1))}
+
+  .br-m{display:block}
 }
 
 
@@ -2284,7 +2319,7 @@ html.sede-monte #s3-slide1{display:none}
       <div class="scena-inner">
       <div class="eyebrow s3-slide4-eyebrow">Dentro una lezione</div>
       <h2 class="titolone s3-slide4-titolo">Si entra. Si gioca. Si crea.</h2>
-      <p class="corpo s3-slide4-corpo">Niente copioni da studiare a casa. La lezione è fatta di esercizi, giochi teatrali e scene costruite insieme, passo dopo passo.</p>
+      <p class="corpo s3-slide4-corpo">Niente copioni da studiare a casa.<br class="br-m"> La lezione è fatta di esercizi, giochi teatrali e scene costruite insieme, passo dopo passo.</p>
       <div class="card-grid g3 s3-slide4-card-grid">
         <div class="porta s3-slide4-card"><span class="card-meta s3-slide4-card1-num">01 · Ascolto</span><h3 class="porta-tit s3-slide4-card1-tit">Prendi il ritmo</h3><p class="porta-testo s3-slide4-card1-testo">Impari a stare presente, ascoltare davvero e reagire a quello che succede in scena.</p></div>
         <div class="porta s3-slide4-card"><span class="card-meta s3-slide4-card2-num">02 · Gioco</span><h3 class="porta-tit s3-slide4-card2-tit">Ti butti</h3><p class="porta-testo s3-slide4-card2-testo">Provi, sbagli, riprovi. Senza cercare la battuta perfetta e senza paura di fare figuracce.</p></div>
@@ -2311,8 +2346,8 @@ html.sede-monte #s3-slide1{display:none}
 
     <!-- ===== SEZIONE 3 — CORSI — SLIDE 6 (chiusura "La prova") ===== -->
     <section class="vc-scena banda sezione-scura" id="s3-slide6" aria-label="Prima si prova, poi si decide">
-      <p class="titolone s3-slide6-titolo">Prima si prova, <span class="punto" style="color:var(--sede)">poi si decide.</span></p>
-      <p class="corpo s3-slide6-corpo">Nessun modulo, nessun impegno: vieni a una lezione di prova gratuita nella tua sede.</p>
+      <p class="titolone s3-slide6-titolo">Prima si prova.<br class="br-m"> <span class="punto" style="color:var(--sede)">Poi si decide.</span></p>
+      <p class="corpo s3-slide6-corpo">Nessun modulo, nessun impegno.<br class="br-m"> Vieni a una lezione di prova gratuita nella tua sede.</p>
       <div class="spazio-btn"><a class="s3-slide6-btn" href="mailto:info@vicolocechov.it">Prenota ora</a></div>
     </section>
 
