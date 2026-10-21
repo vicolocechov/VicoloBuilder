@@ -450,7 +450,7 @@ body{overflow:hidden}
   .postoA{font-size:1.3em}
   .postoB{font-size:1.60em;margin-top:-5px}
   .postoC{font-size:1.85em;margin-top:-6px}
-  .postoD{font-size:2.1em;margin-top:-6px}
+  .postoD{font-size:2.1em;margin-top:8px}
 
   .posto-btn{
     flex-direction:column;
@@ -1076,39 +1076,21 @@ body{overflow:hidden}
    nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
    quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 2 figli originali. */
 #s1-slide7 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
-/* Sfondo bianco (non piu' .giallo-pieno/var(--sede) piena): la linea gialla del logo nell'header
-   spariva sopra lo sfondo giallo (e sopra il celeste di Montegiorgio). .giallo-pieno resta
-   invariata come classe (non usata altrove), qui la sovrascriviamo solo per #s1-slide7. */
-#s1-slide7{background:#fff}
+/* Sfondo nero (slide scura, .banda .sezione-scura): l'header passa a "chiaro" (logo bianco) qui. */
+#s1-slide7{background:#1b1b1b}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Titolo "La prima volta può iniziare qui" -> --s1-slide7-titolo-{scale|x|y|lh|ls|color} */
-.s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s1-slide7-titolo-fs-base,clamp(44px,8vw,120px)) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#1b1b1b);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
-/* Evidenziatore dietro "può iniziare qui." -> colore = var(--sede) (giallo a Civitavecchia, celeste a Montegiorgio) */
-.s1-slide7-evid{background:linear-gradient(transparent 62%,var(--sede) 62%);padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.s1-slide7-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(var(--s1-slide7-titolo-fs-base,clamp(44px,8vw,120px)) * var(--s1-slide7-titolo-scale,1));line-height:var(--s1-slide7-titolo-lh,1);letter-spacing:var(--s1-slide7-titolo-ls,0px);color:var(--s1-slide7-titolo-color,#fff);transform:translate(var(--s1-slide7-titolo-x,0px),var(--s1-slide7-titolo-y,0px));position:relative;z-index:3}
+/* .banda .titolone{color:#fff} vince per specificita' su .s1-slide7-titolo qui sopra (stesso
+   bug gia' corretto per #s1-slide8): qui il risultato e' lo stesso (bianco) ma rendiamo la
+   variabile builder --s1-slide7-titolo-color davvero funzionante con un selettore piu' specifico. */
+#s1-slide7 .s1-slide7-titolo{color:var(--s1-slide7-titolo-color,#fff)}
+/* Evidenziatore "può iniziare qui." -> solo colore sede (giallo a Civitavecchia, celeste a Montegiorgio), niente piu' sfondo/sottolineatura */
+.s1-slide7-evid{background:none;padding:0;color:var(--sede)}
 /* MASCHERINO — HOME · Slide 7 (Fascia gialla) · Bottone "Vieni a provare" -> --s1-slide7-btn-{scale(dimensione)|x|y|lh|ls|color} */
-.s1-slide7-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s1-slide7-btn-scale,1));padding:calc(18px * var(--s1-slide7-btn-scale,1)) calc(22px * var(--s1-slide7-btn-scale,1));line-height:var(--s1-slide7-btn-lh,1);letter-spacing:var(--s1-slide7-btn-ls,0px);color:var(--s1-slide7-btn-color,#1b1b1b);background:#1b1b1b;border:2px solid #1b1b1b;transition:transform .2s,background .2s,color .2s;transform:translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px));}.s1-slide7-btn:hover{transform:translateY(-2px) translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px))}
-.s1-slide7-btn{background:#1b1b1b;color:#fff;border-color:#1b1b1b} .s1-slide7-btn:hover{background:transparent;color:#1b1b1b}
+.s1-slide7-btn{font-family:'Poppins',sans-serif;font-weight:500;text-decoration:none;border-radius:8px;display:inline-block;text-align:center;font-size:calc(16px * var(--s1-slide7-btn-scale,1));padding:calc(18px * var(--s1-slide7-btn-scale,1)) calc(22px * var(--s1-slide7-btn-scale,1));line-height:var(--s1-slide7-btn-lh,1);letter-spacing:var(--s1-slide7-btn-ls,0px);color:var(--s1-slide7-btn-color,#1b1b1b);background:var(--sede);border:2px solid var(--sede);transition:transform .2s,background .2s,color .2s;transform:translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px));}.s1-slide7-btn:hover{transform:translateY(-2px) translate(var(--s1-slide7-btn-x,0px),var(--s1-slide7-btn-y,0px))}
+.s1-slide7-btn:hover{background:transparent;color:var(--sede)}
 /* MASCHERINO s1·slide7·immagine -> --s1-slide7-immagine-{scale|x|y|color} */
 .s1-slide7-immagine{transform:translate(var(--s1-slide7-immagine-x,0px),var(--s1-slide7-immagine-y,0px)) scale(var(--s1-slide7-immagine-scale,1));}
-
-/* ===== SEZIONE 1 HOME · SLIDE 8 — Footer ===== */
-/* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s1-slide8, layout .vc-scena generico,
-   nessun override di display/flex a nessun breakpoint) resta invariata, continua a centrare
-   quest'unico figlio; qui ricreiamo la stessa colonna centrata dei 3 figli originali. */
-#s1-slide8 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
-/* MASCHERINO — HOME · Slide 8 (Footer) · Titolo "Vicolo Cechov" -> --s1-slide8-titolo-{scale|x|y|lh|ls|color} */
-.s1-slide8-titolo{font-family:'Akkordeon',sans-serif;text-transform:uppercase;margin:0;font-size:calc(clamp(22px,3vw,40px) * var(--s1-slide8-titolo-scale,1));line-height:var(--s1-slide8-titolo-lh,1.05);letter-spacing:var(--s1-slide8-titolo-ls,0px);color:var(--s1-slide8-titolo-color,#fff);transform:translate(var(--s1-slide8-titolo-x,0px),var(--s1-slide8-titolo-y,0px));}
-/* .banda .titolone{color:#fff} (regola generica banda scura) vince per specificita' su
-   .s1-slide8-titolo{color:var(...)} qui sopra: il titolo "Vicolo Cechov" restava sempre bianco.
-   Qui lo portiamo a giallo/celeste (var(--sede)) con selettore piu' specifico. */
-#s1-slide8 .s1-slide8-titolo{color:var(--s1-slide8-titolo-color,var(--sede))}
-/* MASCHERINO — HOME · Slide 8 (Footer) · Riga sedi + email -> --s1-slide8-corpo1-{scale|x|y|lh|ls|color} */
-.s1-slide8-corpo1{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(clamp(14px,1.3vw,17px) * var(--s1-slide8-corpo1-scale,1));line-height:var(--s1-slide8-corpo1-lh,1.7);letter-spacing:var(--s1-slide8-corpo1-ls,0px);color:var(--s1-slide8-corpo1-color,#cfcfcf);transform:translate(var(--s1-slide8-corpo1-x,0px),var(--s1-slide8-corpo1-y,0px));margin-top:16px}
-/* MASCHERINO — HOME · Slide 8 (Footer) · Riga social/privacy -> --s1-slide8-corpo2-{scale|x|y|lh|ls|color} */
-.s1-slide8-corpo2{font-family:'Montserrat',sans-serif;margin:0;font-size:calc(12px * var(--s1-slide8-corpo2-scale,1));line-height:var(--s1-slide8-corpo2-lh,1.6);letter-spacing:var(--s1-slide8-corpo2-ls,0px);color:var(--s1-slide8-corpo2-color,#8a8a8a);transform:translate(var(--s1-slide8-corpo2-x,0px),var(--s1-slide8-corpo2-y,0px));margin-top:22px;text-decoration:none}
-/* Icone social (Instagram/Facebook) a contorno, dentro un cerchio 44x44 */
-.s1-slide8-social{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:24px}
-.s1-slide8-social-icon{width:44px;height:44px;border-radius:50%;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.s1-slide8-social-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Allenatori d'interni ===== */
 /* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s2-slide1, layout .vc-scena generico,
@@ -2033,12 +2015,6 @@ html.sede-monte #s3-slide1{display:none}
   #contatti-slide1 .spazio-btn{margin-top:10px;gap:10px}
   #contatti-slide1 .s6-slide1-btn1{font-size:calc(12px * var(--s6-slide1-btn1-scale,1));padding:calc(8px * var(--s6-slide1-btn1-scale,1)) calc(14px * var(--s6-slide1-btn1-scale,1))}
   #contatti-slide1 .s6-slide1-btn2{font-size:calc(12px * var(--s6-slide1-btn2-scale,1));padding:calc(8px * var(--s6-slide1-btn2-scale,1)) calc(14px * var(--s6-slide1-btn2-scale,1))}
-
-  /* HOME — footer */
-  #s1-slide8{padding-top:calc(var(--header-h,46px) + 2px);padding-bottom:calc(6px + var(--vc-safe-bottom))}
-  #s1-slide8 .s1-slide8-titolo{font-size:calc(clamp(16px,2.4vw,26px) * var(--s1-slide8-titolo-scale,1))}
-  #s1-slide8 .s1-slide8-corpo1{margin-top:6px;font-size:calc(clamp(10px,1.1vw,13px) * var(--s1-slide8-corpo1-scale,1));line-height:1.35}
-  #s1-slide8 .s1-slide8-corpo2{margin-top:6px;font-size:calc(10px * var(--s1-slide8-corpo2-scale,1))}
 }
 
 /* ===== RESPONSIVE .card-grid (griglie card generiche, es. Corsi) — stessi breakpoint di sempre =====
@@ -2063,13 +2039,6 @@ html.sede-monte #s3-slide1{display:none}
 /* ===== SLIDE 7 (fascia "La tua nuova prima volta...") — RITOCCHI MOBILE PORTRAIT ===== */
 @media (max-width:767px) and (orientation:portrait){
   :root{--s1-slide7-titolo-fs-base:52px}
-}
-
-/* ===== SLIDE 8 FOOTER — RITOCCHI MOBILE PORTRAIT ===== */
-@media (max-width:767px) and (orientation:portrait){
-  #s1-slide8 .s1-slide8-titolo{font-size:calc(52px * var(--s1-slide8-titolo-scale,1));margin-bottom:12px}
-  #s1-slide8 .s1-slide8-corpo1{font-size:calc(18px * var(--s1-slide8-corpo1-scale,1))}
-  #s1-slide8 .s1-slide8-corpo2{font-size:calc(15px * var(--s1-slide8-corpo2-scale,1))}
 }
 
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
@@ -2246,23 +2215,10 @@ html.sede-monte #s3-slide1{display:none}
     </section>
 
     <!-- ===== SLIDE 7 — FASCIA GIALLA ===== -->
-    <section class="vc-scena giallo-pieno" id="s1-slide7" aria-label="La prima volta può iniziare qui">
+    <section class="vc-scena banda sezione-scura" id="s1-slide7" aria-label="La prima volta può iniziare qui">
       <div class="scena-inner">
       <h2 class="titolone s1-slide7-titolo">La tua nuova prima volta<br><span class="s1-slide7-evid">può iniziare qui.</span></h2>
       <div class="spazio-btn"><a class="s1-slide7-btn" href="#s3-slide6">Vieni a provare</a></div>
-      </div>
-    </section>
-
-    <!-- ===== SLIDE 8 — FOOTER ===== -->
-    <section class="vc-scena banda sezione-scura" id="s1-slide8" aria-label="Footer">
-      <div class="scena-inner">
-      <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
-      <p class="corpo s1-slide8-corpo1">Civitavecchia · Montegiorgio<br><a href="mailto:info@vicolocechov.it" style="color:#fff">info@vicolocechov.it</a></p>
-      <div class="s1-slide8-social">
-        <a class="s1-slide8-social-icon" href="#" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
-        <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
-      </div>
-      <a class="corpo s1-slide8-corpo2" href="#">Privacy</a>
       </div>
     </section>
 
