@@ -1104,6 +1104,11 @@ body{overflow:hidden}
    (regole generiche banda scura) vincerebbero altrimenti per specificita' sulle variabili builder
    colore di titolo/tag/privacy (stesso bug gia' visto per le altre slide scure). */
 #s1-slide8 .scena-inner{display:flex;flex-direction:column;align-items:center;width:100%}
+/* .s1-slide8-sx/-dx/-contatti sono wrapper usati SOLO per il layout a due colonne in orizzontale
+   (vedi blocco landscape piu' sotto): fuori da li' restano "trasparenti" al layout (i loro figli
+   si comportano come se i wrapper non esistessero), cosi' telefono verticale/tablet/desktop non
+   cambiano. */
+#s1-slide8 .s1-slide8-sx,#s1-slide8 .s1-slide8-dx,#s1-slide8 .s1-slide8-contatti{display:contents}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Eyebrow "Vieni a trovarci" -> --s1-slide8-eyebrow-{scale|x|y|color} */
 #s1-slide8 .s1-slide8-eyebrow{font-size:calc(12px * var(--s1-slide8-eyebrow-scale,1));letter-spacing:2px;color:var(--s1-slide8-eyebrow-color,#bdbdbd);transform:translate(var(--s1-slide8-eyebrow-x,0px),var(--s1-slide8-eyebrow-y,0px))}
 #s1-slide8 .s1-slide8-eyebrow::before{width:10px;height:10px}
@@ -1143,35 +1148,41 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
    Posizionato DOPO le regole base di #s1-slide8 qui sopra apposta: essendo .scena-inner{display:grid}
    a parita' di specificita' con la regola base (entrambe #s1-slide8 .scena-inner), vince solo se
    viene dopo nel foglio - prima (dentro il grande blocco landscape condiviso piu' in alto nel file)
-   la regola base, piu' in basso nel foglio, vinceva comunque e il layout restava a una colonna. */
+   la regola base, piu' in basso nel foglio, vinceva comunque e il layout restava a una colonna.
+   Due colonne via CSS grid: .s1-slide8-sx (eyebrow/titolo/tag, centrati) e .s1-slide8-dx (sedi/
+   contatti/social/privacy), entrambi display:contents fuori da qui (vedi regola base piu' sopra) e
+   qui promossi a veri contenitori flex-column. */
 @media (orientation:landscape) and (max-height:550px){
-  /* a 844x280 una colonna non ci sta: due colonne via CSS grid (nessun wrapper extra nel markup,
-     ogni figlio va nella colonna/riga giusta tramite grid-column/grid-row). */
-  #s1-slide8{padding-top:calc(46px + 12px);padding-bottom:calc(6px + var(--vc-safe-bottom))}
+  #s1-slide8{padding-top:58px;padding-bottom:10px}
   :root{
-    --s1-slide8-titolo-fs-base:clamp(34px,6vw,52px);
-    --s1-slide8-tag-fs-base:12px;
-    --s1-slide8-sede-nome-fs-base:15px;
-    --s1-slide8-sede-via-fs-base:11px;
-    --s1-slide8-mail-fs-base:13px;
-    --s1-slide8-wa-fs-base:13px;
-    --s1-slide8-social-size-base:26px;
+    --s1-slide8-titolo-fs-base:54px;
+    --s1-slide8-tag-fs-base:12.5px;
+    --s1-slide8-sede-nome-fs-base:19px;
+    --s1-slide8-sede-via-fs-base:11.5px;
+    --s1-slide8-mail-fs-base:12.5px;
+    --s1-slide8-wa-fs-base:12.5px;
+    --s1-slide8-social-size-base:30px;
   }
-  #s1-slide8 .scena-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:20px;align-items:center;text-align:left;width:100%;max-width:720px}
-  #s1-slide8 .s1-slide8-eyebrow{grid-column:1;grid-row:1;justify-content:flex-start;margin:0 0 4px}
-  #s1-slide8 .s1-slide8-titolo{grid-column:1;grid-row:2;margin:0 0 4px}
-  #s1-slide8 .s1-slide8-tag{grid-column:1;grid-row:3;margin:0;line-height:1.15}
-  #s1-slide8 .s1-slide8-sedi{grid-column:2;grid-row:1;gap:2px;max-width:none;margin-bottom:0}
-  #s1-slide8 .s1-slide8-sede{padding:3px 8px;gap:7px}
-  #s1-slide8 .s1-slide8-sede i{margin-top:0;line-height:1.1}
-  #s1-slide8 .s1-slide8-pin{width:14px;height:14px}
-  #s1-slide8 .s1-slide8-arrow{width:12px;height:12px}
-  #s1-slide8 .s1-slide8-mail{grid-column:2;grid-row:2;margin-top:1px}
-  #s1-slide8 .s1-slide8-icon{width:14px;height:14px;vertical-align:-2px;margin-right:5px}
-  #s1-slide8 .s1-slide8-wa{grid-column:2;grid-row:3;margin-top:1px}
-  #s1-slide8 .s1-slide8-social{grid-column:2;grid-row:4;justify-content:flex-start;gap:6px;margin:1px 0 1px}
-  #s1-slide8 .s1-slide8-social-icon svg{width:14px;height:14px}
-  #s1-slide8 .s1-slide8-privacy{grid-column:2;grid-row:5;line-height:1.1}
+  #s1-slide8 .scena-inner{display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:28px;align-items:center;max-width:720px}
+  #s1-slide8 .s1-slide8-sx{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;align-self:center}
+  #s1-slide8 .s1-slide8-dx{display:flex;flex-direction:column;align-items:center;gap:12px;align-self:center}
+  #s1-slide8 .s1-slide8-eyebrow{justify-content:center;margin:0}
+  #s1-slide8 .s1-slide8-titolo{margin:0}
+  #s1-slide8 .s1-slide8-tag{margin:0;white-space:nowrap}
+  /* sedi: due card affiancate, pin+nome sulla prima riga, via sotto (flex-basis:100%), freccia nascosta */
+  #s1-slide8 .s1-slide8-sedi{flex-direction:row;gap:10px;width:100%;max-width:none}
+  #s1-slide8 .s1-slide8-sede{flex:1;flex-wrap:wrap;align-items:center;padding:11px 12px;gap:6px 7px;border-radius:12px}
+  #s1-slide8 .s1-slide8-sede span{display:contents}
+  #s1-slide8 .s1-slide8-sede i{flex-basis:100%;margin:0}
+  #s1-slide8 .s1-slide8-pin{width:16px;height:16px}
+  #s1-slide8 .s1-slide8-arrow{display:none}
+  /* mail + whatsapp sulla stessa riga */
+  #s1-slide8 .s1-slide8-contatti{display:flex;flex-direction:row;gap:16px;justify-content:center}
+  #s1-slide8 .s1-slide8-mail,#s1-slide8 .s1-slide8-wa{margin:0}
+  #s1-slide8 .s1-slide8-icon{width:15px;height:15px;margin-right:6px}
+  /* social */
+  #s1-slide8 .s1-slide8-social{gap:10px;margin:0}
+  #s1-slide8 .s1-slide8-privacy{margin:0}
 }
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Allenatori d'interni ===== */
@@ -2129,12 +2140,17 @@ html.sede-monte #s3-slide1{display:none}
   :root{
     --s1-slide8-titolo-fs-base:48px;
     --s1-slide8-tag-fs-base:13px;
-    --s1-slide8-sede-nome-fs-base:21px;
-    --s1-slide8-sede-via-fs-base:13px;
+    --s1-slide8-sede-nome-fs-base:25px;
+    --s1-slide8-sede-via-fs-base:14.5px;
     --s1-slide8-mail-fs-base:18px;
     --s1-slide8-wa-fs-base:16px;
     --s1-slide8-social-size-base:48px;
   }
+  /* card sedi piu' alte */
+  #s1-slide8 .s1-slide8-sedi{gap:12px}
+  #s1-slide8 .s1-slide8-sede{padding:18px 16px;gap:14px;border-radius:14px}
+  #s1-slide8 .s1-slide8-sede i{margin-top:5px}
+  #s1-slide8 .s1-slide8-pin{width:26px;height:26px}
 }
 
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
@@ -2321,22 +2337,28 @@ html.sede-monte #s3-slide1{display:none}
     <!-- ===== SLIDE 8 — FOOTER "Vieni a trovarci" ===== -->
     <section class="vc-scena banda sezione-scura" id="s1-slide8" aria-label="Vieni a trovarci">
       <div class="scena-inner">
+      <div class="s1-slide8-sx">
       <div class="eyebrow s1-slide8-eyebrow">Vieni a trovarci</div>
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-tag">Scuola Nazionale di Improvvisazione e Teatro</p>
+      </div>
+      <div class="s1-slide8-dx">
       <div class="s1-slide8-sedi">
         <a class="s1-slide8-sede" href="https://www.google.com/maps/search/?api=1&query=Via+Fratelli+Cervi+42+Civitavecchia" target="_blank" rel="noopener"><svg class="s1-slide8-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg><span><b>Civitavecchia</b><i>Via Fratelli Cervi, 42</i></span><svg class="s1-slide8-arrow" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></a>
         <a class="s1-slide8-sede" href="https://www.google.com/maps/search/?api=1&query=Via+Faleriense+Est+81+Montegiorgio" target="_blank" rel="noopener"><svg class="s1-slide8-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg><span><b>Montegiorgio</b><i>Via Faleriense Est, 81</i></span><svg class="s1-slide8-arrow" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></a>
       </div>
+      <div class="s1-slide8-contatti">
       <a class="s1-slide8-mail" href="mailto:info@vicolocechov.it"><svg class="s1-slide8-icon" viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"></rect><path d="M3 7l9 6 9-6"></path></svg>info@vicolocechov.it</a>
       <!-- TODO: numero WhatsApp segnaposto (+39 000 000 0000 / wa.me/390000000000) - sostituire con quello reale quando l'utente lo fornisce -->
       <a class="s1-slide8-wa" href="https://wa.me/390000000000" target="_blank" rel="noopener"><svg class="s1-slide8-icon" viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-7.6 13.8L3 22l6.3-1.6A9 9 0 1 0 12 2z"></path><path d="M8.5 9c0-.5.4-1 1-1h.7c.3 0 .6.2.7.5l.6 1.4c.1.3.1.6-.1.8l-.6.7c.4 1 1.2 1.8 2.2 2.2l.7-.6c.2-.2.5-.2.8-.1l1.4.6c.3.1.5.4.5.7v.7c0 .6-.5 1-1 1-3.9 0-7-3.1-7-7z"></path></svg>+39 000 000 0000</a>
+      </div>
       <div class="s1-slide8-social">
         <!-- TODO: URL reali Instagram/Facebook segnaposto (href="#") - sostituire quando l'utente li fornisce -->
         <a class="s1-slide8-social-icon" href="#" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
         <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
       </div>
       <a class="corpo s1-slide8-privacy" href="#">Privacy</a>
+      </div>
       </div>
     </section>
 
