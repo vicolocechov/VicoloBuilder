@@ -1292,6 +1292,13 @@ html.sede-monte #s1-slide8 .s1-slide8-social-civ{display:none}
 @media (min-width:1200px){
   .s2-slide1-btn{margin-top:31px}
 }
+/* Titolo e paragrafo grandi come la hero su desktop/laptop (min-height:560px esclude l'orizzontale
+   telefono, gia' gestito dal suo blocco dedicato piu' in basso nel foglio). Il bottone resta com'e'
+   (16px come la hero, nessuna regola qui). */
+@media (min-width:1024px) and (min-height:560px){
+  #s2-slide1 .s2-slide1-titolo{font-size:calc(min(13.5vw,calc(60.7vh - 184px),300px) * var(--s2-slide1-titolo-scale,1))}
+  #s2-slide1 .s2-slide1-corpo{font-size:calc(18.7px * var(--s2-slide1-corpo-scale,1));line-height:1.6;max-width:760px;margin-top:clamp(20px,4vh,38px)}
+}
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 2 — Perché il Vicolo ===== */
 /* Wrapper per "Tutta la pagina" dal pannello: la sezione (#s2-slide2, layout .vc-scena generico,
@@ -2283,7 +2290,7 @@ html.sede-monte #s3-slide1{display:none}
    span del titolo e il braccio reimpostati a inline/baseline come nel markup originale. */
 @media (orientation:landscape) and (max-height:550px){
   #s2-slide1{padding-top:calc(var(--header-h,46px) + 4px);padding-bottom:calc(6px + var(--vc-safe-bottom));padding-left:calc(40px + var(--vc-safe-left));padding-right:calc(40px + var(--vc-safe-right))}
-  #s2-slide1 .s2-slide1-titolo{display:block;text-align:center;white-space:nowrap;font-size:calc(86px * var(--s2-slide1-titolo-scale,1));line-height:var(--s2-slide1-titolo-lh,1)}
+  #s2-slide1 .s2-slide1-titolo{display:block;text-align:center;white-space:nowrap;font-size:calc(72px * var(--s2-slide1-titolo-scale,1));line-height:var(--s2-slide1-titolo-lh,1)}
   #s2-slide1 .s2-slide1-t1,#s2-slide1 .s2-slide1-t2{display:inline;font-size:1em;margin:0}
   #s2-slide1 .s2-slide1-titolo .bicipite{order:0;height:.78em;margin:0 .1em;vertical-align:baseline}
   #s2-slide1 .s2-slide1-corpo{font-size:calc(13px * var(--s2-slide1-corpo-scale,1));line-height:1.35;margin-top:10px;max-width:560px;text-align:center}
@@ -2292,7 +2299,7 @@ html.sede-monte #s3-slide1{display:none}
 /* Altezza molto bassa: ulteriore compressione sopra alla regola landscape appena vista (stesso
    selettore, vince per ordine nel foglio essendo dopo). */
 @media (orientation:landscape) and (max-height:260px){
-  #s2-slide1 .s2-slide1-titolo{font-size:calc(78px * var(--s2-slide1-titolo-scale,1))}
+  #s2-slide1 .s2-slide1-titolo{font-size:calc(60px * var(--s2-slide1-titolo-scale,1))}
   #s2-slide1 .s2-slide1-corpo{margin-top:6px}
   #s2-slide1 .s2-slide1-btn{margin-top:12px}
 }
