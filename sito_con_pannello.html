@@ -797,19 +797,19 @@ body{overflow:hidden}
   /* SLIDE 1 hero (titolo su UNA riga) — compresso per la fascia reale peggiore (Safari a chrome
      pieno, ~249-314px di altezza utile): prima restava centrato in verticale in un box piu' alto
      del disponibile, tagliando il corpo testo e nascondendo del tutto il bottone. */
-  .hero{--header-h:46px;justify-content:flex-start;padding:calc(var(--header-h) + 3px) 18px calc(6px + var(--vc-safe-bottom));padding-top:calc(46px + 22px)}
+  .hero{--header-h:46px;justify-content:flex-start;padding-bottom:calc(6px + var(--vc-safe-bottom));padding-top:60px;padding-left:calc(18px + var(--vc-safe-left));padding-right:calc(18px + var(--vc-safe-right))}
   .hero-inner{flex-direction:column;align-items:center;width:100%}
   .hero-title{display:block;white-space:nowrap;text-align:center;width:100%;line-height:var(--s1-slide1-titolo-lh,1)}
-  :root{--s1-slide1-titolo-fs-base:clamp(30px,6.4vw,54px)}
+  :root{--s1-slide1-titolo-fs-base:72px}
   .hero-l1,.hero-l2{display:inline}
   .hero-l1{font-size:1em}
   .tw{display:inline-block}
   .hero-testo{display:contents}
   .hero-sub{line-height:var(--s1-slide1-sub-lh,1);letter-spacing:var(--s1-slide1-sub-ls,-.2px);white-space:nowrap;text-align:center;margin:6px 0 0}
-  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.3);text-align:center;max-width:640px;margin:7px auto 0}
+  .hero-body{line-height:var(--s1-slide1-corpo-lh,1.3);text-align:center;max-width:640px;margin:6px auto 0}
   :root{--s1-slide1-sub-fs-base:clamp(13px,2.1vw,18px);--s1-slide1-corpo-fs-base:clamp(11px,1.6vw,14px)}
   .br-body{display:none}
-  .hero-btn{margin-top:14px;align-self:center}
+  .hero-btn{margin-top:12px;align-self:center}
   :root{--s1-slide1-btn-fs-base:13px;--s1-slide1-btn-pad-v-base:9px;--s1-slide1-btn-pad-h-base:20px}
   /* SLIDE 2 domanda */
   .domanda-titolo{line-height:var(--s1-slide2-titolo-lh,1.05)} .domanda-titolo .blocco{display:inline} .domanda-testo{margin-top:8px} .scena-domanda{padding:calc(var(--header-h,46px) + 8px) 6vw 14px}
@@ -971,6 +971,15 @@ body{overflow:hidden}
   #s3-slide2 .card-meta{margin-bottom:2px}
   #s3-slide2 .porta-testo{line-height:1.25}
   #s3-slide2 .porta-btn{margin-top:6px;padding:5px 12px}
+}
+
+/* ===== HOME · SLIDE 1 (Hero) — ORIZZONTALE ALTEZZA MOLTO BASSA =====
+   Posizionato DOPO il blocco condiviso qui sopra (righe ~790-974, dove sta la regola base
+   landscape di .hero/--s1-slide1-titolo-fs-base): a parita' di specificita' vince l'ultima
+   regola nel foglio, non il media query piu' specifico. */
+@media (orientation:landscape) and (max-height:260px){
+  :root{--s1-slide1-titolo-fs-base:60px}
+  .hero{padding-top:54px}
 }
 
 /* ===== DESKTOP/LAPTOP ORIZZONTALE >=1200 — solo paure ===== */
