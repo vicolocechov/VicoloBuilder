@@ -1144,7 +1144,11 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Privacy -> --s1-slide8-privacy-{scale|x|y|color} */
 #s1-slide8 .s1-slide8-privacy{font-family:'Montserrat',sans-serif;font-size:calc(12px * var(--s1-slide8-privacy-scale,1));color:var(--s1-slide8-privacy-color,#8f8f8f);text-decoration:none;transform:translate(var(--s1-slide8-privacy-x,0px),var(--s1-slide8-privacy-y,0px))}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Riga legale -> --s1-slide8-legale-{scale|x|y|color} */
-#s1-slide8 .s1-slide8-legale{font-family:'Montserrat',sans-serif;font-size:calc(10px * var(--s1-slide8-legale-scale,1));color:var(--s1-slide8-legale-color,#8f8f8f);line-height:1.4;text-align:center;margin:10px 0 0;max-width:340px;transform:translate(var(--s1-slide8-legale-x,0px),var(--s1-slide8-legale-y,0px))}
+/* order:10 (resettato a 0 solo nel blocco landscape piu' sotto): nel markup .s1-slide8-legale e'
+   ora l'ultimo figlio di .s1-slide8-sx (serve per spostarla li' in orizzontale), ma .s1-slide8-sx/
+   -dx sono display:contents ovunque tranne che in orizzontale, quindi senza order qui finirebbe
+   subito dopo il tag invece che in fondo come prima (dopo Privacy) su verticale/tablet/desktop. */
+#s1-slide8 .s1-slide8-legale{font-family:'Montserrat',sans-serif;font-size:calc(10px * var(--s1-slide8-legale-scale,1));color:var(--s1-slide8-legale-color,#8f8f8f);line-height:1.4;text-align:center;margin:10px 0 0;max-width:340px;order:10;transform:translate(var(--s1-slide8-legale-x,0px),var(--s1-slide8-legale-y,0px))}
 
 /* ===== SLIDE 8 (Vieni a trovarci) — RITOCCHI MOBILE ORIZZONTALE =====
    Posizionato DOPO le regole base di #s1-slide8 qui sopra apposta: essendo .scena-inner{display:grid}
@@ -1155,7 +1159,10 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
    contatti/social/privacy), entrambi display:contents fuori da qui (vedi regola base piu' sopra) e
    qui promossi a veri contenitori flex-column. */
 @media (orientation:landscape) and (max-height:550px){
-  #s1-slide8{padding-top:58px;padding-bottom:10px}
+  /* .vc-dots e' position:fixed a destra; sulla safe-area laterale (iPhone in orizzontale) i
+     Playwright di prova valgono 0, ma su device reali no - padding esplicito con var(--vc-safe-*)
+     per restare lontani dai puntini anche li'. */
+  #s1-slide8{padding-top:58px;padding-bottom:10px;padding-left:calc(40px + var(--vc-safe-left));padding-right:calc(40px + var(--vc-safe-right))}
   :root{
     --s1-slide8-titolo-fs-base:54px;
     --s1-slide8-tag-fs-base:12.5px;
@@ -1165,12 +1172,16 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
     --s1-slide8-wa-fs-base:12.5px;
     --s1-slide8-social-size-base:30px;
   }
-  #s1-slide8 .scena-inner{display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:28px;align-items:center;max-width:720px}
+  #s1-slide8 .scena-inner{display:grid;grid-template-columns:minmax(0,1fr) 320px;column-gap:20px;align-items:center;max-width:720px}
   #s1-slide8 .s1-slide8-sx{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;align-self:center}
   #s1-slide8 .s1-slide8-dx{display:flex;flex-direction:column;align-items:center;gap:12px;align-self:center}
   #s1-slide8 .s1-slide8-eyebrow{justify-content:center;margin:0}
   #s1-slide8 .s1-slide8-titolo{margin:0}
   #s1-slide8 .s1-slide8-tag{margin:0;white-space:nowrap}
+  /* .s1-slide8-legale: ultimo figlio di .s1-slide8-sx nel markup, order:0 (reset dell'order:10
+     della regola base) cosi' qui dentro segue il suo ordine naturale nel DOM, subito dopo il tag;
+     il gap:10px di .s1-slide8-sx qui sopra resta lo spaziatore. */
+  #s1-slide8 .s1-slide8-legale{order:0;margin:0;max-width:300px}
   /* sedi: due card affiancate, pin+nome sulla prima riga, via sotto (flex-basis:100%), freccia nascosta */
   #s1-slide8 .s1-slide8-sedi{flex-direction:row;gap:10px;width:100%;max-width:none}
   #s1-slide8 .s1-slide8-sede{flex:1;flex-wrap:wrap;align-items:center;padding:11px 12px;gap:6px 7px;border-radius:12px}
@@ -1185,7 +1196,11 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
   /* social */
   #s1-slide8 .s1-slide8-social{gap:10px;margin:0}
   #s1-slide8 .s1-slide8-privacy{margin:0}
-  #s1-slide8 .s1-slide8-legale{margin:0}
+}
+
+/* ===== SLIDE 8 (Vieni a trovarci) — ORIZZONTALE ALTEZZA MOLTO BASSA ===== */
+@media (orientation:landscape) and (max-height:260px){
+  #s1-slide8 .s1-slide8-dx{gap:8px}
 }
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Allenatori d'interni ===== */
@@ -2141,7 +2156,7 @@ html.sede-monte #s3-slide1{display:none}
 /* ===== SLIDE 8 (Vieni a trovarci) — RITOCCHI MOBILE PORTRAIT ===== */
 @media (max-width:767px) and (orientation:portrait){
   :root{
-    --s1-slide8-titolo-fs-base:48px;
+    --s1-slide8-titolo-fs-base:58px;
     --s1-slide8-tag-fs-base:13px;
     --s1-slide8-sede-nome-fs-base:25px;
     --s1-slide8-sede-via-fs-base:14.5px;
@@ -2149,12 +2164,24 @@ html.sede-monte #s3-slide1{display:none}
     --s1-slide8-wa-fs-base:16px;
     --s1-slide8-social-size-base:48px;
   }
+  /* "Vieni a trovarci" piu' vicino al titolo, titolo piu' grande */
+  #s1-slide8 .s1-slide8-eyebrow{margin:0 0 4px}
+  #s1-slide8 .s1-slide8-titolo{margin:0 0 8px}
   /* card sedi piu' alte */
   #s1-slide8 .s1-slide8-sedi{gap:12px}
   #s1-slide8 .s1-slide8-sede{padding:18px 16px;gap:14px;border-radius:14px}
   #s1-slide8 .s1-slide8-sede i{margin-top:5px}
   #s1-slide8 .s1-slide8-pin{width:26px;height:26px}
   #s1-slide8 .s1-slide8-legale{max-width:320px}
+}
+
+/* ===== SLIDE 8 (Vieni a trovarci) — ALTEZZA BASSA IN VERTICALE (sotto 680px) =====
+   Sopra 680px di altezza questo blocco non fa nulla (nessuna regola matcha). */
+@media (max-width:767px) and (orientation:portrait) and (max-height:680px){
+  #s1-slide8 .s1-slide8-sede{padding:13px 16px}
+  #s1-slide8 .s1-slide8-sedi{gap:10px;margin-bottom:14px}
+  #s1-slide8 .s1-slide8-social{margin:14px 0 10px}
+  #s1-slide8 .s1-slide8-tag{margin-bottom:12px}
 }
 
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
@@ -2345,6 +2372,8 @@ html.sede-monte #s3-slide1{display:none}
       <div class="eyebrow s1-slide8-eyebrow">Vieni a trovarci</div>
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-tag">Scuola Nazionale di Improvvisazione e Teatro</p>
+      <!-- TODO: dati legali segnaposto (forma giuridica, sede legale, C.F.) - sostituire con quelli reali -->
+      <p class="corpo s1-slide8-legale">Vicolo Cechov [FORMA GIURIDICA] · Sede legale: [INDIRIZZO] · C.F. [CODICE FISCALE]</p>
       </div>
       <div class="s1-slide8-dx">
       <div class="s1-slide8-sedi">
@@ -2362,8 +2391,6 @@ html.sede-monte #s3-slide1{display:none}
         <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
       </div>
       <a class="corpo s1-slide8-privacy" href="#">Privacy</a>
-      <!-- TODO: dati legali segnaposto (forma giuridica, sede legale, C.F.) - sostituire con quelli reali -->
-      <p class="corpo s1-slide8-legale">Vicolo Cechov [FORMA GIURIDICA] · Sede legale: [INDIRIZZO] · C.F. [CODICE FISCALE]</p>
       </div>
       </div>
     </section>
