@@ -2229,6 +2229,19 @@ html.sede-monte #s3-slide1{display:none}
   #s1-slide8 .s1-slide8-tag{margin-bottom:12px}
 }
 
+/* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 (Allenatori d'interni) — RITOCCHI MOBILE PORTRAIT =====
+   Posizionato DOPO le regole base di #s2-slide1 piu' in alto nel foglio: a parita' di specificita'
+   (stesso selettore .s2-slide1-titolo/.s2-slide1-corpo) vince l'ultima regola nel foglio, non il
+   media query piu' specifico. Il titolo e' "Allenatori" + <img class="bicipite"> + "D'interni"
+   dentro lo stesso <h2>: con display:flex;flex-direction:column i due nodi di testo diventano
+   flex item anonimi (uno per "Allenatori", uno per "D'interni"), e order:-1 sull'immagine la
+   porta prima di entrambi restando centrata. */
+@media (max-width:767px) and (orientation:portrait){
+  #s2-slide1 .s2-slide1-titolo{display:flex;flex-direction:column;align-items:center;font-size:calc(clamp(60px,21vw,92px) * var(--s2-slide1-titolo-scale,1));line-height:1}
+  #s2-slide1 .s2-slide1-titolo .bicipite{height:.9em;margin:2px 0;order:-1}
+  #s2-slide1 .s2-slide1-corpo{font-size:calc(15px * var(--s2-slide1-corpo-scale,1));line-height:1.5;margin-top:22px;max-width:320px}
+}
+
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
   #s1-slide6 .s1-slide6-titolo{
     font-size:calc(clamp(36px,5.5vw,76px) * 1.15 * var(--s1-slide6-titolo-scale,1));
