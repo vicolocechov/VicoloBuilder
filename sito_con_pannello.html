@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
 <!-- ============================================================================
      SEO DI PAGINA — in fase di assemblaggio questo blocco andrà nel layout Base.astro.
      I valori sono in italiano (contenuto); i nomi tecnici in inglese (standard).
@@ -111,6 +112,11 @@
    questo comportamento. */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{font-family:'Montserrat',sans-serif;color:#1b1b1b}
+/* Rete di sicurezza per il "data detector" di Safari iOS: anche con il meta format-detection
+   disattivato in <head>, se per qualche motivo rilevasse comunque un numero/data/indirizzo come
+   link lo avvolge in <a x-apple-data-detectors>, stilizzato di default in blu e sottolineato -
+   qui lo riportiamo ad ereditare lo stile del testo circostante invece di spiccare come link. */
+a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font:inherit!important}
 
 /* Base di OGNI slide (schermo intero, centrata): le classi specifiche (.hero, .scena-domanda, ecc.)
    la ridichiarano e vincono perché vengono DOPO — deve restare la prima regola del foglio di stile. */
@@ -2377,7 +2383,7 @@ html.sede-monte #s3-slide1{display:none}
       <div class="eyebrow s1-slide8-eyebrow">Vieni a trovarci</div>
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-tag">Scuola Nazionale di Improvvisazione e Teatro</p>
-      <p class="corpo s1-slide8-legale">Sede legale: Piazza Leandra, 21 - 00053 Civitavecchia (RM) · C.F. 91063580582</p>
+      <p class="corpo s1-slide8-legale">Sede legale: Piazza&nbsp;Leandra,&nbsp;21&nbsp;-&nbsp;00053 Civitavecchia (RM) · <span style="white-space:nowrap">C.F. 91063580582</span></p>
       </div>
       <div class="s1-slide8-dx">
       <div class="s1-slide8-sedi">
