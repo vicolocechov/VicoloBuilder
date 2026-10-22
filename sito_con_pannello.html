@@ -1141,6 +1141,11 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Icone social -> --s1-slide8-social-{scale|x|y} */
 #s1-slide8 .s1-slide8-social-icon{width:calc(var(--s1-slide8-social-size-base,52px) * var(--s1-slide8-social-scale,1));height:calc(var(--s1-slide8-social-size-base,52px) * var(--s1-slide8-social-scale,1));border-radius:50%;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transform:translate(var(--s1-slide8-social-x,0px),var(--s1-slide8-social-y,0px))}
 #s1-slide8 .s1-slide8-social-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* un'icona per social (due <a> nel markup, una per sede): si mostra solo quella della sede attiva,
+   stesso meccanismo gia' usato per le righe sedi qui sopra - layout/spazi restano identici perche'
+   per ogni social resta visibile una sola icona alla volta. */
+html.sede-civ #s1-slide8 .s1-slide8-social-monte{display:none}
+html.sede-monte #s1-slide8 .s1-slide8-social-civ{display:none}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Privacy -> --s1-slide8-privacy-{scale|x|y|color} */
 #s1-slide8 .s1-slide8-privacy{font-family:'Montserrat',sans-serif;font-size:calc(12px * var(--s1-slide8-privacy-scale,1));color:var(--s1-slide8-privacy-color,#8f8f8f);text-decoration:none;transform:translate(var(--s1-slide8-privacy-x,0px),var(--s1-slide8-privacy-y,0px))}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Riga legale -> --s1-slide8-legale-{scale|x|y|color} */
@@ -2372,8 +2377,7 @@ html.sede-monte #s3-slide1{display:none}
       <div class="eyebrow s1-slide8-eyebrow">Vieni a trovarci</div>
       <p class="titolone s1-slide8-titolo">Vicolo Cechov</p>
       <p class="corpo s1-slide8-tag">Scuola Nazionale di Improvvisazione e Teatro</p>
-      <!-- TODO: dati legali segnaposto (forma giuridica, sede legale, C.F.) - sostituire con quelli reali -->
-      <p class="corpo s1-slide8-legale">Vicolo Cechov [FORMA GIURIDICA] · Sede legale: [INDIRIZZO] · C.F. [CODICE FISCALE]</p>
+      <p class="corpo s1-slide8-legale">Sede legale: Piazza Leandra, 21 - 00053 Civitavecchia (RM) · C.F. 91063580582</p>
       </div>
       <div class="s1-slide8-dx">
       <div class="s1-slide8-sedi">
@@ -2386,9 +2390,10 @@ html.sede-monte #s3-slide1{display:none}
       <a class="s1-slide8-wa" href="https://wa.me/390000000000" target="_blank" rel="noopener"><svg class="s1-slide8-icon" viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-7.6 13.8L3 22l6.3-1.6A9 9 0 1 0 12 2z"></path><path d="M8.5 9c0-.5.4-1 1-1h.7c.3 0 .6.2.7.5l.6 1.4c.1.3.1.6-.1.8l-.6.7c.4 1 1.2 1.8 2.2 2.2l.7-.6c.2-.2.5-.2.8-.1l1.4.6c.3.1.5.4.5.7v.7c0 .6-.5 1-1 1-3.9 0-7-3.1-7-7z"></path></svg>+39 000 000 0000</a>
       </div>
       <div class="s1-slide8-social">
-        <!-- TODO: URL reali Instagram/Facebook segnaposto (href="#") - sostituire quando l'utente li fornisce -->
-        <a class="s1-slide8-social-icon" href="#" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
-        <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+        <a class="s1-slide8-social-icon s1-slide8-social-civ" href="https://www.instagram.com/vicolocechov/" aria-label="Instagram Civitavecchia" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+        <a class="s1-slide8-social-icon s1-slide8-social-monte" href="https://www.instagram.com/vicolocechovmarche/" aria-label="Instagram Montegiorgio" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+        <a class="s1-slide8-social-icon s1-slide8-social-civ" href="https://www.facebook.com/vicolocechovimprovvisazione" aria-label="Facebook Civitavecchia" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+        <a class="s1-slide8-social-icon s1-slide8-social-monte" href="https://www.facebook.com/share/1J7ERZarR4/?mibextid=wwXIfr" aria-label="Facebook Montegiorgio" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
       </div>
       <a class="corpo s1-slide8-privacy" href="#">Privacy</a>
       </div>
