@@ -1143,6 +1143,8 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
 #s1-slide8 .s1-slide8-social-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 /* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Privacy -> --s1-slide8-privacy-{scale|x|y|color} */
 #s1-slide8 .s1-slide8-privacy{font-family:'Montserrat',sans-serif;font-size:calc(12px * var(--s1-slide8-privacy-scale,1));color:var(--s1-slide8-privacy-color,#8f8f8f);text-decoration:none;transform:translate(var(--s1-slide8-privacy-x,0px),var(--s1-slide8-privacy-y,0px))}
+/* MASCHERINO — HOME · Slide 8 (Vieni a trovarci) · Riga legale -> --s1-slide8-legale-{scale|x|y|color} */
+#s1-slide8 .s1-slide8-legale{font-family:'Montserrat',sans-serif;font-size:calc(10px * var(--s1-slide8-legale-scale,1));color:var(--s1-slide8-legale-color,#8f8f8f);line-height:1.4;text-align:center;margin:10px 0 0;max-width:340px;transform:translate(var(--s1-slide8-legale-x,0px),var(--s1-slide8-legale-y,0px))}
 
 /* ===== SLIDE 8 (Vieni a trovarci) — RITOCCHI MOBILE ORIZZONTALE =====
    Posizionato DOPO le regole base di #s1-slide8 qui sopra apposta: essendo .scena-inner{display:grid}
@@ -1183,6 +1185,7 @@ html.sede-monte #s1-slide8 .s1-slide8-sede:nth-child(2){order:-1}
   /* social */
   #s1-slide8 .s1-slide8-social{gap:10px;margin:0}
   #s1-slide8 .s1-slide8-privacy{margin:0}
+  #s1-slide8 .s1-slide8-legale{margin:0}
 }
 
 /* ===== SEZIONE 2 CHI SIAMO · SLIDE 1 — Allenatori d'interni ===== */
@@ -2151,6 +2154,7 @@ html.sede-monte #s3-slide1{display:none}
   #s1-slide8 .s1-slide8-sede{padding:18px 16px;gap:14px;border-radius:14px}
   #s1-slide8 .s1-slide8-sede i{margin-top:5px}
   #s1-slide8 .s1-slide8-pin{width:26px;height:26px}
+  #s1-slide8 .s1-slide8-legale{max-width:320px}
 }
 
 @media (min-width:768px) and (max-width:1024px) and (orientation:portrait){
@@ -2358,6 +2362,8 @@ html.sede-monte #s3-slide1{display:none}
         <a class="s1-slide8-social-icon" href="#" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
       </div>
       <a class="corpo s1-slide8-privacy" href="#">Privacy</a>
+      <!-- TODO: dati legali segnaposto (forma giuridica, sede legale, C.F.) - sostituire con quelli reali -->
+      <p class="corpo s1-slide8-legale">Vicolo Cechov [FORMA GIURIDICA] · Sede legale: [INDIRIZZO] · C.F. [CODICE FISCALE]</p>
       </div>
       </div>
     </section>
